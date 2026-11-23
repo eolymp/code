@@ -32,6 +32,9 @@ jobs:
       - name: Install build libraries (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update -y && sudo apt-get install -y libkrb5-dev libx11-dev libxkbfile-dev libsecret-1-dev
+      - name: Add swap (Linux)
+        if: runner.os == 'Linux'
+        run: sudo fallocate -l 8G /swap-build && sudo chmod 600 /swap-build && sudo mkswap /swap-build && sudo swapon /swap-build
       - name: Import the Apple certificate (macOS)
         if: runner.os == 'macOS' && vars.APPLE_SIGN_IDENTITY != '' && github.ref == 'refs/heads/main'
         env:
@@ -48,6 +51,7 @@ jobs:
           security list-keychain -d user -s "$keychain"
       - name: Build the editor
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           EOLYMP_CODE_SIGN_IDENTITY: ${{ github.ref == 'refs/heads/main' && vars.APPLE_SIGN_IDENTITY || '' }}
         run: ./app/build.sh build
       - name: Sign in to Azure Artifact Signing (Windows)
