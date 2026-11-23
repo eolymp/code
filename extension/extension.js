@@ -131,7 +131,6 @@ function flush() {
     results: state ? Object.fromEntries(Object.entries(sync(state, target.dir)).map(([id, r]) => [id, shownResult(r)])) : {},
     compileError: state ? state.compileError : '',
     running: Boolean(testing),
-    setup: !setup.ready(),
     steps: state ? state.steps : null,
     session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
@@ -679,7 +678,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Install", "Eolymp Code needs a compiler and Python. Install them to start solving problems.", "Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -694,7 +693,6 @@ function receive(m) {
   if (m.type === 'run') runTests(shown);
   if (m.type === 'single') run(shown);
   if (m.type === 'submit') submit();
-  if (m.type === 'setup') setup.install().then(update);
   if (!target) return;
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
   const live = active && active.file === target.file && active.state === 'running' ? active : undefined;

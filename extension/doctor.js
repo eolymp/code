@@ -8,7 +8,7 @@ const runner = require('./runner');
 const toolset = require('./tools');
 
 const t = vscode.l10n.t;
-const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', 'Downloading: {0} MB', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. This page continues by itself.'];
+const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', '{0} MB downloaded', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. The setup continues by itself.'];
 
 function hasAppleTools() {
   return process.platform !== 'darwin' || (childProcess.spawnSync('xcode-select', ['-p']).status === 0 && toolset.sdk() !== '');
@@ -20,9 +20,11 @@ function quick(root) {
 
 async function examine(root, use) {
   const checks = [];
-  const add = (id, title, ok, detail, fix) => checks.push({ id, title, ok, detail: ok ? '' : detail || '', fix: ok ? '' : fix || '' });
+  let group = t('Tools');
+  const add = (id, title, ok, detail, fix) => checks.push({ id, group, title, ok, detail: ok ? '' : detail || '', fix: ok ? '' : fix || '' });
   if (process.platform === 'darwin') add('apple', t("Apple's Command Line Tools"), hasAppleTools(), t('They are needed by every compiler on macOS.'), 'apple');
   if (toolset.wanted()) add('tools', t('Compiler and Python'), Boolean(toolset.installed(root)), t('They are not installed yet.'), 'tools');
+  group = t('Compiling and running');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-'));
   const env = use.env();
   const exe = path.join(dir, 'check' + (process.platform === 'win32' ? '.exe' : ''));
@@ -37,6 +39,7 @@ async function examine(root, use) {
   }
   const python = await runner.collect(use.python(), ['-c', 'print(int(input()) + 3)'], { cwd: dir, env, timeout: 5000 }, '2');
   add('python', 'Python', python.stdout.trim() === '5', python.stderr.trim().split('\n').pop());
+  group = t('Extensions');
   const extensions = [
     ['llvm-vs-code-extensions.vscode-clangd', t('C++ completion and errors')],
     ['vadimcn.vscode-lldb', t('C++ debugger')],
@@ -82,9 +85,9 @@ function create(context, root, use, changed) {
   const apple = async () => {
     if (hasAppleTools()) return;
     childProcess.spawn('xcode-select', ['--install'], { stdio: 'ignore' }).on('error', () => {});
-    progress(t('Finish the installation in the window Apple opened. This page continues by itself.'));
+    progress(t('Finish the installation in the window Apple opened. The setup continues by itself.'));
     for (let waited = 0; !hasAppleTools(); waited += 5) {
-      if (waited > 3600 || !panel) throw new Error(t("Apple's Command Line Tools were not installed."));
+      if (waited > 3600) throw new Error(t("Apple's Command Line Tools were not installed."));
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   };
@@ -92,10 +95,15 @@ function create(context, root, use, changed) {
   const tools = async () => {
     if (!toolset.wanted() || toolset.installed(root)) return;
     await toolset.install(root, (stage, value) => {
-      const text = stage === 'download' ? t('Downloading: {0} MB', Math.round(value / 1048576)) : stage === 'unpack' ? t('Unpacking…') : t('Preparing…');
+      const text = stage === 'download' ? t('{0} MB downloaded', Math.round(value / 1048576)) : stage === 'unpack' ? t('Unpacking…') : t('Preparing…');
       if (text !== state.progress) progress(text);
     });
     changed();
+  };
+
+  const failed = (message) => {
+    if (panel) vscode.window.showErrorMessage(message);
+    else vscode.window.showErrorMessage(message, t('Show Details')).then((choice) => choice && open());
   };
 
   const fix = async () => {
@@ -105,10 +113,15 @@ function create(context, root, use, changed) {
       await apple();
       await tools();
     } catch (err) {
-      vscode.window.showErrorMessage(t('Could not finish the setup: {0}', err.message));
+      failed(t('Could not finish the setup: {0}', err.message));
+      busy = false;
+      await check();
+      return false;
     }
     busy = false;
-    return check();
+    const ok = await check();
+    if (!ok) failed(t('Some parts of Eolymp Code are not working.'));
+    return ok;
   };
 
   const open = async () => {
@@ -129,15 +142,19 @@ function create(context, root, use, changed) {
   };
 
   const start = async () => {
-    if (quick(root)) return;
-    bar.show();
-    const fresh = state.fresh;
-    const act = fresh ? t('Install') : t('Fix');
     const details = t('Show Details');
-    const message = fresh ? t('Eolymp Code needs a compiler and Python. Install them to start solving problems.') : t('Some parts of Eolymp Code are not working.');
-    const choice = await vscode.window.showInformationMessage(message, act, details);
+    if (state.fresh && !quick(root)) {
+      bar.show();
+      const choice = await vscode.window.showInformationMessage(t('Eolymp Code needs a compiler and Python. Install them to start solving problems.'), t('Install'), details);
+      if (choice === details) await open();
+      else if (choice) await install();
+      return;
+    }
+    if (await check()) return;
+    const actions = state.checks.some((c) => c.fix) ? [t('Fix'), details] : [details];
+    const choice = await vscode.window.showErrorMessage(t('Some parts of Eolymp Code are not working.'), ...actions);
     if (choice === details) await open();
-    if (choice === act) await install();
+    else if (choice) await install();
   };
 
   const install = async () => {
@@ -147,7 +164,6 @@ function create(context, root, use, changed) {
     });
     notify = undefined;
     if (ok) vscode.window.showInformationMessage(t('Eolymp Code is ready.'));
-    else await open();
   };
 
   return { open, start, install, ready: () => quick(root) };
