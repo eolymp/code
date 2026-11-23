@@ -12,7 +12,7 @@ Windows, in PowerShell:
 
     irm https://downloads.eolymp.com/code/install.ps1 | iex
 
-The app installs its own GCC and Python. On Intel Macs and on macOS older than 15 it uses Apple's compiler instead.
+The app installs its own GCC and Python. On Intel Macs and on macOS older than 15 it uses Apple's compiler and Python instead.
 
 ## Layout
 

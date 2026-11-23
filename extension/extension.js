@@ -803,7 +803,7 @@ function activate(context) {
 
   const failed = (err) => vscode.window.showErrorMessage(t('Could not read the problem sent by the browser: {0}', err.message));
   const server = companion.listen(config().get('companionPort'), (problem) => createProblem(problem.name, problem.tests, problem.meta).catch(failed), failed);
-  context.subscriptions.push({ dispose: () => server.close() });
+  context.subscriptions.push({ dispose: () => server.close() }, vscode.window.onDidChangeWindowState((window) => { if (window.focused) server.open(); }));
 }
 
 function deactivate() {

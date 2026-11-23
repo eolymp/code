@@ -53,16 +53,30 @@ function listen(port, onProblem, onError) {
       }
     });
   });
-  let retry;
+  let again;
+  let more = 0;
+  let trying = false;
   let closed = false;
+  const attempt = () => {
+    if (closed || trying || server.listening) return;
+    trying = true;
+    server.listen(port, '127.0.0.1');
+  };
+  server.on('listening', () => { trying = false; });
   server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE' && !closed) retry = setTimeout(() => server.listen(port, '127.0.0.1'), 3000);
+    trying = false;
+    if (err.code === 'EADDRINUSE' && !closed && more-- > 0) again = setTimeout(attempt, 3000);
   });
-  server.listen(port, '127.0.0.1');
+  attempt();
   return {
+    open() {
+      clearTimeout(again);
+      more = 1;
+      attempt();
+    },
     close() {
       closed = true;
-      clearTimeout(retry);
+      clearTimeout(again);
       server.close(() => {});
     },
   };
