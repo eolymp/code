@@ -26,7 +26,8 @@
   "files.autoSave": "afterDelay",
   "files.exclude": {
     "**/.cp": true,
-    "**/.clang-format": true
+    "**/.clang-format": true,
+    "**/.clangd": true
   },
   "git.enabled": false,
   "security.workspace.trust.enabled": false,

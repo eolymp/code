@@ -67,30 +67,30 @@ function solutionIn(document) {
 }
 
 function toolDirs() {
-  if (managed) return [path.dirname(managed.cxx), path.dirname(managed.python)];
-  return path.isAbsolute(cxxPath()) ? [path.dirname(cxxPath())] : [];
+  const dirs = path.isAbsolute(cxxPath()) ? [path.dirname(cxxPath())] : [];
+  return managed ? [...dirs, path.dirname(managed.python)] : dirs;
 }
 
 function toolEnv() {
   const env = { ...process.env };
   const key = Object.keys(env).find((k) => k.toLowerCase() === 'path') || 'PATH';
   env[key] = [...toolDirs(), env[key] || ''].join(path.delimiter);
-  if (managed) Object.assign(env, managed.env);
+  if (managed && cxxPath() === managed.cxx) Object.assign(env, managed.env);
   else if (config().get('includePath') || standIn) env.CPLUS_INCLUDE_PATH = config().get('includePath') || standIn;
   env.PYTHONUTF8 = '1';
   return env;
 }
 
 function cxxPath() {
-  return managed ? managed.cxx : config().get('cxx');
+  return config().inspect('cxx').globalValue || (managed ? managed.cxx : config().get('cxx'));
 }
 
 function cxxFlags() {
-  return [...config().get('cxxFlags'), ...(managed ? managed.flags : [])];
+  return [...config().get('cxxFlags'), ...(managed && cxxPath() === managed.cxx ? managed.flags : [])];
 }
 
 function pythonPath() {
-  return (managed && managed.python) || config().get('python') || (process.platform === 'win32' ? 'python' : 'python3');
+  return config().get('python') || (managed && managed.python) || (process.platform === 'win32' ? 'python' : 'python3');
 }
 
 function shortName(command) {
@@ -105,7 +105,7 @@ function build(s, debug) {
 
 async function compile(s, debug) {
   const source = path.basename(s.file);
-  if (s.lang === 'py') return { ok: true, command: pythonPath(), args: [s.file], compile: '', log: '', run: `${shortName(pythonPath())} ${source}` };
+  if (s.lang === 'py') return { ok: true, missing: false, command: pythonPath(), args: [s.file], compile: '', log: '', run: `${shortName(pythonPath())} ${source}` };
   fs.mkdirSync(s.outDir, { recursive: true });
   const cxx = cxxPath();
   const exe = path.join(s.outDir, (debug ? 'debug' : 'run') + (process.platform === 'win32' ? '.exe' : ''));
@@ -114,6 +114,7 @@ async function compile(s, debug) {
   const shown = path.relative(s.dir, exe);
   return {
     ok: r.code === 0,
+    missing: Boolean(r.missing),
     command: exe,
     args: [],
     compile: `${shortName(cxx)} ${flags.join(' ')} ${source} -o ${shown}`,
@@ -135,6 +136,7 @@ function flush() {
     results: state ? Object.fromEntries(Object.entries(sync(state, target.dir)).map(([id, r]) => [id, shownResult(r)])) : {},
     compileError: state ? state.compileError : '',
     steps: state ? state.steps : null,
+    setup: Boolean(inApp && state && state.steps && state.steps.missing),
     session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
 }
@@ -223,7 +225,7 @@ async function run(node) {
   update();
   const built = await build(s, false);
   if (active !== mine) return;
-  state.steps = { compile: built.compile, run: built.run, ok: built.ok };
+  state.steps = { compile: built.compile, run: built.run, ok: built.ok, missing: built.missing };
   state.compileError = built.log;
   if (!built.ok) {
     await stopActive();
@@ -289,7 +291,7 @@ async function runTests(node) {
 
 async function runAll(s, state, previous, job) {
   const built = await build(s, false);
-  state.steps = { compile: built.compile, run: built.run, ok: built.ok };
+  state.steps = { compile: built.compile, run: built.run, ok: built.ok, missing: built.missing };
   state.compileError = built.log;
   const meta = ws.loadMeta(s.dir);
   const timeLimit = meta.timeLimit > 0 ? meta.timeLimit : config().get('timeLimit');
@@ -334,7 +336,7 @@ async function debugTest(id) {
   await document.save();
   const built = await build(s, true);
   if (!built.ok) {
-    stateOf(s.file).compileError = built.log;
+    Object.assign(stateOf(s.file), { compileError: built.log, steps: { compile: built.compile, run: built.run, ok: false, missing: built.missing } });
     update();
     return;
   }
@@ -689,7 +691,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "Diagnostics", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -704,6 +706,7 @@ function receive(m) {
   if (m.type === 'run') runTests(shown);
   if (m.type === 'single') run(shown);
   if (m.type === 'submit') submit();
+  if (m.type === 'setup') checkSetup();
   if (!target) return;
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
   const live = active && active.file === target.file && active.state === 'running' ? active : undefined;
