@@ -67,15 +67,15 @@ function solutionIn(document) {
 }
 
 function toolDirs() {
-  if (managed) return [path.dirname(managed.cxx), path.dirname(managed.python)];
-  return path.isAbsolute(cxxPath()) ? [path.dirname(cxxPath())] : [];
+  const dirs = path.isAbsolute(cxxPath()) ? [path.dirname(cxxPath())] : [];
+  return managed ? [...dirs, path.dirname(managed.python)] : dirs;
 }
 
 function toolEnv() {
   const env = { ...process.env };
   const key = Object.keys(env).find((k) => k.toLowerCase() === 'path') || 'PATH';
   env[key] = [...toolDirs(), env[key] || ''].join(path.delimiter);
-  if (managed) Object.assign(env, managed.env);
+  if (managed && cxxPath() === managed.cxx) Object.assign(env, managed.env);
   else if (config().get('includePath') || standIn) env.CPLUS_INCLUDE_PATH = config().get('includePath') || standIn;
   env.PYTHONUTF8 = '1';
   return env;
@@ -336,7 +336,7 @@ async function debugTest(id) {
   await document.save();
   const built = await build(s, true);
   if (!built.ok) {
-    stateOf(s.file).compileError = built.log;
+    Object.assign(stateOf(s.file), { compileError: built.log, steps: { compile: built.compile, run: built.run, ok: false, missing: built.missing } });
     update();
     return;
   }
