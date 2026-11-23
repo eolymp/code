@@ -8,7 +8,7 @@ const runner = require('./runner');
 const toolset = require('./tools');
 
 const t = vscode.l10n.t;
-const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', '{0} MB downloaded', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. The setup continues by itself.'];
+const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', '{0} MB downloaded', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. The setup continues by itself.', 'Cancel'];
 
 function hasAppleTools() {
   return process.platform !== 'darwin' || (childProcess.spawnSync('xcode-select', ['-p']).status === 0 && toolset.sdk() !== '');
@@ -54,7 +54,8 @@ async function examine(root, use) {
 
 function create(context, root, use, changed) {
   let panel;
-  let busy = false;
+  let running;
+  let stopper = new AbortController();
   let notify;
   let state = { checks: null, progress: '', fresh: !context.globalState.get('setup') };
   const bar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
@@ -65,13 +66,13 @@ function create(context, root, use, changed) {
 
   const post = () => { if (panel) panel.webview.postMessage(state); };
   const progress = (text) => {
-    state = { ...state, progress: text };
+    state = { ...state, progress: text, stoppable: true };
     post();
     if (notify) notify.report({ message: text });
   };
 
   const check = async () => {
-    state = { ...state, progress: state.checks ? t('Checking…') : '' };
+    state = { ...state, progress: state.checks ? t('Checking…') : '', stoppable: false };
     post();
     const checks = await examine(root, use);
     const broken = checks.some((c) => !c.ok && (c.fix || ['compile', 'run', 'python', 'measure'].includes(c.id)));
@@ -87,17 +88,21 @@ function create(context, root, use, changed) {
     childProcess.spawn('xcode-select', ['--install'], { stdio: 'ignore' }).on('error', () => {});
     progress(t('Finish the installation in the window Apple opened. The setup continues by itself.'));
     for (let waited = 0; !hasAppleTools(); waited += 5) {
-      if (waited > 3600) throw new Error(t("Apple's Command Line Tools were not installed."));
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      if (waited > 3600 || stopper.signal.aborted) throw new Error(t("Apple's Command Line Tools were not installed."));
+      await new Promise((resolve) => {
+        const timer = setTimeout(resolve, 5000);
+        stopper.signal.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
+      });
     }
   };
 
   const tools = async () => {
-    if (!toolset.wanted() || toolset.installed(root)) return;
+    const have = toolset.installed(root);
+    if (!toolset.wanted() || (have && have.current)) return;
     await toolset.install(root, (stage, value) => {
       const text = stage === 'download' ? t('{0} MB downloaded', Math.round(value / 1048576)) : stage === 'unpack' ? t('Unpacking…') : t('Preparing…');
       if (text !== state.progress) progress(text);
-    });
+    }, stopper.signal);
     changed();
   };
 
@@ -106,23 +111,40 @@ function create(context, root, use, changed) {
     else vscode.window.showErrorMessage(message, t('Show Details')).then((choice) => choice && open());
   };
 
-  const fix = async () => {
-    if (busy) return;
-    busy = true;
+  const repair = async () => {
     try {
       await apple();
       await tools();
     } catch (err) {
-      failed(t('Could not finish the setup: {0}', err.message));
-      busy = false;
+      if (!stopper.signal.aborted) failed(t('Could not finish the setup: {0}', err.message));
       await check();
       return false;
     }
-    busy = false;
     const ok = await check();
     if (!ok) failed(t('Some parts of Eolymp Code are not working.'));
     return ok;
   };
+
+  const during = (work) => {
+    if (running) return running;
+    stopper = new AbortController();
+    running = work().finally(() => { running = undefined; });
+    return running;
+  };
+
+  const fix = () => during(repair);
+
+  const update = () => during(async () => {
+    try {
+      await tools();
+    } catch {
+      return false;
+    } finally {
+      state = { ...state, progress: '', stoppable: false };
+      post();
+    }
+    return true;
+  });
 
   const open = async () => {
     if (panel) { panel.reveal(); return; }
@@ -136,9 +158,10 @@ function create(context, root, use, changed) {
     panel.webview.onDidReceiveMessage((m) => {
       if (m.type === 'ready') post();
       if (m.type === 'fix') fix();
-      if (m.type === 'check' && !busy) check();
+      if (m.type === 'check' && !running) check();
+      if (m.type === 'cancel') stopper.abort();
     });
-    if (!busy) await check();
+    if (!running) await check();
   };
 
   const start = async () => {
@@ -150,7 +173,10 @@ function create(context, root, use, changed) {
       else if (choice) await install();
       return;
     }
-    if (await check()) return;
+    const ok = await check();
+    const have = toolset.installed(root);
+    if (have && !have.current) update();
+    if (ok) return;
     const actions = state.checks.some((c) => c.fix) ? [t('Fix'), details] : [details];
     const choice = await vscode.window.showErrorMessage(t('Some parts of Eolymp Code are not working.'), ...actions);
     if (choice === details) await open();
@@ -158,8 +184,9 @@ function create(context, root, use, changed) {
   };
 
   const install = async () => {
-    const ok = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Setting up Eolymp Code') }, (reporter) => {
+    const ok = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Setting up Eolymp Code'), cancellable: true }, (reporter, token) => {
       notify = reporter;
+      token.onCancellationRequested(() => stopper.abort());
       return fix();
     });
     notify = undefined;

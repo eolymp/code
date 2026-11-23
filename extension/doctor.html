@@ -69,7 +69,10 @@
       if (c.detail) row.append(make('span', 'detail', c.detail));
       list.append(row);
     }
-    if (s.progress || !s.checks) return;
+    if (s.progress || !s.checks) {
+      if (s.stoppable) buttons.append(button(T('Cancel'), 'cancel', 'quiet'));
+      return;
+    }
     if (fixable) buttons.append(button(s.fresh ? T('Install') : T('Fix'), 'fix'));
     buttons.append(button(T('Check again'), 'check', fixable ? 'quiet' : ''));
   });

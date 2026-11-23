@@ -16,23 +16,39 @@ function wanted() {
   return pick === undefined ? undefined : SETS[`${base}-${pick}`];
 }
 
+let sdkPath = '';
+
 function sdk() {
+  if (sdkPath) return sdkPath;
   const found = childProcess.spawnSync('xcrun', ['--show-sdk-path'], { encoding: 'utf8' });
-  return found.status === 0 ? found.stdout.trim() : '';
+  sdkPath = found.status === 0 ? found.stdout.trim() : '';
+  return sdkPath;
 }
 
 function installed(root) {
   const set = wanted();
-  if (!set) return undefined;
-  if (!fs.existsSync(root)) return undefined;
-  const dir = path.join(fs.realpathSync(root), set.id);
-  if (!fs.existsSync(path.join(dir, 'ready')) || fs.readFileSync(path.join(dir, 'ready'), 'utf8') !== dir) return undefined;
-  const at = (file) => (file ? path.join(dir, ...file.split('/')) : '');
-  return { dir, cxx: at(set.cxx), python: at(set.python), clangd: at(set.clangd), flags: set.flags, env: set.sdk ? { SDKROOT: sdk() } : {} };
+  if (!set || !fs.existsSync(root)) return undefined;
+  const base = fs.realpathSync(root);
+  const names = [set.id, ...fs.readdirSync(base).filter((name) => name !== set.id).sort().reverse()];
+  for (const name of names) {
+    const dir = path.join(base, name);
+    let saved;
+    try {
+      saved = JSON.parse(fs.readFileSync(path.join(dir, 'ready'), 'utf8'));
+    } catch {
+      continue;
+    }
+    if (saved.dir !== dir) continue;
+    const at = (file) => (file ? path.join(dir, ...file.split('/')) : '');
+    return { dir, current: name === set.id, cxx: at(saved.cxx), python: at(saved.python), clangd: at(saved.clangd), flags: saved.flags, env: saved.sdk ? { SDKROOT: sdk() } : {} };
+  }
+  return undefined;
 }
 
-async function download(item, file, onBytes) {
+async function download(item, file, onBytes, signal) {
   const abort = new AbortController();
+  if (signal.aborted) abort.abort();
+  signal.addEventListener('abort', () => abort.abort(), { once: true });
   let stalled = setTimeout(() => abort.abort(), 60000);
   const out = fs.createWriteStream(file);
   let failure;
@@ -47,7 +63,13 @@ async function download(item, file, onBytes) {
       if (failure) throw failure;
       hash.update(chunk);
       onBytes(chunk.length);
-      if (!out.write(chunk)) await new Promise((resolve) => { out.once('drain', resolve); out.once('error', resolve); });
+      if (!out.write(chunk)) {
+        await new Promise((resolve) => {
+          const done = () => { out.off('drain', done); out.off('error', done); resolve(); };
+          out.on('drain', done);
+          out.on('error', done);
+        });
+      }
     }
     await new Promise((resolve) => out.end(resolve));
     if (failure) throw failure;
@@ -163,31 +185,24 @@ function relocate(root) {
   visit(root);
 }
 
-async function install(location, report) {
+function stored(set, index) {
+  return `${index}-${path.basename(new URL(set.items[index].url).pathname)}`;
+}
+
+function unpack(root, report) {
   const set = wanted();
-  if (!set) throw new Error('there is no compiler package for this system');
-  fs.mkdirSync(location, { recursive: true });
-  const root = fs.realpathSync(location);
   const dir = path.join(root, set.id);
   const downloads = path.join(root, 'downloads');
   fs.rmSync(dir, { recursive: true, force: true });
-  fs.mkdirSync(downloads, { recursive: true });
-  let bytes = 0;
-  const files = [];
-  for (const [index, item] of set.items.entries()) {
-    const file = path.join(downloads, `${index}-${path.basename(new URL(item.url).pathname)}`);
-    await download(item, file, (count) => { bytes += count; report('download', bytes); });
-    files.push(file);
-  }
   for (const [index, item] of set.items.entries()) {
     report('unpack', index / set.items.length);
+    const file = path.join(downloads, stored(set, index));
     const dest = path.join(dir, item.into);
     fs.mkdirSync(dest, { recursive: true });
-    if (item.type === 'conda') conda(files[index], dest);
-    else if (item.type === 'tar.gz') untar(zlib.gunzipSync(fs.readFileSync(files[index]), { maxOutputLength: 2 ** 31 - 1 }), dest);
-    else if (process.platform === 'win32') run('tar', ['-xf', files[index], '-C', dest]);
-    else run(path.join(dir, ...set.python.split('/')), ['-m', 'zipfile', '-e', files[index], dest]);
-    await new Promise((resolve) => setImmediate(resolve));
+    if (item.type === 'conda') conda(file, dest);
+    else if (item.type === 'tar.gz') untar(zlib.gunzipSync(fs.readFileSync(file), { maxOutputLength: 2 ** 31 - 1 }), dest);
+    else if (process.platform === 'win32') run('tar', ['-xf', file, '-C', dest]);
+    else run(path.join(dir, ...set.python.split('/')), ['-m', 'zipfile', '-e', file, dest]);
   }
   if (process.platform === 'win32') for (const name of fs.readdirSync(path.join(dir, 'python'))) if (name.endsWith('._pth')) fs.rmSync(path.join(dir, 'python', name));
   if (set.clangd && process.platform !== 'win32') fs.chmodSync(path.join(dir, ...set.clangd.split('/')), 0o755);
@@ -196,12 +211,81 @@ async function install(location, report) {
     relocate(path.join(dir, set.relocate));
   }
   fs.rmSync(downloads, { recursive: true, force: true });
-  fs.writeFileSync(path.join(dir, 'ready'), dir);
+  fs.writeFileSync(path.join(dir, 'ready'), JSON.stringify({ dir, cxx: set.cxx, python: set.python, clangd: set.clangd, flags: set.flags, sdk: set.sdk }));
   for (const other of fs.readdirSync(root)) {
-    if (other === set.id) continue;
+    if (other === set.id || other === 'lock') continue;
     try { fs.rmSync(path.join(root, other), { recursive: true, force: true }); } catch {}
   }
+}
+
+function work(root, report, signal) {
+  return new Promise((resolve, reject) => {
+    const child = childProcess.fork(__filename, [root], { silent: true });
+    let problem = '';
+    child.stderr.on('data', (data) => { problem = (problem + data).slice(-2000); });
+    child.stdout.resume();
+    child.on('message', (m) => { if (m.error) problem = m.error; else report(m.stage, m.value); });
+    child.on('error', reject);
+    child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(problem.trim().split('\n').pop() || 'unpacking stopped'))));
+    signal.addEventListener('abort', () => child.kill(), { once: true });
+  });
+}
+
+function take(lock) {
+  try {
+    fs.writeFileSync(lock, String(process.pid), { flag: 'wx' });
+    return true;
+  } catch {}
+  let owner;
+  try {
+    owner = Number(fs.readFileSync(lock, 'utf8'));
+  } catch {
+    return false;
+  }
+  try {
+    process.kill(owner, 0);
+    return false;
+  } catch (err) {
+    if (err.code === 'EPERM') return false;
+  }
+  fs.rmSync(lock, { force: true });
+  return false;
+}
+
+async function install(location, report, signal = new AbortController().signal) {
+  const set = wanted();
+  if (!set) throw new Error('there is no compiler package for this system');
+  fs.mkdirSync(location, { recursive: true });
+  const root = fs.realpathSync(location);
+  const lock = path.join(root, 'lock');
+  while (!take(lock)) {
+    report('prepare', 0);
+    if (signal.aborted) throw new Error('stopped');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  try {
+    const have = installed(root);
+    if (have && have.current) return have;
+    const downloads = path.join(root, 'downloads');
+    fs.mkdirSync(downloads, { recursive: true });
+    let bytes = 0;
+    for (const [index, item] of set.items.entries()) {
+      await download(item, path.join(downloads, stored(set, index)), (count) => { bytes += count; report('download', bytes); }, signal);
+    }
+    await work(root, report, signal);
+  } finally {
+    fs.rmSync(lock, { force: true });
+  }
   return installed(root);
+}
+
+if (require.main === module && process.send) {
+  try {
+    unpack(process.argv[2], (stage, value) => process.send({ stage, value }));
+    process.disconnect();
+  } catch (err) {
+    process.send({ error: err.message }, () => process.exit(1));
+  }
 }
 
 module.exports = { wanted, installed, install, sdk };

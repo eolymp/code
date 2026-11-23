@@ -28,6 +28,7 @@ let testing;
 let pending;
 let toolsRoot;
 let managed;
+const standIn = process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
 let setup;
 let terminalEnv;
 let building = Promise.resolve();
@@ -72,7 +73,7 @@ function toolEnv() {
     env[key] = path.dirname(cxx) + path.delimiter + (env[key] || '');
   }
   if (managed) Object.assign(env, managed.env);
-  else if (config().get('includePath')) env.CPLUS_INCLUDE_PATH = config().get('includePath');
+  else if (config().get('includePath') || standIn) env.CPLUS_INCLUDE_PATH = config().get('includePath') || standIn;
   env.PYTHONUTF8 = '1';
   return env;
 }
@@ -410,22 +411,28 @@ function checkSetup() {
 
 function adopt() {
   managed = toolset.installed(toolsRoot);
-  if (!managed) return;
-  const key = process.platform === 'win32' ? 'Path' : 'PATH';
-  terminalEnv.replace(key, [path.dirname(managed.cxx), path.dirname(managed.python), process.env[key] || process.env.PATH || ''].join(path.delimiter));
-  for (const [name, value] of Object.entries(managed.env)) terminalEnv.replace(name, value);
+  if (!managed && !standIn) return;
   const updates = [];
-  const python = vscode.workspace.getConfiguration('python');
-  if (python.get('defaultInterpreterPath') !== managed.python) updates.push(python.update('defaultInterpreterPath', managed.python, vscode.ConfigurationTarget.Global));
-  const clangd = vscode.workspace.getConfiguration('clangd');
-  if (managed.clangd && clangd.get('path') !== managed.clangd) updates.push(clangd.update('path', managed.clangd, vscode.ConfigurationTarget.Global));
-  const driver = `--query-driver=${path.dirname(managed.cxx)}${path.sep}*`;
-  const args = clangd.get('arguments') || [];
-  if (!args.includes(driver)) updates.push(clangd.update('arguments', [...args.filter((arg) => !arg.startsWith('--query-driver=')), driver], vscode.ConfigurationTarget.Global));
+  const flags = ['-std=c++17'];
+  if (managed) {
+    const key = process.platform === 'win32' ? 'Path' : 'PATH';
+    terminalEnv.replace(key, [path.dirname(managed.cxx), path.dirname(managed.python), process.env[key] || process.env.PATH || ''].join(path.delimiter));
+    for (const [name, value] of Object.entries(managed.env)) terminalEnv.replace(name, value);
+    const python = vscode.workspace.getConfiguration('python');
+    if (python.get('defaultInterpreterPath') !== managed.python) updates.push(python.update('defaultInterpreterPath', managed.python, vscode.ConfigurationTarget.Global));
+    const clangd = vscode.workspace.getConfiguration('clangd');
+    if (managed.clangd && clangd.get('path') !== managed.clangd) updates.push(clangd.update('path', managed.clangd, vscode.ConfigurationTarget.Global));
+    const driver = `--query-driver=${path.dirname(managed.cxx)}${path.sep}*`;
+    const args = clangd.get('arguments') || [];
+    if (!args.includes(driver)) updates.push(clangd.update('arguments', [...args.filter((arg) => !arg.startsWith('--query-driver=')), driver], vscode.ConfigurationTarget.Global));
+    if (managed.env.SDKROOT) flags.push('-isysroot', managed.env.SDKROOT);
+  } else {
+    terminalEnv.replace('CPLUS_INCLUDE_PATH', standIn);
+    flags.push(`-I${standIn}`);
+  }
   if (root()) {
     const file = path.join(root(), '.clangd');
-    const add = ['-std=c++17', ...(managed.env.SDKROOT ? ['-isysroot', managed.env.SDKROOT] : [])];
-    const text = `# Written by Eolymp Code\nCompileFlags:\n  Compiler: ${JSON.stringify(managed.cxx)}\n  Add: ${JSON.stringify(add)}\n`;
+    const text = `# Written by Eolymp Code\nCompileFlags:\n${managed ? `  Compiler: ${JSON.stringify(managed.cxx)}\n` : ''}  Add: ${JSON.stringify(flags)}\n`;
     const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '# Written by Eolymp Code';
     if (current.startsWith('# Written by Eolymp Code') && current !== text) {
       fs.writeFileSync(file, text);
@@ -717,6 +724,10 @@ function activate(context) {
   adopt();
   setup = doctor.create(context, toolsRoot, { cxx: cxxPath, flags: cxxFlags, python: pythonPath, env: toolEnv }, adopt);
   setup.start();
+  context.subscriptions.push(vscode.window.onDidChangeWindowState((window) => {
+    const have = window.focused ? toolset.installed(toolsRoot) : undefined;
+    if (have && (!managed || managed.dir !== have.dir)) adopt();
+  }));
   const problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree });
   const describe = () => {
     if (!root()) return;
