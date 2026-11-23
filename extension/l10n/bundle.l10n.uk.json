@@ -91,6 +91,7 @@
   "runtime error": "помилка виконання",
   "stopped": "зупинено",
   "the extension is not installed": "розширення не встановлено",
+  "clangd was not found": "clangd не знайдено",
   "time limit": "ліміт часу",
   "unexpected output": "неочікуваний вивід",
   "warnings": "попередження",

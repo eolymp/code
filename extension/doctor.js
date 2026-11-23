@@ -48,6 +48,11 @@ async function examine(root, use) {
     ['charliermarsh.ruff', t('Python formatting')],
   ];
   for (const [id, label] of extensions) add(id, label, Boolean(vscode.extensions.getExtension(id)), t('the extension is not installed'));
+  const clangd = vscode.workspace.getConfiguration('clangd').get('path') || 'clangd';
+  const dirs = path.isAbsolute(clangd) ? [''] : (process.env.PATH || '').split(path.delimiter);
+  const served = dirs.some((dir) => fs.existsSync(path.join(dir, clangd)) || fs.existsSync(path.join(dir, `${clangd}.exe`)));
+  const completion = checks.find((c) => c.id === 'llvm-vs-code-extensions.vscode-clangd');
+  if (completion.ok && !served) Object.assign(completion, { ok: false, detail: t('clangd was not found') });
   try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 }); } catch {}
   return checks;
 }
@@ -77,7 +82,9 @@ function create(context, root, use, changed) {
     post();
     const checks = await examine(root, use).catch((err) => [{ id: 'run', group: t('Compiling and running'), title: t('C++ compiler'), ok: false, detail: err.message, fix: '' }]);
     const broken = checks.some((c) => !c.ok && (c.fix || ['compile', 'run', 'python', 'measure'].includes(c.id)));
+    const have = toolset.installed(root);
     if (!broken) context.globalState.update('setup', true);
+    context.globalState.update('checked', broken ? undefined : have ? have.dir : 'system');
     state = { checks, progress: '', fresh: state.fresh && broken };
     if (broken) bar.show(); else bar.hide();
     post();
@@ -178,8 +185,9 @@ function create(context, root, use, changed) {
       else if (choice) await install();
       return;
     }
-    const ok = await check();
     const have = toolset.installed(root);
+    const known = quick(root) && context.globalState.get('checked') === (have ? have.dir : 'system');
+    const ok = known || await check();
     if (have && !have.current) update();
     if (ok) return;
     const actions = state.checks.some((c) => c.fix) ? [t('Fix'), details] : [details];

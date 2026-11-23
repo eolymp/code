@@ -177,7 +177,9 @@
       const sign = failed ? mark('bad', T('Compilation failed')) : s.compileError ? mark('warn', T('Compiled with warnings')) : mark('ok', T('Compiled'));
       const head = [sign, compile ? command(compile) : make('span', 'title comment', T('# compile'))];
       if (s.compileError) head.push(stats(failed ? T('failed') : T('warnings')));
-      cards.push({ sign: JSON.stringify([s.path, compile, s.compileError, failed]), node: block('compile', Boolean(s.compileError), head, s.compileError ? [compilerLog(s.compileError, failed)] : []) });
+      const body = s.compileError ? [compilerLog(s.compileError, failed)] : [];
+      if (s.setup) body.push(actions(button(T('Diagnostics'), { type: 'setup' })));
+      cards.push({ sign: JSON.stringify([s.path, compile, s.compileError, failed, s.setup]), node: block('compile', Boolean(s.compileError), head, body) });
     }
     if (s.session && s.session.state !== 'compiling' && s.steps) {
       const x = s.session;

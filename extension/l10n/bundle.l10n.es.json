@@ -91,6 +91,7 @@
   "runtime error": "error de ejecución",
   "stopped": "detenido",
   "the extension is not installed": "la extensión no está instalada",
+  "clangd was not found": "no se encontró clangd",
   "time limit": "límite de tiempo",
   "unexpected output": "salida inesperada",
   "warnings": "advertencias",
