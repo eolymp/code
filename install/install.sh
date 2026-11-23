@@ -9,7 +9,7 @@ WORK="$HOME/Eolymp/practice"
 started=$(date +%s)
 
 step() { printf '\n\033[36m==> %s\033[0m\n' "$1"; }
-fetch() { curl -fL --retry 3 --progress-bar -o "$2" "$1"; }
+fetch() { curl -fL --retry 3 --connect-timeout 20 --speed-limit 1024 --speed-time 60 --progress-bar -o "$2" "$1" || { echo "could not download $1"; exit 1; }; }
 digest() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi
 }

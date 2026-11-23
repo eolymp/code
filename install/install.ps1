@@ -16,7 +16,7 @@ $BaseUrl = "$Root/@RELEASE@"
 function Step($message) { Write-Host ""; Write-Host "==> $message" -ForegroundColor Cyan }
 
 function Fetch($url, $file) {
-  curl.exe -fL --retry 3 --progress-bar -o $file $url
+  curl.exe -fL --retry 3 --connect-timeout 20 --speed-limit 1024 --speed-time 60 --progress-bar -o $file $url
   if ($LASTEXITCODE -ne 0) { throw "download failed: $url" }
 }
 
