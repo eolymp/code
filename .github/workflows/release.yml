@@ -1,12 +1,9 @@
 name: release
 
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
-    inputs:
-      publish:
-        description: Publish to downloads.eolymp.com/code (off = build only; main only)
-        type: boolean
-        default: false
 
 jobs:
   editor:
@@ -15,6 +12,7 @@ jobs:
       matrix:
         os: [macos-15, macos-15-intel, ubuntu-22.04, ubuntu-22.04-arm, windows-2022]
     runs-on: ${{ matrix.os }}
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || '' }}
     permissions:
       contents: read
       id-token: write
@@ -36,7 +34,7 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL && df -h /
       - name: Import the Apple certificate (macOS)
-        if: runner.os == 'macOS' && vars.APPLE_SIGN_IDENTITY != '' && github.ref == 'refs/heads/main'
+        if: runner.os == 'macOS' && vars.APPLE_SIGN_IDENTITY != '' && startsWith(github.ref, 'refs/tags/v')
         env:
           CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -52,17 +50,17 @@ jobs:
       - name: Build the editor
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          EOLYMP_CODE_SIGN_IDENTITY: ${{ github.ref == 'refs/heads/main' && vars.APPLE_SIGN_IDENTITY || '' }}
+          EOLYMP_CODE_SIGN_IDENTITY: ${{ startsWith(github.ref, 'refs/tags/v') && vars.APPLE_SIGN_IDENTITY || '' }}
         run: ./app/build.sh build
       - name: Sign in to Azure Artifact Signing (Windows)
-        if: runner.os == 'Windows' && vars.AZURE_SIGNING_CLIENT_ID != '' && github.ref == 'refs/heads/main'
+        if: runner.os == 'Windows' && vars.AZURE_SIGNING_CLIENT_ID != '' && startsWith(github.ref, 'refs/tags/v')
         uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
         with:
           client-id: ${{ vars.AZURE_SIGNING_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: Sign the programs (Windows)
-        if: runner.os == 'Windows' && vars.AZURE_SIGNING_CLIENT_ID != '' && github.ref == 'refs/heads/main'
+        if: runner.os == 'Windows' && vars.AZURE_SIGNING_CLIENT_ID != '' && startsWith(github.ref, 'refs/tags/v')
         uses: azure/trusted-signing-action@1d365fec12862c4aa68fcac418143d73f0cea293 # v0
         with:
           endpoint: ${{ vars.AZURE_SIGNING_ENDPOINT }}
@@ -85,6 +83,7 @@ jobs:
   publish:
     needs: editor
     runs-on: ubuntu-24.04
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || '' }}
     permissions:
       contents: read
       id-token: write
@@ -105,16 +104,17 @@ jobs:
           name: dist
           path: dist
       - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
-        if: inputs.publish && github.ref == 'refs/heads/main'
+        if: startsWith(github.ref, 'refs/tags/v')
         with:
           role-to-assume: ${{ vars.AWS_PUBLISHER_ROLE }}
           aws-region: eu-central-1
       - name: Upload to downloads.eolymp.com
-        if: inputs.publish && github.ref == 'refs/heads/main'
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           bucket="${{ vars.DOWNLOADS_BUCKET }}"
           release="$(basename "$(ls -d dist/*/)")"
           aws s3 cp "dist/$release" "$bucket/$release" --recursive --cache-control "public, max-age=31536000, immutable"
+          case "$GITHUB_REF_NAME" in *-*) channel=pre/ ;; *) channel= ;; esac
           for installer in install.sh install.ps1; do
-            aws s3 cp "dist/$installer" "$bucket/$installer" --cache-control "public, max-age=300"
+            aws s3 cp "dist/$installer" "$bucket/$channel$installer" --cache-control "public, max-age=300"
           done
