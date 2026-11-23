@@ -82,6 +82,9 @@ else
 fi
 [ "$fresh" = yes ] || mv "$kept" "$data"
 mkdir -p "$data/user-data/User"
+case "${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}$(defaults read -g AppleLocale 2>/dev/null || true)" in
+  *uk_*|*uk-*) [ -e "$data/argv.json" ] || printf '{ "locale": "uk" }\n' > "$data/argv.json" ;;
+esac
 
 step "Writing the editor's settings"
 python3 - "$pinned/settings.json" "$data/user-data/User/settings.json" "$os" "$(command -v python3)" "$DEST/include" <<'PY'

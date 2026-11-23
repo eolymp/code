@@ -17,6 +17,7 @@ Windows, in PowerShell:
 - `app/` builds the editor from source with [VSCodium](https://github.com/VSCodium/vscodium)'s build scripts.
 - `extension/` is the Eolymp Code extension.
 - `editor/` holds the default settings and the list of pinned downloads.
+- `l10n/` holds the Ukrainian language pack for the editor.
 - `install/` holds the installer templates.
 - `tests/` drives the installed app with Playwright.
 

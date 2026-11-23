@@ -70,6 +70,7 @@ Remove-Item "$Dest\python\python*._pth"
 
 
 Step "Writing the editor's settings"
+if ((Get-UICulture).Name -like "uk*" -and -not (Test-Path "$Dest\editor\data\argv.json")) { [IO.File]::WriteAllText("$Dest\editor\data\argv.json", '{ "locale": "uk" }') }
 $settings = Get-Content "$Dest\downloads\pinned\settings.json" -Raw | ConvertFrom-Json
 $settings | Add-Member -Force "eolympCode.cxx" "$bin\g++.exe"
 $settings | Add-Member -Force "eolympCode.python" "$Dest\python\python.exe"

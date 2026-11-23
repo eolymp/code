@@ -5,6 +5,7 @@ cd "$(dirname "$0")"
 rm -rf dist
 mkdir -p dist/files
 (cd extension && npx --yes @vscode/vsce@4.1.1 package --out ../dist/files/eolymp-code.vsix)
+(cd l10n/uk && npx --yes @vscode/vsce@4.1.1 package --out ../../dist/files/eolymp-code-uk.vsix)
 cp editor/settings.json editor/clang-format editor/stdc++.h editor/icon.png dist/files/
 cp editor/pins.txt dist/pins.txt
 digest() {
