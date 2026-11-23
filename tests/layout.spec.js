@@ -7,6 +7,7 @@ test('A fresh editor shows only the views a beginner needs', async ({ editor }) 
   await expect(sidebar.getByRole('tab').first()).toHaveAccessibleName(/^Practice/);
   await expect(sidebar.getByRole('tab', { name: /^Explorer/ })).toBeVisible();
   await expect(sidebar.getByRole('tab', { name: /^Source Control/ })).toHaveCount(0);
+  await expect(sidebar.getByRole('tab', { name: /^Extensions/ })).toHaveCount(0);
   await expect(editor.window.getByRole('button', { name: /^Accounts/ })).toHaveCount(0);
 
   await editor.toolbar.getByRole('button', { name: /^Test/ }).click();

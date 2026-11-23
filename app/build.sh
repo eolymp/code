@@ -94,6 +94,14 @@ set +u
 set -u +x
 fi
 
+if [ "$step" != package ]; then
+  if [ "$platform" = darwin ]; then bundled="$built/Eolymp Code.app/Contents/Resources/app/extensions"; else bundled="$built/resources/app/extensions"; fi
+  for extension in "$bundled"/*/; do
+    name="$(basename "$extension")"
+    grep -qx "$name" "$here/extensions.keep" || rm -rf "${bundled:?}/$name"
+  done
+fi
+
 [ "$step" != build ] || exit 0
 out="$repo/artifacts"
 mkdir -p "$out"
