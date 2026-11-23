@@ -12,6 +12,7 @@ const TEMPLATES = {
   py: 'import sys\ninput = sys.stdin.readline\n\n',
 };
 const CURSOR = { cpp: new vscode.Position(4, 4), py: new vscode.Position(3, 0) };
+const t = vscode.l10n.t;
 const FINAL = ['runtime error', 'time limit', 'memory limit', 'output limit'];
 const SHOWN = 256 << 10;
 
@@ -74,7 +75,7 @@ function shortName(command) {
 }
 
 function build(s, debug) {
-  const built = building.then(() => compile(s, debug)).catch((err) => ({ ok: false, command: '', args: [], compile: '', log: `Could not build: ${err.message}`, run: '' }));
+  const built = building.then(() => compile(s, debug)).catch((err) => ({ ok: false, command: '', args: [], compile: '', log: t('Could not build: {0}', err.message), run: '' }));
   building = built;
   return built;
 }
@@ -93,7 +94,7 @@ async function compile(s, debug) {
     command: exe,
     args: [],
     compile: `${shortName(cxx)} ${flags.join(' ')} ${source} -o ${shown}`,
-    log: r.missing ? `The compiler was not found: ${cxx}` : r.stderr.trim(),
+    log: r.missing ? t('The compiler was not found: {0}', cxx) : r.stderr.trim(),
     run: shown,
   };
 }
@@ -167,12 +168,12 @@ function say(session, kind, text) {
   update();
 }
 
-async function prepare(node, action) {
+async function prepare(node, missing) {
   const picked = node && node.kind === 'solution';
   const document = picked ? await vscode.workspace.openTextDocument(node.file) : vscode.window.activeTextEditor && vscode.window.activeTextEditor.document;
   const s = solutionIn(document);
   if (!s) {
-    vscode.window.showInformationMessage(`Open a .cpp or .py file to ${action} it.`);
+    vscode.window.showInformationMessage(missing);
     return undefined;
   }
   if (testing || starting) return undefined;
@@ -190,7 +191,7 @@ async function prepare(node, action) {
 }
 
 async function run(node) {
-  const s = await prepare(node, 'run');
+  const s = await prepare(node, t('Open a .cpp or .py file to run it.'));
   if (!s) return;
   const state = stateOf(s.file);
   const mine = { file: s.file, dir: s.dir, parts: [], size: 0, shown: 0, state: 'compiling', input: '', output: '' };
@@ -242,7 +243,7 @@ function keepSession() {
 }
 
 async function runTests(node) {
-  const s = await prepare(node, 'test');
+  const s = await prepare(node, t('Open a .cpp or .py file to test it.'));
   if (!s) return;
   const state = stateOf(s.file);
   const previous = { ...sync(state, s.dir) };
@@ -255,7 +256,7 @@ async function runTests(node) {
   try {
     await runAll(s, state, previous, job);
   } catch (err) {
-    state.compileError = `Could not run the tests: ${err.message}`;
+    state.compileError = t('Could not run the tests: {0}', err.message);
   } finally {
     testing = undefined;
     setBusy();
@@ -321,7 +322,7 @@ async function debugTest(id) {
     await vscode.debug.startDebugging(folder, {
       type: 'lldb',
       request: 'launch',
-      name: `Test ${id}`,
+      name: t('Test {0}', id),
       program: built.command,
       cwd: s.dir,
       env: toolEnv(),
@@ -336,7 +337,7 @@ async function debugTest(id) {
   const started = await vscode.debug.startDebugging(folder, {
     type: 'debugpy',
     request: 'launch',
-    name: `Test ${id}`,
+    name: t('Test {0}', id),
     python: built.command,
     program: path.join(__dirname, 'debug.py'),
     args: [s.file, input],
@@ -373,14 +374,14 @@ async function showDiff(id) {
   const answer = path.join(s.dir, `${id}.answer`);
   const answered = fs.existsSync(answer);
   if (!r || (!answered && r.previous === undefined)) {
-    vscode.window.showInformationMessage('There is nothing to compare this output with yet.');
+    vscode.window.showInformationMessage(t('There is nothing to compare this output with yet.'));
     return;
   }
   const base = answered ? vscode.Uri.file(answer) : outputUri(s, id, 'previous');
   const output = outputUri(s, id, 'out');
   outputs.fire(base);
   outputs.fire(output);
-  const title = `Test ${id}: ${answered ? 'answer' : 'previous output'} ↔ output of ${path.basename(s.file)}`;
+  const title = answered ? t('Test {0}: answer ↔ output of {1}', id, path.basename(s.file)) : t('Test {0}: previous output ↔ output of {1}', id, path.basename(s.file));
   await vscode.commands.executeCommand('vscode.diff', base, output, title);
 }
 
@@ -392,29 +393,29 @@ async function checkSetup() {
   const exe = path.join(dir, 'check' + (process.platform === 'win32' ? '.exe' : ''));
   const env = toolEnv();
   const compiled = await runner.collect(config().get('cxx'), [...config().get('cxxFlags'), 'check.cpp', '-o', exe], { cwd: dir, env });
-  report(compiled.code === 0, 'C++ compiler', compiled.stderr.trim().split('\n')[0]);
+  report(compiled.code === 0, t('C++ compiler'), compiled.stderr.trim().split('\n')[0]);
   if (compiled.code === 0) {
     const ran = await runner.collect(exe, [], { cwd: dir, env, timeout: 5000 }, '2 3');
-    report(ran.stdout.trim() === '5', 'C++ program runs', ran.stderr.trim().split('\n')[0] || 'unexpected output');
+    report(ran.stdout.trim() === '5', t('C++ program runs'), ran.stderr.trim().split('\n')[0] || t('unexpected output'));
   }
   const python = await runner.collect(pythonPath(), ['-c', 'print(int(input()) + 3)'], { cwd: dir, env, timeout: 5000 }, '2');
   report(python.stdout.trim() === '5', 'Python', python.stderr.trim().split('\n').pop());
   if (compiled.code === 0) {
     const timed = await runner.collect(exe, [], { cwd: dir, env, timeout: 5000, python: pythonPath() }, '2 3');
-    report(timed.memory > 0, 'Time and memory measuring', timed.failure || 'it needs a working Python');
+    report(timed.memory > 0, t('Time and memory measuring'), timed.failure || t('it needs a working Python'));
   }
   const extensions = [
-    ['llvm-vs-code-extensions.vscode-clangd', 'C++ completion and errors'],
-    ['vadimcn.vscode-lldb', 'C++ debugger'],
-    ['detachhead.basedpyright', 'Python completion and errors'],
-    ['ms-python.debugpy', 'Python debugger'],
-    ['charliermarsh.ruff', 'Python formatting'],
+    ['llvm-vs-code-extensions.vscode-clangd', t('C++ completion and errors')],
+    ['vadimcn.vscode-lldb', t('C++ debugger')],
+    ['detachhead.basedpyright', t('Python completion and errors')],
+    ['ms-python.debugpy', t('Python debugger')],
+    ['charliermarsh.ruff', t('Python formatting')],
   ];
-  for (const [id, label] of extensions) report(Boolean(vscode.extensions.getExtension(id)), label, 'the extension is not installed');
+  for (const [id, label] of extensions) report(Boolean(vscode.extensions.getExtension(id)), label, t('the extension is not installed'));
   fs.rmSync(dir, { recursive: true, force: true });
   const failed = lines.some((line) => line.startsWith('✗'));
   const show = failed ? vscode.window.showWarningMessage : vscode.window.showInformationMessage;
-  show(failed ? 'Some parts of Eolymp Code are not working.' : 'Everything works.', { modal: true, detail: lines.join('\n') });
+  show(failed ? t('Some parts of Eolymp Code are not working.') : t('Everything works.'), { modal: true, detail: lines.join('\n') });
 }
 
 async function submit() {
@@ -425,7 +426,7 @@ async function submit() {
   await document.save();
   await vscode.env.clipboard.writeText(document.getText());
   await vscode.env.openExternal(vscode.Uri.parse(url));
-  vscode.window.showInformationMessage('Your solution is copied. Paste it into the submit form on the problem page.');
+  vscode.window.showInformationMessage(t('Your solution is copied. Paste it into the submit form on the problem page.'));
 }
 
 async function openSolution(file, lang) {
@@ -440,7 +441,7 @@ async function openSolution(file, lang) {
 
 async function createProblem(name, tests, meta) {
   if (!root()) {
-    vscode.window.showErrorMessage('Open a folder first: problems are created in it.');
+    vscode.window.showErrorMessage(t('Open a folder first: problems are created in it.'));
     return;
   }
   let slug = ws.slugOf(name);
@@ -457,19 +458,19 @@ async function createProblem(name, tests, meta) {
 function askName(options, taken) {
   return vscode.window.showInputBox({
     ...options,
-    validateInput: (value) => ws.badName(value) || (value.trim() && taken(value.trim()) ? `The name ${taken(value.trim())} is already used.` : undefined),
+    validateInput: (value) => (ws.badName(value) ? t('This name cannot be used for a file.') : value.trim() && taken(value.trim()) ? t('The name {0} is already used.', taken(value.trim())) : undefined),
   }).then((value) => (value || '').trim());
 }
 
 async function newProblem() {
-  const name = await vscode.window.showInputBox({ prompt: 'Name of the problem', placeHolder: 'Leave empty to name it later' });
+  const name = await vscode.window.showInputBox({ prompt: t('Name of the problem'), placeHolder: t('Leave empty to name it later') });
   if (name !== undefined) await createProblem(name);
 }
 
 async function newSolution(node) {
   const lang = config().get('language');
   const named = (value) => (ws.langOf(value) ? value : `${value}.${lang}`);
-  const name = await askName({ prompt: 'Name of the solution', value: `brute.${lang}`, valueSelection: [0, 5] }, (value) => fs.existsSync(path.join(node.dir, named(value))) && named(value));
+  const name = await askName({ prompt: t('Name of the solution'), value: `brute.${lang}`, valueSelection: [0, 5] }, (value) => fs.existsSync(path.join(node.dir, named(value))) && named(value));
   if (!name) return;
   const file = path.join(node.dir, named(name));
   await openSolution(file, ws.langOf(file));
@@ -483,7 +484,7 @@ async function newTest(node) {
 }
 
 async function newFile(node) {
-  const name = await askName({ prompt: 'Name of the file' }, (value) => fs.existsSync(path.join(node.dir, value)) && value);
+  const name = await askName({ prompt: t('Name of the file') }, (value) => fs.existsSync(path.join(node.dir, value)) && value);
   if (!name) return;
   const file = path.join(node.dir, name);
   fs.writeFileSync(file, '', { flag: 'wx' });
@@ -495,7 +496,7 @@ async function move(from, to) {
   const edit = new vscode.WorkspaceEdit();
   edit.renameFile(vscode.Uri.file(from), vscode.Uri.file(to));
   if (await vscode.workspace.applyEdit(edit) && fs.existsSync(to)) return true;
-  vscode.window.showErrorMessage(`Could not rename ${path.basename(from)} to ${path.basename(to)}.`);
+  vscode.window.showErrorMessage(t('Could not rename {0} to {1}.', path.basename(from), path.basename(to)));
   return false;
 }
 
@@ -513,11 +514,11 @@ function recall(file, state) {
 
 async function renameProblem(node) {
   const old = path.basename(node.dir);
-  const slug = ws.slugOf(await vscode.window.showInputBox({ prompt: 'New name of the problem', value: old }) || '');
+  const slug = ws.slugOf(await vscode.window.showInputBox({ prompt: t('New name of the problem'), value: old }) || '');
   const dir = path.join(path.dirname(node.dir), slug);
   if (!slug || slug === old) return;
   if (fs.existsSync(dir)) {
-    vscode.window.showErrorMessage(`There is already a folder named ${slug}.`);
+    vscode.window.showErrorMessage(t('There is already a folder named {0}.', slug));
     return;
   }
   const kept = [];
@@ -543,7 +544,7 @@ async function renameSolution(node) {
   const base = path.basename(old.file);
   const ext = path.extname(base);
   const named = (value) => (ws.langOf(value) ? value : value + ext);
-  const name = await askName({ prompt: 'New name of the solution', value: base, valueSelection: [0, base.length - ext.length] }, (value) => named(value) !== base && fs.existsSync(path.join(old.dir, named(value))) && named(value));
+  const name = await askName({ prompt: t('New name of the solution'), value: base, valueSelection: [0, base.length - ext.length] }, (value) => named(value) !== base && fs.existsSync(path.join(old.dir, named(value))) && named(value));
   if (!name || named(name) === base) return;
   const file = path.join(old.dir, named(name));
   const shown = target && target.file === old.file;
@@ -573,7 +574,7 @@ function moveResults(dir, id, name) {
 
 async function renameTest(dir, id) {
   const taken = (name) => name !== id && ws.TEST_FILES.some((ext) => fs.existsSync(path.join(dir, `${name}.${ext}`))) && name;
-  const name = await askName({ prompt: 'New name of the test', value: id }, taken);
+  const name = await askName({ prompt: t('New name of the test'), value: id }, taken);
   if (!name || name === id) return;
   for (const ext of ws.TEST_FILES) {
     const from = path.join(dir, `${id}.${ext}`);
@@ -640,13 +641,13 @@ const tree = {
       item.id = node.file;
       item.resourceUri = vscode.Uri.file(node.file);
       item.iconPath = vscode.ThemeIcon.File;
-      item.description = verdicts.length && answered ? `${verdicts.filter((v) => v === 'match').length}/${answered} match` : '';
+      item.description = verdicts.length && answered ? t('{0}/{1} match', verdicts.filter((v) => v === 'match').length, answered) : '';
       item.command = { command: 'vscode.open', title: 'Open', arguments: [item.resourceUri] };
       item.contextValue = 'solution';
       return item;
     }
     if (node.kind === 'test') {
-      const item = new vscode.TreeItem(`Test ${node.id}`, vscode.TreeItemCollapsibleState.Collapsed);
+      const item = new vscode.TreeItem(t('Test {0}', node.id), vscode.TreeItemCollapsibleState.Collapsed);
       item.id = `${node.dir}#${node.id}`;
       item.iconPath = new vscode.ThemeIcon('symbol-field');
       item.contextValue = 'test';
@@ -660,10 +661,13 @@ const tree = {
   },
 };
 
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
   const font = webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'codicon.ttf')));
-  return fs.readFileSync(path.join(__dirname, 'view.html'), 'utf8').replace(/{{nonce}}/g, nonce).replace(/{{font}}/g, String(font)).replace(/{{source}}/g, webview.cspSource);
+  return fs.readFileSync(path.join(__dirname, 'view.html'), 'utf8').replace(/{{nonce}}/g, nonce).replace(/{{font}}/g, String(font)).replace(/{{source}}/g, webview.cspSource)
+    .replace('{{strings}}', JSON.stringify(Object.fromEntries(VIEW_STRINGS.map((text) => [text, t(text)]))).replace(/</g, '\\u003c'));
 }
 
 function receive(m) {
@@ -753,7 +757,7 @@ function activate(context) {
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
   if (root()) vscode.commands.executeCommand('eolympCode.problems.focus');
 
-  const failed = (err) => vscode.window.showErrorMessage(`Could not read the problem sent by the browser: ${err.message}`);
+  const failed = (err) => vscode.window.showErrorMessage(t('Could not read the problem sent by the browser: {0}', err.message));
   const server = companion.listen(config().get('companionPort'), (problem) => createProblem(problem.name, problem.tests, problem.meta).catch(failed), failed);
   context.subscriptions.push({ dispose: () => server.close() });
 }

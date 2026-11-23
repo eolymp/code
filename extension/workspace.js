@@ -33,7 +33,7 @@ function badName(value) {
   const text = value.trim();
   if (!text) return '';
   const reserved = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i.test(text);
-  return /[\\/:*?"<>|]/.test(text) || /^\.|\.$/.test(text) || reserved ? 'This name cannot be used for a file.' : '';
+  return /[\\/:*?"<>|]/.test(text) || /^\.|\.$/.test(text) || reserved ? 'invalid' : '';
 }
 
 function langOf(file) {

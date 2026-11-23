@@ -1,7 +1,7 @@
 {
   "name": "eolymp-code",
   "displayName": "Eolymp Code",
-  "description": "Solve competitive programming problems: a problem list, tests with saved answers, and Run and Debug on a test.",
+  "description": "%description%",
   "version": "0.1.0",
   "publisher": "eolymp",
   "license": "MIT",
@@ -24,14 +24,14 @@
       "panel": [
         {
           "id": "eolympCode",
-          "title": "Console",
+          "title": "%view.eolympCode%",
           "icon": "$(terminal)"
         }
       ],
       "activitybar": [
         {
           "id": "eolympCodeSidebar",
-          "title": "Practice",
+          "title": "%view.eolympCodeSidebar%",
           "icon": "$(symbol-event)"
         }
       ]
@@ -41,108 +41,108 @@
         {
           "type": "webview",
           "id": "eolympCode.tests",
-          "name": "Console"
+          "name": "%view.tests%"
         }
       ],
       "eolympCodeSidebar": [
         {
           "id": "eolympCode.problems",
-          "name": "Practice"
+          "name": "%view.problems%"
         }
       ]
     },
     "commands": [
       {
         "command": "eolympCode.run",
-        "title": "Run",
+        "title": "%command.run%",
         "category": "Eolymp Code",
         "icon": "$(play)"
       },
       {
         "command": "eolympCode.runTests",
-        "title": "Test",
+        "title": "%command.runTests%",
         "category": "Eolymp Code",
         "icon": "$(run-all)"
       },
       {
         "command": "eolympCode.newProblem",
-        "title": "New Problem Workspace",
+        "title": "%command.newProblem%",
         "category": "Eolymp Code",
         "icon": "$(add)"
       },
       {
         "command": "eolympCode.newSolution",
-        "title": "New Solution",
+        "title": "%command.newSolution%",
         "category": "Eolymp Code",
         "icon": "$(new-file)"
       },
       {
         "command": "eolympCode.newTest",
-        "title": "New Test",
+        "title": "%command.newTest%",
         "category": "Eolymp Code",
         "icon": "$(symbol-field)"
       },
       {
         "command": "eolympCode.renameProblem",
-        "title": "Rename Problem",
+        "title": "%command.renameProblem%",
         "category": "Eolymp Code"
       },
       {
         "command": "eolympCode.checkSetup",
-        "title": "Check Setup",
+        "title": "%command.checkSetup%",
         "category": "Eolymp Code"
       },
       {
         "command": "eolympCode.openInput",
-        "title": "Open Input"
+        "title": "%command.openInput%"
       },
       {
         "command": "eolympCode.openAnswer",
-        "title": "Open Answer"
+        "title": "%command.openAnswer%"
       },
       {
         "command": "eolympCode.addAnswer",
-        "title": "Add Answer"
+        "title": "%command.addAnswer%"
       },
       {
         "command": "eolympCode.showDiff",
-        "title": "Show Diff"
+        "title": "%command.showDiff%"
       },
       {
         "command": "eolympCode.markCorrect",
-        "title": "Use Output as Answer"
+        "title": "%command.markCorrect%"
       },
       {
         "command": "eolympCode.debugTest",
-        "title": "Debug"
+        "title": "%command.debugTest%"
       },
       {
         "command": "eolympCode.deleteTest",
-        "title": "Delete"
+        "title": "%command.deleteTest%"
       },
       {
         "command": "eolympCode.addAsTest",
-        "title": "Add as Test"
+        "title": "%command.addAsTest%"
       },
       {
         "command": "eolympCode.renameTest",
-        "title": "Rename"
+        "title": "%command.renameTest%"
       },
       {
         "command": "eolympCode.renameSolution",
-        "title": "Rename"
+        "title": "%command.renameSolution%"
       },
       {
         "command": "eolympCode.deleteSolution",
-        "title": "Delete"
+        "title": "%command.deleteSolution%"
       },
       {
         "command": "eolympCode.newFile",
-        "title": "New File"
+        "title": "%command.newFile%"
       },
       {
         "command": "eolympCode.stop",
-        "title": "Stop",
+        "title": "%command.stop%",
         "category": "Eolymp Code",
         "icon": "$(debug-stop)"
       }
@@ -376,7 +376,7 @@
         "eolympCode.cxx": {
           "type": "string",
           "default": "g++",
-          "description": "C++ compiler.",
+          "description": "%setting.cxx%",
           "scope": "machine"
         },
         "eolympCode.cxxFlags": {
@@ -389,19 +389,19 @@
             "-O2",
             "-Wall"
           ],
-          "description": "Flags for running tests.",
+          "description": "%setting.cxxFlags%",
           "scope": "machine"
         },
         "eolympCode.includePath": {
           "type": "string",
           "default": "",
-          "description": "Extra folder with C++ headers, passed to the compiler as CPLUS_INCLUDE_PATH.",
+          "description": "%setting.includePath%",
           "scope": "machine"
         },
         "eolympCode.python": {
           "type": "string",
           "default": "",
-          "description": "Python interpreter. Empty means python on Windows and python3 elsewhere.",
+          "description": "%setting.python%",
           "scope": "machine"
         },
         "eolympCode.language": {
@@ -411,17 +411,17 @@
             "py"
           ],
           "default": "cpp",
-          "description": "Language of new problems."
+          "description": "%setting.language%"
         },
         "eolympCode.timeLimit": {
           "type": "number",
           "default": 5000,
-          "description": "Time limit of one test, in milliseconds."
+          "description": "%setting.timeLimit%"
         },
         "eolympCode.companionPort": {
           "type": "number",
           "default": 27121,
-          "description": "Port that receives problems from the Competitive Companion browser extension.",
+          "description": "%setting.companionPort%",
           "scope": "machine"
         }
       }
@@ -429,12 +429,12 @@
     "viewsWelcome": [
       {
         "view": "eolympCode.problems",
-        "contents": "No problems are being solved here yet.\n[New Problem Workspace](command:eolympCode.newProblem)",
+        "contents": "%welcome.0%",
         "when": "workbenchState != empty"
       },
       {
         "view": "eolympCode.problems",
-        "contents": "Open a folder to keep your solutions in.\n[Open Folder](command:vscode.openFolder)",
+        "contents": "%welcome.1%",
         "when": "workbenchState == empty"
       }
     ],
@@ -536,5 +536,6 @@
         }
       }
     }
-  }
+  },
+  "l10n": "./l10n"
 }
