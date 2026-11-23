@@ -46,7 +46,7 @@ async function measured(python, command, args, memory) {
     if (found.error) return { ...result, code: -1, signal: undefined, failure: found.error };
     return { ...result, code: found.code === undefined ? null : found.code, signal: found.signal, ms: found.cpu === undefined ? result.ms : found.cpu, memory: found.memory, over: Boolean(found.over) };
   };
-  return { command: python, args: [path.join(__dirname, 'measure.py'), stats, String(memory || 0), command, ...args], finish };
+  return { command: python, args: [path.join(__dirname, 'measure.py'), stats, String(Math.floor(memory || 0)), command, ...args], finish };
 }
 
 async function collect(command, args, options, input) {

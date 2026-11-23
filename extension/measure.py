@@ -27,20 +27,20 @@ def darwin(pid):
     info = (ctypes.c_uint64 * 12)()
 
     def read():
-        if libproc.proc_pidinfo(pid, 4, ctypes.c_uint64(0), info, 96) != 96:
+        if libproc.proc_pid_rusage(pid, 0, info) != 0:
             raise OSError("the process is gone")
-        return info[1]
+        return info[9]
 
     return read
 
 
-def watch(read, seen, limit, stop):
+def watch(read, seen, limit, pid):
     try:
         while True:
             seen[0] = max(seen[0], read())
             if limit and seen[0] > limit:
                 seen[1] = True
-                stop(None, None)
+                os.kill(pid, signal.SIGKILL)
                 return
             time.sleep(0.002)
     except (OSError, ValueError):
@@ -69,7 +69,7 @@ def posix(command, limit):
     seen = [0, False]
     try:
         read = darwin(child.pid) if sys.platform == "darwin" else linux(child.pid)
-        threading.Thread(target=watch, args=(read, seen, limit, stop), daemon=True).start()
+        threading.Thread(target=watch, args=(read, seen, limit, child.pid), daemon=True).start()
     except OSError:
         pass
     _, status, usage = os.wait4(child.pid, 0)
@@ -82,10 +82,11 @@ def posix(command, limit):
         own = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
         if memory <= own:
             memory = seen[0]
+    over = seen[1] and os.WIFSIGNALED(status) and os.WTERMSIG(status) == signal.SIGKILL
     stats = {
         "cpu": round((usage.ru_utime + usage.ru_stime) * 1000),
-        "memory": max(memory, seen[0]) if seen[1] else memory,
-        "over": seen[1],
+        "memory": max(memory, seen[0]) if over else memory,
+        "over": over,
     }
     if os.WIFSIGNALED(status):
         number = os.WTERMSIG(status)
@@ -165,7 +166,7 @@ def windows(command, limit):
         while child.poll() is None and kernel.K32GetProcessMemoryInfo(handle, ctypes.byref(used), used.cb):
             if used.PeakWorkingSetSize > limit:
                 over[0] = True
-                kernel.TerminateProcess(handle, 1)
+                kernel.TerminateProcess(handle, 0x4D454D)
                 return
             time.sleep(0.005)
 
@@ -174,7 +175,7 @@ def windows(command, limit):
     child.wait()
     code = child.returncode & 0xFFFFFFFF
     stats = {"signal": "0x%08X" % code} if code >= 0xC0000000 else {"code": child.returncode}
-    stats["over"] = over[0]
+    stats["over"] = over[0] and code == 0x4D454D
     counters = Counters()
     counters.cb = ctypes.sizeof(counters)
     if kernel.K32GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb):
