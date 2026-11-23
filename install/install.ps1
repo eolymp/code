@@ -27,7 +27,7 @@ function Unpack($zip, $dir) {
   if ($LASTEXITCODE -ne 0) { throw "unpack failed: $zip" }
 }
 
-Step "Downloading the editor, the compiler, Python and the extensions"
+Step "Downloading the editor and its extensions"
 Fetch "$BaseUrl/pins.txt" "$Dest\downloads\pins.txt"
 if ((Get-FileHash -LiteralPath "$Dest\downloads\pins.txt" -Algorithm SHA256).Hash.ToLower() -ne "@PINS@") { throw "the list of downloads is damaged or was replaced" }
 New-Item -ItemType Directory -Force "$Dest\downloads\pinned" | Out-Null
@@ -44,10 +44,8 @@ foreach ($line in Get-Content "$Dest\downloads\pins.txt") {
   $pinned += "$Dest\downloads\pinned\$name"
 }
 $editor = $pinned | Where-Object { (Split-Path $_ -Leaf) -like "EolympCode-*" } | Select-Object -First 1
-$compiler = $pinned | Where-Object { (Split-Path $_ -Leaf) -like "winlibs-*" } | Select-Object -First 1
-$python = $pinned | Where-Object { (Split-Path $_ -Leaf) -like "python-*" } | Select-Object -First 1
 $extensions = @($pinned | Where-Object { $_ -like "*.vsix" })
-if (-not $editor -or -not $compiler -or -not $python) { throw "the list of downloads is incomplete" }
+if (-not $editor) { throw "the list of downloads is incomplete" }
 $data = "$Dest\editor\data"
 $kept = "$Dest\data.kept"
 if (Test-Path $data) {
@@ -59,34 +57,12 @@ Unpack $editor "$Dest\editor"
 if (-not $fresh) { Move-Item $kept $data }
 New-Item -ItemType Directory -Force "$Dest\editor\data\user-data\User" | Out-Null
 
-Step "Unpacking the C++ compiler (GCC, WinLibs build with clangd)"
-Unpack $compiler "$Dest\toolchain"
-$bin = "$Dest\toolchain\mingw64\bin"
-if (-not (Test-Path "$bin\g++.exe")) { throw "g++.exe is missing after unpacking" }
-
-Step "Unpacking Python"
-Unpack $python "$Dest\python"
-Remove-Item "$Dest\python\python*._pth"
 
 
 Step "Writing the editor's settings"
 if ((Get-UICulture).Name -like "uk*" -and -not (Test-Path "$Dest\editor\data\argv.json")) { [IO.File]::WriteAllText("$Dest\editor\data\argv.json", '{ "locale": "uk" }') }
-$settings = Get-Content "$Dest\downloads\pinned\settings.json" -Raw | ConvertFrom-Json
-$settings | Add-Member -Force "eolympCode.cxx" "$bin\g++.exe"
-$settings | Add-Member -Force "eolympCode.python" "$Dest\python\python.exe"
-$settings | Add-Member -Force "python.defaultInterpreterPath" "$Dest\python\python.exe"
-$settings | Add-Member -Force "clangd.path" "$bin\clangd.exe"
-$settings | Add-Member -Force "terminal.integrated.defaultProfile.windows" "Command Prompt"
-$settings | Add-Member -Force "terminal.integrated.env.windows" @{ "PATH" = "$bin;$Dest\python;`${env:PATH}" }
 $target = "$Dest\editor\data\user-data\User\settings.json"
-$merged = $settings
-if (Test-Path $target) {
-  try {
-    $merged = Get-Content $target -Raw | ConvertFrom-Json
-    foreach ($property in $settings.PSObject.Properties) { $merged | Add-Member -Force $property.Name $property.Value }
-  } catch { $merged = $settings }
-}
-[IO.File]::WriteAllText($target, ($merged | ConvertTo-Json -Depth 5))
+if (-not (Test-Path $target)) { Copy-Item "$Dest\downloads\pinned\settings.json" $target }
 
 Step "Installing the extensions"
 $codium = "$Dest\editor\bin\eolymp-code.cmd"

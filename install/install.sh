@@ -26,17 +26,6 @@ case "$(uname -s)" in
   *) echo "unsupported system: $(uname -s)"; exit 1 ;;
 esac
 
-if [ "$os" = linux ]; then
-  step "Installing the compiler, debugger and Python (asks for your password)"
-  sudo apt-get update -qq
-  sudo apt-get install -y -qq g++ gdb clangd python3 curl
-elif ! xcode-select -p >/dev/null 2>&1; then
-  step "Installing Apple's Command Line Tools (compiler and Python)"
-  xcode-select --install
-  echo "Finish the installation in the window that opened, then run this command again."
-  exit 1
-fi
-
 mkdir -p "$DEST/downloads" "$WORK"
 
 step "Downloading the editor and its extensions"
@@ -77,8 +66,6 @@ else
   bundle="$DEST/editor/Eolymp Code.app"
   ditto -x -k "$editor" "$DEST/editor"
   codium="$bundle/Contents/Resources/app/bin/eolymp-code"
-  mkdir -p "$DEST/include/bits"
-  cp "$pinned/stdc++.h" "$DEST/include/bits/stdc++.h"
 fi
 [ "$fresh" = yes ] || mv "$kept" "$data"
 mkdir -p "$data/user-data/User"
@@ -87,26 +74,7 @@ case "${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}$(defaults read -g AppleLocale 2>/dev/
 esac
 
 step "Writing the editor's settings"
-python3 - "$pinned/settings.json" "$data/user-data/User/settings.json" "$os" "$(command -v python3)" "$DEST/include" <<'PY'
-import json, os, sys
-source, target, system, python, include = sys.argv[1:]
-settings = json.load(open(source))
-try:
-    kept = json.load(open(target)) if os.path.exists(target) else {}
-except ValueError:
-    kept = {}
-settings["eolympCode.python"] = python
-settings["python.defaultInterpreterPath"] = python
-if system == "linux":
-    settings["window.titleBarStyle"] = "custom"
-else:
-    settings["eolympCode.cxx"] = "/usr/bin/clang++"
-    settings["eolympCode.includePath"] = include
-    settings["clangd.path"] = "/usr/bin/clangd"
-    settings["clangd.fallbackFlags"].append("-I" + include)
-    settings["terminal.integrated.env.osx"] = {"CPLUS_INCLUDE_PATH": include}
-json.dump({**kept, **settings}, open(target, "w"), indent=2)
-PY
+[ -e "$data/user-data/User/settings.json" ] || cp "$pinned/settings.json" "$data/user-data/User/settings.json"
 
 step "Installing the extensions"
 for extension in "${extensions[@]}"; do

@@ -10,7 +10,7 @@
   "command.newSolution": "Nueva solución",
   "command.newTest": "Nueva prueba",
   "command.renameProblem": "Cambiar el nombre del problema",
-  "command.checkSetup": "Comprobar la instalación",
+  "command.checkSetup": "Diagnóstico",
   "command.openInput": "Abrir la entrada",
   "command.openAnswer": "Abrir la respuesta",
   "command.addAnswer": "Añadir respuesta",

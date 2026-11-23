@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-{{nonce}}'; font-src {{source}}; script-src 'nonce-{{nonce}}';">
+<style nonce="{{nonce}}">
+  @font-face { font-family: codicon; src: url('{{font}}') format('truetype'); }
+  body { margin: 0; padding: 0; font-family: var(--vscode-font-family); font-size: 13px; color: var(--vscode-foreground); }
+  main { max-width: 1000px; padding: 20px 30px 40px; }
+  h2 { margin: 0 0 6px; font-size: 26px; font-weight: 600; color: var(--vscode-settings-headerForeground, var(--vscode-foreground)); }
+  .lead { margin: 0; color: var(--vscode-descriptionForeground); line-height: 1.4; }
+  .actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; min-height: 28px; }
+  #buttons { display: flex; gap: 8px; }
+  h3 { margin: 24px 0 6px; font-size: 13px; font-weight: 600; color: var(--vscode-settings-headerForeground, var(--vscode-foreground)); }
+  .step { display: flex; gap: 8px; padding: 4px 10px; line-height: 16px; }
+  .step:nth-child(even) { background: var(--vscode-keybindingTable-rowsBackground, transparent); }
+  .mark { flex: 0 0 16px; font: 16px/1 codicon; color: var(--vscode-descriptionForeground); }
+  .mark.ok { color: var(--vscode-testing-iconPassed, var(--vscode-textLink-foreground)); }
+  .mark.bad { color: var(--vscode-errorForeground); }
+  .mark.busy { animation: spin 1.5s steps(30) infinite; align-self: flex-start; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .title { flex: 0 0 240px; }
+  .detail { min-width: 0; color: var(--vscode-descriptionForeground); overflow-wrap: anywhere; }
+  button { font: inherit; color: var(--vscode-button-foreground); background: var(--vscode-button-background); border: 1px solid var(--vscode-button-border, transparent); border-radius: 2px; padding: 4px 11px; line-height: 16px; cursor: pointer; }
+  button:hover { background: var(--vscode-button-hoverBackground); }
+  button.quiet { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
+  button.quiet:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+  .progress { color: var(--vscode-descriptionForeground); }
+  @media (max-width: 560px) { .step { flex-wrap: wrap; } .title { flex: 1 1 0; } .detail { flex: 0 0 100%; padding-left: 24px; box-sizing: border-box; } }
+</style>
+</head>
+<body>
+<main>
+<h2 id="title"></h2>
+<p class="lead" id="lead"></p>
+<div class="actions"><span id="buttons"></span><span class="progress" id="progress"></span></div>
+<div id="rows"></div>
+</main>
+<script nonce="{{nonce}}">
+  const vscode = acquireVsCodeApi();
+  const STRINGS = {{strings}};
+  const T = (text, ...args) => (STRINGS[text] || text).replace(/\{(\d)\}/g, (all, i) => args[i]);
+  const el = (id) => document.getElementById(id);
+  const make = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  const button = (label, type, cls) => { const b = make('button', cls || '', label); b.onclick = () => vscode.postMessage({ type }); return b; };
+  window.addEventListener('message', (event) => {
+    const s = event.data;
+    const rows = el('rows');
+    const buttons = el('buttons');
+    rows.textContent = '';
+    buttons.textContent = '';
+    el('progress').textContent = s.progress || (s.checks ? '' : T('Checking…'));
+    const fixable = s.checks ? s.checks.some((c) => c.fix) : false;
+    const broken = s.checks ? s.checks.some((c) => !c.ok) : false;
+    el('lead').textContent = !s.checks ? '' : s.fresh && fixable ? T('Eolymp Code needs a compiler and Python. Install them to start solving problems.') : broken ? T('Some parts of Eolymp Code are not working.') : T('Everything works.');
+    el('title').textContent = T('Diagnostics');
+    let group;
+    let list;
+    for (const c of s.checks || []) {
+      if (c.group !== group) {
+        group = c.group;
+        list = make('div', 'group');
+        rows.append(make('h3', '', group), list);
+      }
+      const working = Boolean(s.progress) && Boolean(c.fix);
+      const row = make('div', 'step');
+      row.append(make('span', working ? 'mark busy' : c.ok ? 'mark ok' : c.fix ? 'mark' : 'mark bad', String.fromCharCode(working ? 0xeb19 : c.ok ? 0xeab2 : c.fix ? 0xeabc : 0xea76)), make('span', 'title', c.title));
+      if (c.detail) row.append(make('span', 'detail', c.detail));
+      list.append(row);
+    }
+    if (s.progress || !s.checks) {
+      if (s.stoppable) buttons.append(button(T('Cancel'), 'cancel', 'quiet'));
+      return;
+    }
+    if (fixable) buttons.append(button(s.fresh ? T('Install') : T('Fix'), 'fix'));
+    buttons.append(button(T('Check again'), 'check', fixable ? 'quiet' : ''));
+  });
+  vscode.postMessage({ type: 'ready' });
+</script>
+</body>
+</html>
