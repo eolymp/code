@@ -731,7 +731,7 @@ function activate(context) {
     fs.mkdirSync(toolsRoot, { recursive: true });
     terminalEnv = context.environmentVariableCollection;
     adopt();
-    setup = doctor.create(context, toolsRoot, { cxx: cxxPath, flags: cxxFlags, python: pythonPath, env: toolEnv }, adopt);
+    setup = doctor.create(context, toolsRoot, adopt);
     setup.start().catch(() => {});
     context.subscriptions.push(vscode.window.onDidChangeWindowState((window) => {
       const have = window.focused ? toolset.installed(toolsRoot) : undefined;

@@ -2,13 +2,11 @@ const vscode = require('vscode');
 const childProcess = require('child_process');
 const crypto = require('crypto');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
-const runner = require('./runner');
 const toolset = require('./tools');
 
 const t = vscode.l10n.t;
-const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', '{0} MB downloaded', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. The setup continues by itself.', 'Cancel'];
+const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Reinstall', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', '{0} MB downloaded', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. The setup continues by itself.', 'Cancel'];
 
 function hasAppleTools() {
   return process.platform !== 'darwin' || (childProcess.spawnSync('xcode-select', ['-p']).status === 0 && toolset.sdk(true) !== '');
@@ -18,27 +16,12 @@ function quick(root) {
   return hasAppleTools() && (!toolset.wanted() || Boolean(toolset.installed(root)));
 }
 
-async function examine(root, use) {
+function examine(root) {
   const checks = [];
   let group = t('Tools');
   const add = (id, title, ok, detail, fix) => checks.push({ id, group, title, ok, detail: ok ? '' : detail || '', fix: ok ? '' : fix || '' });
   if (process.platform === 'darwin') add('apple', t("Apple's Command Line Tools"), hasAppleTools(), t('They are needed by every compiler on macOS.'), 'apple');
   if (toolset.wanted()) add('tools', t('Compiler and Python'), Boolean(toolset.installed(root)), t('They are not installed yet.'), 'tools');
-  group = t('Compiling and running');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-'));
-  const env = use.env();
-  const exe = path.join(dir, 'check' + (process.platform === 'win32' ? '.exe' : ''));
-  fs.writeFileSync(path.join(dir, 'check.cpp'), '#include <bits/stdc++.h>\nint main() { int a, b; std::cin >> a >> b; std::cout << a + b; }\n');
-  const compiled = await runner.collect(use.cxx(), [...use.flags(), 'check.cpp', '-o', exe], { cwd: dir, env });
-  add('compile', t('C++ compiler'), compiled.code === 0, compiled.missing ? t('The compiler was not found: {0}', use.cxx()) : compiled.stderr.trim().split('\n')[0]);
-  if (compiled.code === 0) {
-    const ran = await runner.collect(exe, [], { cwd: dir, env, timeout: 5000 }, '2 3');
-    add('run', t('C++ program runs'), ran.stdout.trim() === '5', ran.stderr.trim().split('\n')[0] || t('unexpected output'));
-    const timed = await runner.collect(exe, [], { cwd: dir, env, timeout: 5000, python: use.python() }, '2 3');
-    add('measure', t('Time and memory measuring'), timed.memory > 0, timed.failure || t('it needs a working Python'));
-  }
-  const python = await runner.collect(use.python(), ['-c', 'print(int(input()) + 3)'], { cwd: dir, env, timeout: 5000 }, '2');
-  add('python', 'Python', python.stdout.trim() === '5', python.stderr.trim().split('\n').pop());
   group = t('Extensions');
   const extensions = [
     ['llvm-vs-code-extensions.vscode-clangd', t('C++ completion and errors')],
@@ -53,11 +36,10 @@ async function examine(root, use) {
   const served = clangd.includes('${') || dirs.some((dir) => fs.existsSync(path.join(dir, clangd)) || fs.existsSync(path.join(dir, `${clangd}.exe`)));
   const completion = checks.find((c) => c.id === 'llvm-vs-code-extensions.vscode-clangd');
   if (completion.ok && !served) Object.assign(completion, { ok: false, detail: t('clangd was not found') });
-  try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 }); } catch {}
   return checks;
 }
 
-function create(context, root, use, changed) {
+function create(context, root, changed) {
   let panel;
   let running;
   let repairing = false;
@@ -77,15 +59,11 @@ function create(context, root, use, changed) {
     if (notify) notify.report({ message: text });
   };
 
-  const check = async () => {
-    state = { ...state, progress: state.checks ? t('Checking…') : '', stoppable: false };
-    post();
-    const checks = await examine(root, use).catch((err) => [{ id: 'run', group: t('Compiling and running'), title: t('C++ compiler'), ok: false, detail: err.message, fix: '' }]);
-    const broken = checks.some((c) => !c.ok && (c.fix || ['compile', 'run', 'python', 'measure'].includes(c.id)));
-    const have = toolset.installed(root);
+  const check = () => {
+    const checks = examine(root);
+    const broken = checks.some((c) => c.fix);
     if (!broken) context.globalState.update('setup', true);
-    context.globalState.update('checked', broken ? undefined : [have ? have.dir : '', use.cxx(), use.python()].join('\n'));
-    state = { checks, progress: '', fresh: state.fresh && broken };
+    state = { checks, progress: '', fresh: state.fresh && broken, managed: Boolean(toolset.wanted()) };
     if (broken) bar.show(); else bar.hide();
     post();
     return !broken;
@@ -125,10 +103,10 @@ function create(context, root, use, changed) {
       await tools();
     } catch (err) {
       if (!stopper.signal.aborted) failed(t('Could not finish the setup: {0}', err.message));
-      await check();
+      check();
       return false;
     }
-    const ok = await check();
+    const ok = check();
     if (!ok) failed(t('Some parts of Eolymp Code are not working.'));
     return ok;
   };
@@ -145,6 +123,14 @@ function create(context, root, use, changed) {
     });
     running = mine;
     return mine;
+  };
+
+  const reinstall = async () => {
+    const have = toolset.installed(root);
+    await vscode.commands.executeCommand('clangd.shutdown').then(undefined, () => {});
+    if (have) fs.rmSync(path.join(have.dir, 'ready'), { force: true });
+    changed();
+    if (await fix()) vscode.commands.executeCommand('clangd.restart').then(undefined, () => {});
   };
 
   const update = () => {
@@ -171,9 +157,10 @@ function create(context, root, use, changed) {
       if (m.type === 'ready') post();
       if (m.type === 'fix') fix();
       if (m.type === 'check' && !running) check();
+      if (m.type === 'reinstall' && !running) reinstall();
       if (m.type === 'cancel') stopper.abort();
     });
-    if (!running) await check();
+    if (!running) check();
   };
 
   const start = async () => {
@@ -185,9 +172,8 @@ function create(context, root, use, changed) {
       else if (choice) await install();
       return;
     }
+    const ok = check();
     const have = toolset.installed(root);
-    const known = quick(root) && context.globalState.get('checked') === [have ? have.dir : '', use.cxx(), use.python()].join('\n');
-    const ok = known || await check();
     if (have && !have.current) update();
     if (ok) return;
     const actions = state.checks.some((c) => c.fix) ? [t('Fix'), details] : [details];
