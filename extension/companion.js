@@ -53,9 +53,19 @@ function listen(port, onProblem, onError) {
       }
     });
   });
-  server.on('error', () => {});
+  let retry;
+  let closed = false;
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && !closed) retry = setTimeout(() => server.listen(port, '127.0.0.1'), 3000);
+  });
   server.listen(port, '127.0.0.1');
-  return server;
+  return {
+    close() {
+      closed = true;
+      clearTimeout(retry);
+      server.close(() => {});
+    },
+  };
 }
 
 module.exports = { listen, parse, webUrl };

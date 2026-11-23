@@ -12,6 +12,8 @@ Windows, in PowerShell:
 
     irm https://downloads.eolymp.com/code/install.ps1 | iex
 
+The app installs its own GCC and Python. On Intel Macs and on macOS older than 15 it uses Apple's compiler instead.
+
 ## Layout
 
 - `app/` builds the editor from source with [VSCodium](https://github.com/VSCodium/vscodium)'s build scripts.
