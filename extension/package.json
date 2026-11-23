@@ -32,7 +32,7 @@
         {
           "id": "eolympCodeSidebar",
           "title": "Practice",
-          "icon": "icon.svg"
+          "icon": "$(symbol-event)"
         }
       ]
     },
