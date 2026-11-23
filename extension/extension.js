@@ -133,7 +133,6 @@ function flush() {
     tests: target ? ws.testIds(target.dir).map((id) => ({ id, answered: ws.answerOf(target.dir, id) !== undefined })) : [],
     results: state ? Object.fromEntries(Object.entries(sync(state, target.dir)).map(([id, r]) => [id, shownResult(r)])) : {},
     compileError: state ? state.compileError : '',
-    running: Boolean(testing),
     steps: state ? state.steps : null,
     session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
@@ -230,8 +229,9 @@ async function run(node) {
     update();
     return;
   }
+  const wrapped = await runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args);
+  if (active !== mine) return;
   const started = Date.now();
-  const wrapped = runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args);
   mine.state = 'running';
   mine.child = runner.start(wrapped.command, wrapped.args, { cwd: s.dir, env: toolEnv() });
   mine.child.stdin.on('error', () => {});
@@ -381,7 +381,7 @@ async function debugTest(id) {
 
 function acceptOutput(id) {
   const r = sync(stateOf(target.file), target.dir)[id];
-  if (!r) return;
+  if (!r || r.verdict === 'running' || FINAL.includes(r.verdict)) return;
   fs.writeFileSync(path.join(target.dir, `${id}.answer`), r.stdout);
   refresh();
 }
