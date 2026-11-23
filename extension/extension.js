@@ -720,7 +720,30 @@ function receive(m) {
   if (live && m.type === 'stop') stop();
 }
 
+function openPractice(context) {
+  const practice = path.join(os.homedir(), 'Eolymp', 'practice');
+  const sample = path.join(practice, 'sum', 'sum.cpp');
+  if (!root()) {
+    if (!fs.existsSync(practice)) {
+      fs.mkdirSync(path.dirname(sample), { recursive: true });
+      fs.writeFileSync(sample, "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << '\\n';\n    return 0;\n}\n");
+      fs.writeFileSync(path.join(practice, 'sum', '1.in'), '12\n9\n');
+      fs.writeFileSync(path.join(practice, 'sum', '1.answer'), '21\n');
+    }
+    const style = path.join(path.dirname(practice), '.clang-format');
+    if (!fs.existsSync(style)) fs.copyFileSync(path.join(__dirname, 'clang-format'), style);
+    vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(practice), { forceReuseWindow: true });
+    return true;
+  }
+  if (root() === practice && !context.globalState.get('welcomed') && fs.existsSync(sample)) {
+    context.globalState.update('welcomed', true);
+    vscode.window.showTextDocument(vscode.Uri.file(sample));
+  }
+  return false;
+}
+
 function activate(context) {
+  if (vscode.env.appName === 'Eolymp Code' && !vscode.workspace.workspaceFile && openPractice(context)) return;
   toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
   fs.mkdirSync(toolsRoot, { recursive: true });
   terminalEnv = context.environmentVariableCollection;

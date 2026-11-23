@@ -3,17 +3,14 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const HOME = process.env.EOLYMP_CODE_HOME || (process.platform === 'win32' ? path.join(process.env.LOCALAPPDATA, 'EolympCode') : path.join(os.homedir(), '.local/share/eolymp-code'));
-const LAYOUT = {
-  darwin: { program: 'editor/Eolymp Code.app/Contents/MacOS/Eolymp Code', data: 'editor/eolymp-code-portable-data' },
-  linux: { program: 'editor/eolymp-code', data: 'editor/data' },
-  win32: { program: 'editor/Eolymp Code.exe', data: 'editor/data' },
+const PROGRAM = process.env.EOLYMP_CODE_APP || {
+  darwin: '/Applications/Eolymp Code.app/Contents/MacOS/Eolymp Code',
+  linux: path.join(os.homedir(), '.local/share/eolymp-code/editor/eolymp-code'),
+  win32: path.join(process.env.LOCALAPPDATA || '', 'EolympCode/editor/Eolymp Code.exe'),
 }[process.platform];
 
 async function launch(files, tools) {
-  const program = path.join(HOME, LAYOUT.program);
-  const installed = path.join(HOME, LAYOUT.data);
-  if (!fs.existsSync(program)) throw new Error(`Eolymp Code is not installed in ${HOME}. Install it, or set EOLYMP_CODE_HOME to where it is.`);
+  if (!fs.existsSync(PROGRAM)) throw new Error(`Eolymp Code is not at ${PROGRAM}. Install it, or set EOLYMP_CODE_APP to its program.`);
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-test-'));
   const workspace = path.join(sandbox, 'practice');
   fs.mkdirSync(workspace);
@@ -22,20 +19,15 @@ async function launch(files, tools) {
     fs.writeFileSync(path.join(workspace, file), text);
   }
   const data = path.join(sandbox, 'data');
-  fs.mkdirSync(path.join(data, 'user-data/User'), { recursive: true });
-  fs.copyFileSync(path.join(installed, 'user-data/User/settings.json'), path.join(data, 'user-data/User/settings.json'));
-  const extension = fs.readdirSync(path.join(installed, 'extensions')).find((name) => name.startsWith('eolymp.eolymp-code-'));
-  fs.cpSync(path.join(installed, 'extensions', extension), path.join(data, 'extensions', extension), { recursive: true });
   const cache = path.join(os.tmpdir(), 'eolymp-code-test-tools');
   if (!tools) fs.rmSync(cache, { recursive: true, force: true });
   fs.mkdirSync(cache, { recursive: true });
-  fs.mkdirSync(path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code'), { recursive: true });
-  fs.symlinkSync(cache, path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code/tools'));
+  fs.mkdirSync(path.join(data, 'User/globalStorage/eolymp.eolymp-code'), { recursive: true });
+  fs.symlinkSync(cache, path.join(data, 'User/globalStorage/eolymp.eolymp-code/tools'));
   const opened = Object.keys(files).slice(0, 1).map((file) => path.join(workspace, file));
   const app = await electron.launch({
-    executablePath: program,
-    args: [workspace, ...opened, '--use-mock-keychain'],
-    env: { ...process.env, VSCODE_PORTABLE: data },
+    executablePath: PROGRAM,
+    args: [workspace, ...opened, '--user-data-dir', data, '--extensions-dir', path.join(sandbox, 'extensions'), '--use-mock-keychain'],
   });
   const window = await app.firstWindow();
   return {

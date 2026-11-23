@@ -1,0 +1,22 @@
+--- a/src/vs/workbench/api/common/extHostLocalizationService.ts
++++ b/src/vs/workbench/api/common/extHostLocalizationService.ts
+@@ -79,7 +79,7 @@
+ 			const response = await this._proxy.$fetchBundleContents(bundleUri);
+ 			const result = JSON.parse(response);
+ 			// 'contents.bundle' is a well-known key in the language pack json file that contains the _code_ translations for the extension
+-			contents = extension.isBuiltin ? result.contents?.bundle : result;
++			contents = extension.isBuiltin ? (result.contents?.bundle ?? (result.contents ? undefined : result)) : result;
+ 		} catch (e) {
+ 			this.logService.error(`Failed to load translations for ${extension.identifier.value} from ${bundleUri}: ${e.message}`);
+ 			return;
+@@ -96,7 +96,9 @@
+ 	private async getBundleLocation(extension: IExtensionDescription): Promise<URI | undefined> {
+ 		if (extension.isBuiltin) {
+ 			const uri = await this._proxy.$fetchBuiltInBundleUri(extension.identifier.value, this.currentLanguage);
+-			return URI.revive(uri);
++			if (uri) {
++				return URI.revive(uri);
++			}
+ 		}
+ 
+ 		return extension.l10n

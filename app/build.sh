@@ -95,24 +95,20 @@ set -u +x
 fi
 
 if [ "$step" != package ]; then
-  if [ "$platform" = darwin ]; then bundled="$built/Eolymp Code.app/Contents/Resources/app/extensions"; else bundled="$built/resources/app/extensions"; fi
+  if [ "$platform" = darwin ]; then resources="$built/Eolymp Code.app/Contents/Resources/app"; else resources="$built/resources/app"; fi
+  bundled="$resources/extensions"
   for extension in "$bundled"/*/; do
     name="$(basename "$extension")"
     grep -qx "$name" "$here/extensions.keep" || rm -rf "${bundled:?}/$name"
   done
+  node "$here/bundle.js" "$resources" "$platform-$arch" "$work/pins"
 fi
 
 [ "$step" != build ] || exit 0
 out="$repo/artifacts"
 mkdir -p "$out"
 if [ "$platform" = darwin ]; then
-  if [ -n "${EOLYMP_CODE_SIGN_IDENTITY:-}" ]; then
-    codesign --force --deep --options runtime --timestamp --entitlements "$work/vscodium/vscode/build/azure-pipelines/darwin/app-entitlements.plist" --sign "$EOLYMP_CODE_SIGN_IDENTITY" "$built/Eolymp Code.app"
-  else
-    codesign --force --deep --sign - "$built/Eolymp Code.app"
-  fi
-  rm -f "$out/EolympCode-$platform-$arch-$version.zip"
-  ditto -c -k --keepParent "$built/Eolymp Code.app" "$out/EolympCode-$platform-$arch-$version.zip"
+  "$here/mac.sh" "$built/Eolymp Code.app" "$out/EolympCode-$platform-$arch-$version.dmg" "$work/vscodium/vscode/build/azure-pipelines/darwin"
 elif [ "$platform" = linux ]; then
   tar -czf "$out/EolympCode-$platform-$arch-$version.tar.gz" -C "$built" .
 else

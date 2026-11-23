@@ -53,8 +53,9 @@ jobs:
       - name: Build the editor
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          EOLYMP_CODE_SIGN_IDENTITY: ${{ startsWith(github.ref, 'refs/tags/v') && vars.APPLE_SIGN_IDENTITY || '' }}
-        run: ./app/build.sh build
+        run: |
+          case "$GITHUB_REF" in refs/tags/v*) export EOLYMP_CODE_VERSION="${GITHUB_REF_NAME#v}" ;; esac
+          ./app/build.sh build
       - name: Sign in to Azure Artifact Signing (Windows)
         if: runner.os == 'Windows' && vars.AZURE_SIGNING_CLIENT_ID != '' && startsWith(github.ref, 'refs/tags/v')
         uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
@@ -76,7 +77,17 @@ jobs:
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
       - name: Package the editor
-        run: ./app/build.sh package
+        env:
+          EOLYMP_CODE_SIGN_IDENTITY: ${{ startsWith(github.ref, 'refs/tags/v') && vars.APPLE_SIGN_IDENTITY || '' }}
+          APPLE_API_KEY_ID: ${{ vars.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ vars.APPLE_API_ISSUER }}
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          if [ -n "$EOLYMP_CODE_SIGN_IDENTITY" ] && [ -n "$APPLE_API_KEY_CONTENT" ]; then
+            echo "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/notary.p8"
+            export APPLE_API_KEY="$RUNNER_TEMP/notary.p8"
+          fi
+          ./app/build.sh package
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: editor-${{ matrix.os }}
@@ -123,6 +134,9 @@ jobs:
           case "$GITHUB_REF_NAME" in *-*) channel=pre/ ;; *) channel= ;; esac
           for installer in install.sh install.ps1; do
             aws s3 cp "dist/$installer" "$bucket/$channel$installer" --cache-control "public, max-age=300"
+          done
+          for arch in arm64 x64; do
+            aws s3 cp "$bucket/$release/$(basename dist/"$release"/EolympCode-darwin-"$arch"-*.dmg)" "$bucket/${channel}EolympCode-macos-$arch.dmg" --cache-control "public, max-age=300"
           done
       - name: Publish the extension to Open VSX and the Visual Studio Marketplace
         if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
