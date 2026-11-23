@@ -131,6 +131,7 @@ function flush() {
     results: state ? Object.fromEntries(Object.entries(sync(state, target.dir)).map(([id, r]) => [id, shownResult(r)])) : {},
     compileError: state ? state.compileError : '',
     running: Boolean(testing),
+    setup: !setup.ready(),
     steps: state ? state.steps : null,
     session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
@@ -414,22 +415,25 @@ function adopt() {
   const key = process.platform === 'win32' ? 'Path' : 'PATH';
   terminalEnv.replace(key, [path.dirname(managed.cxx), path.dirname(managed.python), process.env[key] || process.env.PATH || ''].join(path.delimiter));
   for (const [name, value] of Object.entries(managed.env)) terminalEnv.replace(name, value);
+  const updates = [];
   const python = vscode.workspace.getConfiguration('python');
-  if (python.get('defaultInterpreterPath') !== managed.python) python.update('defaultInterpreterPath', managed.python, vscode.ConfigurationTarget.Global);
+  if (python.get('defaultInterpreterPath') !== managed.python) updates.push(python.update('defaultInterpreterPath', managed.python, vscode.ConfigurationTarget.Global));
   const clangd = vscode.workspace.getConfiguration('clangd');
-  if (managed.clangd && clangd.get('path') !== managed.clangd) clangd.update('path', managed.clangd, vscode.ConfigurationTarget.Global);
+  if (managed.clangd && clangd.get('path') !== managed.clangd) updates.push(clangd.update('path', managed.clangd, vscode.ConfigurationTarget.Global));
   const driver = `--query-driver=${path.dirname(managed.cxx)}${path.sep}*`;
-  const args = (clangd.get('arguments') || []).filter((arg) => !arg.startsWith('--query-driver='));
-  if (!(clangd.get('arguments') || []).includes(driver)) clangd.update('arguments', [...args, driver], vscode.ConfigurationTarget.Global);
-  if (!root()) return;
-  const file = path.join(root(), '.clangd');
-  const add = ['-std=c++17', ...(managed.env.SDKROOT ? ['-isysroot', managed.env.SDKROOT] : [])];
-  const text = `# Written by Eolymp Code\nCompileFlags:\n  Compiler: ${JSON.stringify(managed.cxx)}\n  Add: ${JSON.stringify(add)}\n`;
-  const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '# Written by Eolymp Code';
-  if (current.startsWith('# Written by Eolymp Code') && current !== text) {
-    fs.writeFileSync(file, text);
-    vscode.commands.executeCommand('clangd.restart').then(undefined, () => {});
+  const args = clangd.get('arguments') || [];
+  if (!args.includes(driver)) updates.push(clangd.update('arguments', [...args.filter((arg) => !arg.startsWith('--query-driver=')), driver], vscode.ConfigurationTarget.Global));
+  if (root()) {
+    const file = path.join(root(), '.clangd');
+    const add = ['-std=c++17', ...(managed.env.SDKROOT ? ['-isysroot', managed.env.SDKROOT] : [])];
+    const text = `# Written by Eolymp Code\nCompileFlags:\n  Compiler: ${JSON.stringify(managed.cxx)}\n  Add: ${JSON.stringify(add)}\n`;
+    const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '# Written by Eolymp Code';
+    if (current.startsWith('# Written by Eolymp Code') && current !== text) {
+      fs.writeFileSync(file, text);
+      updates.push(Promise.resolve());
+    }
   }
+  if (updates.length) Promise.all(updates).then(() => vscode.commands.executeCommand('clangd.restart')).then(undefined, () => {});
 }
 
 async function submit() {
@@ -675,7 +679,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+const VIEW_STRINGS = ["Install", "Eolymp Code needs a compiler and Python. Install them to start solving problems.", "Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -690,6 +694,7 @@ function receive(m) {
   if (m.type === 'run') runTests(shown);
   if (m.type === 'single') run(shown);
   if (m.type === 'submit') submit();
+  if (m.type === 'setup') setup.install().then(update);
   if (!target) return;
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
   const live = active && active.file === target.file && active.state === 'running' ? active : undefined;

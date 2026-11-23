@@ -137,7 +137,10 @@ function create(context, root, use, changed) {
     const message = fresh ? t('Eolymp Code needs a compiler and Python. Install them to start solving problems.') : t('Some parts of Eolymp Code are not working.');
     const choice = await vscode.window.showInformationMessage(message, act, details);
     if (choice === details) await open();
-    if (choice !== act) return;
+    if (choice === act) await install();
+  };
+
+  const install = async () => {
     const ok = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Setting up Eolymp Code') }, (reporter) => {
       notify = reporter;
       return fix();
@@ -147,7 +150,7 @@ function create(context, root, use, changed) {
     else await open();
   };
 
-  return { open, start };
+  return { open, start, install, ready: () => quick(root) };
 }
 
 module.exports = { create };

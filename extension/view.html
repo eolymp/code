@@ -160,7 +160,9 @@
     const empty = el('empty');
     empty.textContent = '';
     empty.hidden = Boolean(s.file) && !fresh;
-    if (!s.file) empty.append(make('div', '', T('Open a .cpp or .py file to run it here.')));
+    empty.hidden = empty.hidden && !s.setup;
+    if (s.setup) empty.append(make('div', '', T('Eolymp Code needs a compiler and Python. Install them to start solving problems.')), actions(button(T('Install'), { type: 'setup' }, 'main')));
+    else if (!s.file) empty.append(make('div', '', T('Open a .cpp or .py file to run it here.')));
     else if (fresh) {
       const items = [button(T('Run'), { type: 'single' }, 'main')];
       if (s.tests.length) items.push(button(T('Test'), { type: 'run' }));
