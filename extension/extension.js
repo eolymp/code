@@ -297,7 +297,7 @@ async function runAll(s, state, previous, job) {
     if (job.cancelled) break;
     state.results[test.id] = { verdict: 'running' };
     update();
-    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), onStart: (child) => { job.child = child; } };
+    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
     const r = await runner.collect(built.command, built.args, options, test.input);
     if (job.cancelled) {
       delete state.results[test.id];

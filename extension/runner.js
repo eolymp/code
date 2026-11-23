@@ -8,6 +8,7 @@ const checked = {};
 const children = new Set();
 let folder;
 let counter = 0;
+let stopped = false;
 
 function start(command, args, options) {
   const child = childProcess.spawn(command, args, options);
@@ -15,22 +16,23 @@ function start(command, args, options) {
   const gone = () => children.delete(child);
   child.on('error', gone);
   child.on('close', gone);
+  if (stopped) child.kill();
   return child;
 }
 
 function measures(python) {
   if (!(python in checked)) {
     checked[python] = new Promise((resolve) => {
-      const child = childProcess.spawn(python, ['-c', 'pass'], { stdio: 'ignore', timeout: 10000 });
+      const child = start(python, ['-c', 'pass'], { stdio: 'ignore', timeout: 10000 });
       child.on('error', () => resolve(false));
       child.on('close', (code) => resolve(code === 0));
-    });
+    }).catch(() => false);
   }
   return checked[python];
 }
 
 async function measured(python, command, args) {
-  if (!await measures(python)) return { command, args, finish: (result) => result };
+  if (!await measures(python) || stopped) return { command, args, finish: (result) => result };
   if (!folder) folder = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-'));
   const stats = path.join(folder, `${counter += 1}.json`);
   const finish = (result) => {
@@ -53,7 +55,7 @@ async function collect(command, args, options, input) {
     const started = Date.now();
     const resolve = (result) => {
       const r = wrapped.finish(result);
-      done(r.failure ? { ...r, stderr: `${r.stderr}${r.failure}\n` } : r);
+      done(r.failure ? { ...r, stderr: `${r.stderr}${r.stderr && !r.stderr.endsWith('\n') ? '\n' : ''}${r.failure}\n` } : r);
     };
     const child = start(wrapped.command, wrapped.args, { cwd: options.cwd, env: options.env });
     let stdout = '';
@@ -80,6 +82,7 @@ async function collect(command, args, options, input) {
 }
 
 function stopAll() {
+  stopped = true;
   for (const child of children) child.kill();
   children.clear();
   if (folder) fs.rmSync(folder, { recursive: true, force: true });
