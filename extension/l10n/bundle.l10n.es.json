@@ -15,7 +15,6 @@
   "Copy and open problem": "Copiar la solución y abrir el problema",
   "Could not build: {0}": "No se pudo compilar el programa: {0}",
   "Could not finish the setup: {0}": "No se pudo completar la instalación: {0}",
-  "Could not read the problem sent by the browser: {0}": "No se pudo leer el problema enviado por el navegador: {0}",
   "Could not rename {0} to {1}.": "No se pudo cambiar el nombre de {0} a {1}.",
   "Could not run the tests: {0}": "No se pudieron ejecutar las pruebas: {0}",
   "Crashed": "El programa se ha bloqueado",

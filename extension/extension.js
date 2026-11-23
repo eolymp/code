@@ -5,7 +5,6 @@ const path = require('path');
 const os = require('os');
 const ws = require('./workspace');
 const runner = require('./runner');
-const companion = require('./companion');
 const toolset = require('./tools');
 const doctor = require('./doctor');
 
@@ -450,8 +449,8 @@ function adopt() {
 
 async function submit() {
   if (!target) return;
-  const url = companion.webUrl(ws.loadMeta(target.dir).url);
-  if (!url) return;
+  const url = ws.loadMeta(target.dir).url;
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url) || url.length > 2000) return;
   const document = await vscode.workspace.openTextDocument(target.file);
   await document.save();
   await vscode.env.clipboard.writeText(document.getText());
@@ -469,22 +468,6 @@ async function openSolution(file, lang) {
   refresh();
 }
 
-async function createProblem(name, tests, meta) {
-  if (!root()) {
-    vscode.window.showErrorMessage(t('Open a folder first: problems are created in it.'));
-    return;
-  }
-  let slug = ws.slugOf(name);
-  for (let n = 1; !slug; n++) if (!fs.existsSync(path.join(root(), `untitled-${n}`))) slug = `untitled-${n}`;
-  const dir = path.join(root(), slug);
-  fs.mkdirSync(dir, { recursive: true });
-  if (tests && ws.testIds(dir).length === 0) tests.forEach((t, i) => ws.saveTest(dir, String(i + 1), t.input, t.output));
-  const described = path.join(dir, 'problem.json');
-  if (meta && !fs.existsSync(described)) fs.writeFileSync(described, JSON.stringify(meta, null, 2));
-  const lang = config().get('language');
-  await openSolution(ws.solutionsIn(dir)[0] || path.join(dir, `${slug}.${lang}`), lang);
-}
-
 function askName(options, taken) {
   return vscode.window.showInputBox({
     ...options,
@@ -494,7 +477,17 @@ function askName(options, taken) {
 
 async function newProblem() {
   const name = await vscode.window.showInputBox({ prompt: t('Name of the problem'), placeHolder: t('Leave empty to name it later') });
-  if (name !== undefined) await createProblem(name);
+  if (name === undefined) return;
+  if (!root()) {
+    vscode.window.showErrorMessage(t('Open a folder first: problems are created in it.'));
+    return;
+  }
+  let slug = ws.slugOf(name);
+  for (let n = 1; !slug; n++) if (!fs.existsSync(path.join(root(), `untitled-${n}`))) slug = `untitled-${n}`;
+  const dir = path.join(root(), slug);
+  fs.mkdirSync(dir, { recursive: true });
+  const lang = config().get('language');
+  await openSolution(ws.solutionsIn(dir)[0] || path.join(dir, `${slug}.${lang}`), lang);
 }
 
 async function newSolution(node) {
@@ -800,10 +793,6 @@ function activate(context) {
   );
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
   if (inApp && root()) vscode.commands.executeCommand('eolympCode.problems.focus');
-
-  const failed = (err) => vscode.window.showErrorMessage(t('Could not read the problem sent by the browser: {0}', err.message));
-  const server = companion.listen(config().get('companionPort'), (problem) => createProblem(problem.name, problem.tests, problem.meta).catch(failed), failed);
-  context.subscriptions.push({ dispose: () => server.close() }, vscode.window.onDidChangeWindowState((window) => { if (window.focused) server.open(); }));
 }
 
 function deactivate() {

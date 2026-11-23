@@ -31,6 +31,5 @@
   "setting.includePath": "Додаткова папка із заголовковими файлами C++. Компілятор отримує її через CPLUS_INCLUDE_PATH.",
   "setting.python": "Інтерпретатор Python. Якщо поле порожнє, у Windows використовується python, а в інших системах python3.",
   "setting.language": "Мова нових задач.",
-  "setting.timeLimit": "Ліміт часу на один тест у мілісекундах.",
-  "setting.companionPort": "Порт, на який розширення браузера Competitive Companion надсилає задачі."
+  "setting.timeLimit": "Ліміт часу на один тест у мілісекундах."
 }
