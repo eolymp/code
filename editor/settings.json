@@ -1,5 +1,4 @@
 {
-  "eolympCode.cxx": "g++",
   "python.languageServer": "None",
   "python.terminal.activateEnvironment": false,
   "basedpyright.analysis.typeCheckingMode": "basic",
@@ -39,5 +38,7 @@
   "update.mode": "none",
   "extensions.ignoreRecommendations": true,
   "extensions.autoUpdate": false,
-  "extensions.autoCheckUpdates": false
+  "extensions.autoCheckUpdates": false,
+  "window.titleBarStyle": "custom",
+  "terminal.integrated.defaultProfile.windows": "Command Prompt"
 }

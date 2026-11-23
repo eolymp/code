@@ -1,13 +1,10 @@
 """Writes editor/pins.txt: third-party downloads with their SHA-256."""
-import hashlib
 import json
 import re
 import urllib.error
 import urllib.request
 
 CODELLDB = "v1.12.3"
-PYTHON = "3.13.1"
-WINLIBS = r"^winlibs-x86_64-posix-seh-gcc-[\d.]+-llvm-[\d.]+-mingw-w64ucrt-.*\.zip$"
 EXTENSIONS = [
     ("ms-python", "python", "2026.10.0"),
     ("ms-python", "debugpy", "2026.6.0"),
@@ -48,11 +45,6 @@ def main():
     for namespace, name, version in EXTENSIONS:
         for platform in PLATFORMS:
             lines.append((platform,) + extension(namespace, name, version, platform))
-    releases = json.loads(get("https://api.github.com/repos/brechtsanders/winlibs_mingw/releases?per_page=15"))
-    compiler = next(asset for release in releases for asset in release["assets"] if re.match(WINLIBS, asset["name"]))
-    lines.append(("win32-x64", compiler["digest"].split(":")[1], compiler["browser_download_url"]))
-    python = "https://www.python.org/ftp/python/%s/python-%s-embed-amd64.zip" % (PYTHON, PYTHON)
-    lines.append(("win32-x64", hashlib.sha256(get(python)).hexdigest(), python))
     for line in lines:
         assert re.fullmatch(r"[0-9a-f]{64}", line[1]), line
     with open("editor/pins.txt", "w") as file:

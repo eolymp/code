@@ -6,6 +6,8 @@ const os = require('os');
 const ws = require('./workspace');
 const runner = require('./runner');
 const companion = require('./companion');
+const toolset = require('./tools');
+const doctor = require('./doctor');
 
 const TEMPLATES = {
   cpp: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n',
@@ -24,6 +26,10 @@ let target;
 let active;
 let testing;
 let pending;
+let toolsRoot;
+let managed;
+let setup;
+let terminalEnv;
 let building = Promise.resolve();
 let starting = false;
 
@@ -60,18 +66,27 @@ function solutionIn(document) {
 
 function toolEnv() {
   const env = { ...process.env };
-  const cxx = config().get('cxx');
+  const cxx = cxxPath();
   if (path.isAbsolute(cxx)) {
     const key = Object.keys(env).find((k) => k.toLowerCase() === 'path') || 'PATH';
     env[key] = path.dirname(cxx) + path.delimiter + (env[key] || '');
   }
-  if (config().get('includePath')) env.CPLUS_INCLUDE_PATH = config().get('includePath');
+  if (managed) Object.assign(env, managed.env);
+  else if (config().get('includePath')) env.CPLUS_INCLUDE_PATH = config().get('includePath');
   env.PYTHONUTF8 = '1';
   return env;
 }
 
+function cxxPath() {
+  return managed ? managed.cxx : config().get('cxx');
+}
+
+function cxxFlags() {
+  return [...config().get('cxxFlags'), ...(managed ? managed.flags : [])];
+}
+
 function pythonPath() {
-  return config().get('python') || (process.platform === 'win32' ? 'python' : 'python3');
+  return (managed && managed.python) || config().get('python') || (process.platform === 'win32' ? 'python' : 'python3');
 }
 
 function shortName(command) {
@@ -88,9 +103,9 @@ async function compile(s, debug) {
   const source = path.basename(s.file);
   if (s.lang === 'py') return { ok: true, command: pythonPath(), args: [s.file], compile: '', log: '', run: `${shortName(pythonPath())} ${source}` };
   fs.mkdirSync(s.outDir, { recursive: true });
-  const cxx = config().get('cxx');
+  const cxx = cxxPath();
   const exe = path.join(s.outDir, (debug ? 'debug' : 'run') + (process.platform === 'win32' ? '.exe' : ''));
-  const flags = debug ? [...config().get('cxxFlags').filter((f) => !f.startsWith('-O')), '-g', '-O0'] : config().get('cxxFlags');
+  const flags = debug ? [...cxxFlags().filter((f) => !f.startsWith('-O')), '-g', '-O0'] : cxxFlags();
   const r = await runner.collect(cxx, [...flags, s.file, '-o', exe], { cwd: s.dir, env: toolEnv() });
   const shown = path.relative(s.dir, exe);
   return {
@@ -389,37 +404,32 @@ async function showDiff(id) {
   await vscode.commands.executeCommand('vscode.diff', base, output, title);
 }
 
-async function checkSetup() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-'));
-  const lines = [];
-  const report = (ok, text, reason) => lines.push(`${ok ? '✓' : '✗'} ${text}${ok || !reason ? '' : `: ${reason}`}`);
-  fs.writeFileSync(path.join(dir, 'check.cpp'), '#include <bits/stdc++.h>\nint main() { int a, b; std::cin >> a >> b; std::cout << a + b; }\n');
-  const exe = path.join(dir, 'check' + (process.platform === 'win32' ? '.exe' : ''));
-  const env = toolEnv();
-  const compiled = await runner.collect(config().get('cxx'), [...config().get('cxxFlags'), 'check.cpp', '-o', exe], { cwd: dir, env });
-  report(compiled.code === 0, t('C++ compiler'), compiled.stderr.trim().split('\n')[0]);
-  if (compiled.code === 0) {
-    const ran = await runner.collect(exe, [], { cwd: dir, env, timeout: 5000 }, '2 3');
-    report(ran.stdout.trim() === '5', t('C++ program runs'), ran.stderr.trim().split('\n')[0] || t('unexpected output'));
+function checkSetup() {
+  return setup.open();
+}
+
+function adopt() {
+  managed = toolset.installed(toolsRoot);
+  if (!managed) return;
+  const key = process.platform === 'win32' ? 'Path' : 'PATH';
+  terminalEnv.replace(key, [path.dirname(managed.cxx), path.dirname(managed.python), process.env[key] || process.env.PATH || ''].join(path.delimiter));
+  for (const [name, value] of Object.entries(managed.env)) terminalEnv.replace(name, value);
+  const python = vscode.workspace.getConfiguration('python');
+  if (python.get('defaultInterpreterPath') !== managed.python) python.update('defaultInterpreterPath', managed.python, vscode.ConfigurationTarget.Global);
+  const clangd = vscode.workspace.getConfiguration('clangd');
+  if (managed.clangd && clangd.get('path') !== managed.clangd) clangd.update('path', managed.clangd, vscode.ConfigurationTarget.Global);
+  const driver = `--query-driver=${path.dirname(managed.cxx)}${path.sep}*`;
+  const args = (clangd.get('arguments') || []).filter((arg) => !arg.startsWith('--query-driver='));
+  if (!(clangd.get('arguments') || []).includes(driver)) clangd.update('arguments', [...args, driver], vscode.ConfigurationTarget.Global);
+  if (!root()) return;
+  const file = path.join(root(), '.clangd');
+  const add = ['-std=c++17', ...(managed.env.SDKROOT ? ['-isysroot', managed.env.SDKROOT] : [])];
+  const text = `# Written by Eolymp Code\nCompileFlags:\n  Compiler: ${JSON.stringify(managed.cxx)}\n  Add: ${JSON.stringify(add)}\n`;
+  const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '# Written by Eolymp Code';
+  if (current.startsWith('# Written by Eolymp Code') && current !== text) {
+    fs.writeFileSync(file, text);
+    vscode.commands.executeCommand('clangd.restart').then(undefined, () => {});
   }
-  const python = await runner.collect(pythonPath(), ['-c', 'print(int(input()) + 3)'], { cwd: dir, env, timeout: 5000 }, '2');
-  report(python.stdout.trim() === '5', 'Python', python.stderr.trim().split('\n').pop());
-  if (compiled.code === 0) {
-    const timed = await runner.collect(exe, [], { cwd: dir, env, timeout: 5000, python: pythonPath() }, '2 3');
-    report(timed.memory > 0, t('Time and memory measuring'), timed.failure || t('it needs a working Python'));
-  }
-  const extensions = [
-    ['llvm-vs-code-extensions.vscode-clangd', t('C++ completion and errors')],
-    ['vadimcn.vscode-lldb', t('C++ debugger')],
-    ['detachhead.basedpyright', t('Python completion and errors')],
-    ['ms-python.debugpy', t('Python debugger')],
-    ['charliermarsh.ruff', t('Python formatting')],
-  ];
-  for (const [id, label] of extensions) report(Boolean(vscode.extensions.getExtension(id)), label, t('the extension is not installed'));
-  fs.rmSync(dir, { recursive: true, force: true });
-  const failed = lines.some((line) => line.startsWith('✗'));
-  const show = failed ? vscode.window.showWarningMessage : vscode.window.showInformationMessage;
-  show(failed ? t('Some parts of Eolymp Code are not working.') : t('Everything works.'), { modal: true, detail: lines.join('\n') });
 }
 
 async function submit() {
@@ -698,6 +708,12 @@ function receive(m) {
 }
 
 function activate(context) {
+  toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
+  fs.mkdirSync(toolsRoot, { recursive: true });
+  terminalEnv = context.environmentVariableCollection;
+  adopt();
+  setup = doctor.create(context, toolsRoot, { cxx: cxxPath, flags: cxxFlags, python: pythonPath, env: toolEnv }, adopt);
+  setup.start();
   const problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree });
   const describe = () => {
     if (!root()) return;
