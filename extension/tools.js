@@ -32,16 +32,31 @@ function installed(root) {
 }
 
 async function download(item, file, onBytes) {
-  const response = await fetch(item.url, { headers: item.bearer ? { Authorization: `Bearer ${item.bearer}` } : {} });
-  if (!response.ok) throw new Error(`${response.status} for ${item.url}`);
-  const hash = crypto.createHash('sha256');
+  const abort = new AbortController();
+  let stalled = setTimeout(() => abort.abort(), 60000);
   const out = fs.createWriteStream(file);
-  for await (const chunk of response.body) {
-    hash.update(chunk);
-    onBytes(chunk.length);
-    if (!out.write(chunk)) await new Promise((resolve) => out.once('drain', resolve));
+  let failure;
+  out.on('error', (err) => { failure = err; });
+  const hash = crypto.createHash('sha256');
+  try {
+    const response = await fetch(item.url, { signal: abort.signal, headers: item.bearer ? { Authorization: `Bearer ${item.bearer}` } : {} });
+    if (!response.ok) throw new Error(`${response.status} for ${item.url}`);
+    for await (const chunk of response.body) {
+      clearTimeout(stalled);
+      stalled = setTimeout(() => abort.abort(), 60000);
+      if (failure) throw failure;
+      hash.update(chunk);
+      onBytes(chunk.length);
+      if (!out.write(chunk)) await new Promise((resolve) => { out.once('drain', resolve); out.once('error', resolve); });
+    }
+    await new Promise((resolve) => out.end(resolve));
+    if (failure) throw failure;
+  } catch (err) {
+    out.destroy();
+    throw abort.signal.aborted ? new Error(`the download stopped: ${path.basename(item.url)}`) : err;
+  } finally {
+    clearTimeout(stalled);
   }
-  await new Promise((resolve, reject) => out.end((err) => (err ? reject(err) : resolve())));
   if (hash.digest('hex') !== item.sha256) throw new Error(`the download does not match its checksum: ${path.basename(item.url)}`);
 }
 
@@ -182,7 +197,10 @@ async function install(location, report) {
   }
   fs.rmSync(downloads, { recursive: true, force: true });
   fs.writeFileSync(path.join(dir, 'ready'), dir);
-  for (const other of fs.readdirSync(root)) if (other !== set.id) fs.rmSync(path.join(root, other), { recursive: true, force: true });
+  for (const other of fs.readdirSync(root)) {
+    if (other === set.id) continue;
+    try { fs.rmSync(path.join(root, other), { recursive: true, force: true }); } catch {}
+  }
   return installed(root);
 }
 

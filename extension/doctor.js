@@ -48,7 +48,7 @@ async function examine(root, use) {
     ['charliermarsh.ruff', t('Python formatting')],
   ];
   for (const [id, label] of extensions) add(id, label, Boolean(vscode.extensions.getExtension(id)), t('the extension is not installed'));
-  fs.rmSync(dir, { recursive: true, force: true });
+  try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 }); } catch {}
   return checks;
 }
 
