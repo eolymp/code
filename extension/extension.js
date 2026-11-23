@@ -28,7 +28,8 @@ let testing;
 let pending;
 let toolsRoot;
 let managed;
-const standIn = process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
+const inApp = vscode.env.appName === 'Eolymp Code';
+const standIn = inApp && process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
 let setup;
 let terminalEnv;
 let building = Promise.resolve();
@@ -408,7 +409,7 @@ async function showDiff(id) {
 }
 
 function checkSetup() {
-  return setup.open();
+  return setup && setup.open();
 }
 
 function adopt() {
@@ -721,16 +722,19 @@ function receive(m) {
 }
 
 function activate(context) {
-  toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
-  fs.mkdirSync(toolsRoot, { recursive: true });
-  terminalEnv = context.environmentVariableCollection;
-  adopt();
-  setup = doctor.create(context, toolsRoot, { cxx: cxxPath, flags: cxxFlags, python: pythonPath, env: toolEnv }, adopt);
-  setup.start().catch(() => {});
-  context.subscriptions.push(vscode.window.onDidChangeWindowState((window) => {
-    const have = window.focused ? toolset.installed(toolsRoot) : undefined;
-    if (have && (!managed || managed.dir !== have.dir)) adopt();
-  }));
+  vscode.commands.executeCommand('setContext', 'eolympCode.app', inApp);
+  if (inApp) {
+    toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
+    fs.mkdirSync(toolsRoot, { recursive: true });
+    terminalEnv = context.environmentVariableCollection;
+    adopt();
+    setup = doctor.create(context, toolsRoot, { cxx: cxxPath, flags: cxxFlags, python: pythonPath, env: toolEnv }, adopt);
+    setup.start().catch(() => {});
+    context.subscriptions.push(vscode.window.onDidChangeWindowState((window) => {
+      const have = window.focused ? toolset.installed(toolsRoot) : undefined;
+      if (have && (!managed || managed.dir !== have.dir)) adopt();
+    }));
+  } else context.environmentVariableCollection.clear();
   const problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree });
   const describe = () => {
     if (!root()) return;
@@ -792,7 +796,7 @@ function activate(context) {
     }),
   );
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
-  if (root()) vscode.commands.executeCommand('eolympCode.problems.focus');
+  if (inApp && root()) vscode.commands.executeCommand('eolympCode.problems.focus');
 
   const failed = (err) => vscode.window.showErrorMessage(t('Could not read the problem sent by the browser: {0}', err.message));
   const server = companion.listen(config().get('companionPort'), (problem) => createProblem(problem.name, problem.tests, problem.meta).catch(failed), failed);
