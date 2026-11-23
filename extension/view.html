@@ -49,7 +49,6 @@
   pre a:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; }
   .stdin { display: flex; align-items: baseline; gap: 6px; color: var(--vscode-terminal-ansiCyan); }
   .stdin input { flex: 1; font: inherit; color: inherit; background: transparent; border: 0; outline: 0; padding: 0; }
-  .stdin input::placeholder { color: var(--vscode-input-placeholderForeground); }
 </style>
 </head>
 <body>
@@ -204,7 +203,6 @@
         const field = make('input');
         field.id = 'stdin';
         field.spellcheck = false;
-        field.placeholder = 'Your program is asking for input: type it here and press Enter';
         field.setAttribute('aria-label', 'Input for the program');
         field.value = typing;
         field.oninput = () => { typing = field.value; };
