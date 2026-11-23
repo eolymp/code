@@ -29,7 +29,7 @@ let pending;
 let toolsRoot;
 let managed;
 const inApp = vscode.env.appName === 'Eolymp Code';
-const standIn = process.platform === 'darwin' && !(inApp && toolset.wanted()) ? path.join(__dirname, 'include') : '';
+const standIn = inApp && process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
 let setup;
 let terminalEnv;
 let building = Promise.resolve();
@@ -734,7 +734,7 @@ function activate(context) {
       const have = window.focused ? toolset.installed(toolsRoot) : undefined;
       if (have && (!managed || managed.dir !== have.dir)) adopt();
     }));
-  }
+  } else context.environmentVariableCollection.clear();
   const problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree });
   const describe = () => {
     if (!root()) return;
