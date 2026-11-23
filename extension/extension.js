@@ -45,7 +45,11 @@ function sync(state, dir) {
   const ids = new Set(ws.testIds(dir));
   for (const [id, r] of Object.entries(state.results)) {
     if (!ids.has(id)) delete state.results[id];
-    else if (r.verdict !== 'running' && !FINAL.includes(r.verdict)) r.verdict = ws.verdictOf(r.stdout, ws.answerOf(dir, id));
+    else if (r.verdict !== 'running' && !FINAL.includes(r.verdict)) {
+      const answer = ws.answerOf(dir, id);
+      if (r.judged !== answer) r.verdict = ws.verdictOf(r.stdout, answer);
+      r.judged = answer;
+    }
   }
   return state.results;
 }
