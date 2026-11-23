@@ -77,4 +77,8 @@ function stopAll() {
   folder = undefined;
 }
 
-module.exports = { OUTPUT_LIMIT, start, measures, measured, collect, stopAll };
+function forget() {
+  for (const python of Object.keys(checked)) delete checked[python];
+}
+
+module.exports = { OUTPUT_LIMIT, start, measures, measured, collect, stopAll, forget };

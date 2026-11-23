@@ -11,7 +11,7 @@ const t = vscode.l10n.t;
 const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', '{0} MB downloaded', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. The setup continues by itself.', 'Cancel'];
 
 function hasAppleTools() {
-  return process.platform !== 'darwin' || (childProcess.spawnSync('xcode-select', ['-p']).status === 0 && toolset.sdk() !== '');
+  return process.platform !== 'darwin' || (childProcess.spawnSync('xcode-select', ['-p']).status === 0 && toolset.sdk(true) !== '');
 }
 
 function quick(root) {
@@ -55,6 +55,7 @@ async function examine(root, use) {
 function create(context, root, use, changed) {
   let panel;
   let running;
+  let repairing = false;
   let stopper = new AbortController();
   let notify;
   let state = { checks: null, progress: '', fresh: !context.globalState.get('setup') };
@@ -74,7 +75,7 @@ function create(context, root, use, changed) {
   const check = async () => {
     state = { ...state, progress: state.checks ? t('Checking…') : '', stoppable: false };
     post();
-    const checks = await examine(root, use);
+    const checks = await examine(root, use).catch((err) => [{ id: 'run', group: t('Compiling and running'), title: t('C++ compiler'), ok: false, detail: err.message, fix: '' }]);
     const broken = checks.some((c) => !c.ok && (c.fix || ['compile', 'run', 'python', 'measure'].includes(c.id)));
     if (!broken) context.globalState.update('setup', true);
     state = { checks, progress: '', fresh: state.fresh && broken };
@@ -125,26 +126,30 @@ function create(context, root, use, changed) {
     return ok;
   };
 
-  const during = (work) => {
-    if (running) return running;
-    stopper = new AbortController();
-    running = work().finally(() => { running = undefined; });
-    return running;
+  const fix = () => {
+    if (repairing) return running;
+    repairing = true;
+    const mine = (running || Promise.resolve()).then(() => {
+      stopper = new AbortController();
+      return repair();
+    }).finally(() => {
+      repairing = false;
+      if (running === mine) running = undefined;
+    });
+    running = mine;
+    return mine;
   };
 
-  const fix = () => during(repair);
-
-  const update = () => during(async () => {
-    try {
-      await tools();
-    } catch {
-      return false;
-    } finally {
+  const update = () => {
+    if (running) return;
+    stopper = new AbortController();
+    const mine = tools().then(() => true, () => false).finally(() => {
+      if (running === mine) running = undefined;
       state = { ...state, progress: '', stoppable: false };
       post();
-    }
-    return true;
-  });
+    });
+    running = mine;
+  };
 
   const open = async () => {
     if (panel) { panel.reveal(); return; }
@@ -193,7 +198,7 @@ function create(context, root, use, changed) {
     if (ok) vscode.window.showInformationMessage(t('Eolymp Code is ready.'));
   };
 
-  return { open, start, install, ready: () => quick(root) };
+  return { open, start };
 }
 
 module.exports = { create };

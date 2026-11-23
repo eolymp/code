@@ -65,13 +65,15 @@ function solutionIn(document) {
   return document && document.uri.scheme === 'file' ? ws.solutionOf(document.fileName) : undefined;
 }
 
+function toolDirs() {
+  if (managed) return [path.dirname(managed.cxx), path.dirname(managed.python)];
+  return path.isAbsolute(cxxPath()) ? [path.dirname(cxxPath())] : [];
+}
+
 function toolEnv() {
   const env = { ...process.env };
-  const cxx = cxxPath();
-  if (path.isAbsolute(cxx)) {
-    const key = Object.keys(env).find((k) => k.toLowerCase() === 'path') || 'PATH';
-    env[key] = path.dirname(cxx) + path.delimiter + (env[key] || '');
-  }
+  const key = Object.keys(env).find((k) => k.toLowerCase() === 'path') || 'PATH';
+  env[key] = [...toolDirs(), env[key] || ''].join(path.delimiter);
   if (managed) Object.assign(env, managed.env);
   else if (config().get('includePath') || standIn) env.CPLUS_INCLUDE_PATH = config().get('includePath') || standIn;
   env.PYTHONUTF8 = '1';
@@ -411,12 +413,13 @@ function checkSetup() {
 
 function adopt() {
   managed = toolset.installed(toolsRoot);
+  runner.forget();
+  terminalEnv.clear();
   if (!managed && !standIn) return;
   const updates = [];
   const flags = ['-std=c++17'];
   if (managed) {
-    const key = process.platform === 'win32' ? 'Path' : 'PATH';
-    terminalEnv.replace(key, [path.dirname(managed.cxx), path.dirname(managed.python), process.env[key] || process.env.PATH || ''].join(path.delimiter));
+    terminalEnv.prepend(process.platform === 'win32' ? 'Path' : 'PATH', toolDirs().join(path.delimiter) + path.delimiter);
     for (const [name, value] of Object.entries(managed.env)) terminalEnv.replace(name, value);
     const python = vscode.workspace.getConfiguration('python');
     if (python.get('defaultInterpreterPath') !== managed.python) updates.push(python.update('defaultInterpreterPath', managed.python, vscode.ConfigurationTarget.Global));
@@ -723,7 +726,7 @@ function activate(context) {
   terminalEnv = context.environmentVariableCollection;
   adopt();
   setup = doctor.create(context, toolsRoot, { cxx: cxxPath, flags: cxxFlags, python: pythonPath, env: toolEnv }, adopt);
-  setup.start();
+  setup.start().catch(() => {});
   context.subscriptions.push(vscode.window.onDidChangeWindowState((window) => {
     const have = window.focused ? toolset.installed(toolsRoot) : undefined;
     if (have && (!managed || managed.dir !== have.dir)) adopt();

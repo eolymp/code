@@ -16,12 +16,13 @@ function wanted() {
   return pick === undefined ? undefined : SETS[`${base}-${pick}`];
 }
 
-let sdkPath = '';
+let sdkPath;
 
-function sdk() {
-  if (sdkPath) return sdkPath;
-  const found = childProcess.spawnSync('xcrun', ['--show-sdk-path'], { encoding: 'utf8' });
-  sdkPath = found.status === 0 ? found.stdout.trim() : '';
+function sdk(again) {
+  if (sdkPath === undefined || again) {
+    const found = childProcess.spawnSync('xcrun', ['--show-sdk-path'], { encoding: 'utf8' });
+    sdkPath = found.status === 0 ? found.stdout.trim() : '';
+  }
   return sdkPath;
 }
 
@@ -38,9 +39,9 @@ function installed(root) {
     } catch {
       continue;
     }
-    if (saved.dir !== dir) continue;
     const at = (file) => (file ? path.join(dir, ...file.split('/')) : '');
-    return { dir, current: name === set.id, cxx: at(saved.cxx), python: at(saved.python), clangd: at(saved.clangd), flags: saved.flags, env: saved.sdk ? { SDKROOT: sdk() } : {} };
+    if (saved.dir !== dir || !fs.existsSync(at(saved.cxx))) continue;
+    return { dir, current: name === set.id, cxx: at(saved.cxx), python: at(saved.python), clangd: at(saved.clangd), flags: saved.flags, env: saved.sdk && sdk() ? { SDKROOT: sdk() } : {} };
   }
   return undefined;
 }
@@ -192,16 +193,19 @@ function stored(set, index) {
 function unpack(root, report) {
   const set = wanted();
   const dir = path.join(root, set.id);
+  const lock = path.join(root, 'lock');
+  fs.writeFileSync(lock, String(process.pid));
   const downloads = path.join(root, 'downloads');
   fs.rmSync(dir, { recursive: true, force: true });
   for (const [index, item] of set.items.entries()) {
     report('unpack', index / set.items.length);
+    fs.writeFileSync(lock, String(process.pid));
     const file = path.join(downloads, stored(set, index));
     const dest = path.join(dir, item.into);
     fs.mkdirSync(dest, { recursive: true });
     if (item.type === 'conda') conda(file, dest);
     else if (item.type === 'tar.gz') untar(zlib.gunzipSync(fs.readFileSync(file), { maxOutputLength: 2 ** 31 - 1 }), dest);
-    else if (process.platform === 'win32') run('tar', ['-xf', file, '-C', dest]);
+    else if (process.platform === 'win32') run(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe'), ['-xf', file, '-C', dest]);
     else run(path.join(dir, ...set.python.split('/')), ['-m', 'zipfile', '-e', file, dest]);
   }
   if (process.platform === 'win32') for (const name of fs.readdirSync(path.join(dir, 'python'))) if (name.endsWith('._pth')) fs.rmSync(path.join(dir, 'python', name));
@@ -220,6 +224,7 @@ function unpack(root, report) {
 
 function work(root, report, signal) {
   return new Promise((resolve, reject) => {
+    if (signal.aborted) { reject(new Error('stopped')); return; }
     const child = childProcess.fork(__filename, [root], { silent: true });
     let problem = '';
     child.stderr.on('data', (data) => { problem = (problem + data).slice(-2000); });
@@ -227,7 +232,10 @@ function work(root, report, signal) {
     child.on('message', (m) => { if (m.error) problem = m.error; else report(m.stage, m.value); });
     child.on('error', reject);
     child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(problem.trim().split('\n').pop() || 'unpacking stopped'))));
-    signal.addEventListener('abort', () => child.kill(), { once: true });
+    signal.addEventListener('abort', () => {
+      if (process.platform === 'win32') childProcess.spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
+      else child.kill();
+    }, { once: true });
   });
 }
 
@@ -236,23 +244,24 @@ function take(lock) {
     fs.writeFileSync(lock, String(process.pid), { flag: 'wx' });
     return true;
   } catch {}
-  let owner;
   try {
-    owner = Number(fs.readFileSync(lock, 'utf8'));
-  } catch {
-    return false;
-  }
-  try {
-    process.kill(owner, 0);
-    return false;
-  } catch (err) {
-    if (err.code === 'EPERM') return false;
-  }
-  fs.rmSync(lock, { force: true });
+    const owner = Number(fs.readFileSync(lock, 'utf8'));
+    const age = Date.now() - fs.statSync(lock).mtimeMs;
+    let alive = age < 30000;
+    if (owner > 0) {
+      try {
+        process.kill(owner, 0);
+        alive = true;
+      } catch (err) {
+        alive = err.code === 'EPERM';
+      }
+    }
+    if (!alive || age > 900000) fs.rmSync(lock, { force: true });
+  } catch {}
   return false;
 }
 
-async function install(location, report, signal = new AbortController().signal) {
+async function install(location, report, signal) {
   const set = wanted();
   if (!set) throw new Error('there is no compiler package for this system');
   fs.mkdirSync(location, { recursive: true });
@@ -269,8 +278,13 @@ async function install(location, report, signal = new AbortController().signal) 
     const downloads = path.join(root, 'downloads');
     fs.mkdirSync(downloads, { recursive: true });
     let bytes = 0;
-    for (const [index, item] of set.items.entries()) {
-      await download(item, path.join(downloads, stored(set, index)), (count) => { bytes += count; report('download', bytes); }, signal);
+    const beat = setInterval(() => fs.writeFileSync(lock, String(process.pid)), 10000);
+    try {
+      for (const [index, item] of set.items.entries()) {
+        await download(item, path.join(downloads, stored(set, index)), (count) => { bytes += count; report('download', bytes); }, signal);
+      }
+    } finally {
+      clearInterval(beat);
     }
     await work(root, report, signal);
   } finally {
