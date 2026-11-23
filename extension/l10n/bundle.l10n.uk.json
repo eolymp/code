@@ -96,5 +96,6 @@
   "{0} more are not shown; the whole output is compared with the answer": "Ще {0} не показано. З відповіддю порівнюється весь вивід.",
   "{0} ms": "{0} мс",
   "{0}/{1} match": "{0}/{1} збігаються",
-  "Reinstall": "Перевстановити"
+  "Reinstall": "Перевстановити",
+  "Stopped: the program used more than {0} MB": "Зупинено: програма використала понад {0} МБ"
 }

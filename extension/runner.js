@@ -31,7 +31,7 @@ function measures(python) {
   return checked[python];
 }
 
-async function measured(python, command, args) {
+async function measured(python, command, args, memory) {
   if (!await measures(python) || stopped) return { command, args, finish: (result) => result };
   if (!folder) folder = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-'));
   const stats = path.join(folder, `${counter += 1}.json`);
@@ -44,13 +44,13 @@ async function measured(python, command, args) {
     }
     fs.rmSync(stats, { force: true });
     if (found.error) return { ...result, code: -1, signal: undefined, failure: found.error };
-    return { ...result, code: found.code === undefined ? null : found.code, signal: found.signal, ms: found.cpu === undefined ? result.ms : found.cpu, memory: found.memory };
+    return { ...result, code: found.code === undefined ? null : found.code, signal: found.signal, ms: found.cpu === undefined ? result.ms : found.cpu, memory: found.memory, over: Boolean(found.over) };
   };
-  return { command: python, args: [path.join(__dirname, 'measure.py'), stats, command, ...args], finish };
+  return { command: python, args: [path.join(__dirname, 'measure.py'), stats, String(Math.floor(memory || 0)), command, ...args], finish };
 }
 
 async function collect(command, args, options, input) {
-  const wrapped = options.python ? await measured(options.python, command, args) : { command, args, finish: (result) => result };
+  const wrapped = options.python ? await measured(options.python, command, args, options.memory) : { command, args, finish: (result) => result };
   return new Promise((done) => {
     const started = Date.now();
     const resolve = (result) => {

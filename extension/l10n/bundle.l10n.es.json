@@ -96,5 +96,6 @@
   "{0} more are not shown; the whole output is compared with the answer": "No se muestran {0} más. Se compara toda la salida con la respuesta.",
   "{0} ms": "{0} ms",
   "{0}/{1} match": "{0}/{1} coinciden",
-  "Reinstall": "Reinstalar"
+  "Reinstall": "Reinstalar",
+  "Stopped: the program used more than {0} MB": "Detenido: el programa usó más de {0} MB"
 }

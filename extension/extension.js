@@ -16,6 +16,7 @@ const CURSOR = { cpp: new vscode.Position(4, 4), py: new vscode.Position(3, 0) }
 const t = vscode.l10n.t;
 const FINAL = ['runtime error', 'time limit', 'memory limit', 'output limit'];
 const SHOWN = 256 << 10;
+const MEMORY_CAP = 1024;
 
 const states = new Map();
 const changed = new vscode.EventEmitter();
@@ -136,7 +137,7 @@ function flush() {
     compileError: state ? state.compileError : '',
     steps: state ? state.steps : null,
     setup: Boolean(inApp && state && state.steps && state.steps.missing),
-    session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
+    session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, over: x.over, cap: x.cap, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
 }
 
@@ -231,7 +232,9 @@ async function run(node) {
     update();
     return;
   }
-  const wrapped = await runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args);
+  const limit = ws.loadMeta(s.dir).memoryLimit;
+  const cap = limit > 0 ? limit : MEMORY_CAP;
+  const wrapped = await runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args, cap * 1048576);
   if (active !== mine) return;
   const started = Date.now();
   mine.state = 'running';
@@ -244,7 +247,7 @@ async function run(node) {
   const finish = (code, signal, text) => {
     if (mine.state === 'finished') return;
     const r = wrapped.finish({ code, signal, ms: Date.now() - started });
-    Object.assign(mine, { state: 'finished', child: undefined, code: r.code, signal: r.signal, ms: r.ms, memory: r.memory });
+    Object.assign(mine, { state: 'finished', child: undefined, code: r.code, signal: r.signal, ms: r.ms, memory: r.memory, over: r.over, cap });
     if (text || r.failure) say(mine, 'err', text || `${r.failure}\n`);
     if (active === mine) active = undefined;
     setBusy();
@@ -294,12 +297,12 @@ async function runAll(s, state, previous, job) {
   state.compileError = built.log;
   const meta = ws.loadMeta(s.dir);
   const timeLimit = meta.timeLimit > 0 ? meta.timeLimit : config().get('timeLimit');
-  const memoryLimit = meta.memoryLimit > 0 ? meta.memoryLimit * 1048576 : Infinity;
+  const memoryLimit = (meta.memoryLimit > 0 ? meta.memoryLimit : MEMORY_CAP) * 1048576;
   for (const test of built.ok ? ws.loadTests(s.dir) : []) {
     if (job.cancelled) break;
     state.results[test.id] = { verdict: 'running' };
     update();
-    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
+    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), memory: memoryLimit, onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
     const r = await runner.collect(built.command, built.args, options, test.input);
     if (job.cancelled) {
       delete state.results[test.id];
@@ -308,7 +311,7 @@ async function runAll(s, state, previous, job) {
     let verdict = ws.verdictOf(r.stdout, test.answer);
     if (r.flooded) verdict = 'output limit';
     else if (r.timedOut || r.ms > timeLimit) verdict = 'time limit';
-    else if (r.memory > memoryLimit) verdict = 'memory limit';
+    else if (r.over || (meta.memoryLimit > 0 && r.memory > memoryLimit)) verdict = 'memory limit';
     else if (r.code !== 0) verdict = 'runtime error';
     const before = previous[test.id];
     const differs = Boolean(before) && ws.normalize(before.stdout) !== ws.normalize(r.stdout);
@@ -684,7 +687,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "Diagnostics", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Stopped: the program used more than {0} MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "Diagnostics", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
