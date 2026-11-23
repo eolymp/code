@@ -1,0 +1,37 @@
+{
+  "nameShort": "Eolymp Code",
+  "nameLong": "Eolymp Code",
+  "applicationName": "eolymp-code",
+  "dataFolderName": ".eolymp-code",
+  "linuxIconName": "eolymp-code",
+  "urlProtocol": "eolymp-code",
+  "serverApplicationName": "eolymp-code-server",
+  "serverDataFolderName": ".eolymp-code-server",
+  "tunnelApplicationName": "eolymp-code-tunnel",
+  "darwinBundleIdentifier": "com.eolymp.code",
+  "win32AppUserModelId": "Eolymp.Code",
+  "win32DirName": "Eolymp Code",
+  "win32MutexName": "eolympcode",
+  "win32NameVersion": "Eolymp Code",
+  "win32RegValueName": "EolympCode",
+  "win32ShellNameShort": "Eolymp Code",
+  "win32AppId": "{{FC127E92-1B37-42C1-9CD0-9243CF0B6002}",
+  "win32x64AppId": "{{84261E56-9F59-43F3-9825-7A0EA5ACB029}",
+  "win32arm64AppId": "{{A94F7858-8A64-46CE-A9BD-81275BA16783}",
+  "win32UserAppId": "{{9BF0B7BB-44E7-4E5B-8F8B-1EA0AC551D2B}",
+  "win32x64UserAppId": "{{39974C8E-A46F-429F-BE7F-A2CBABD2D913}",
+  "win32arm64UserAppId": "{{0EFC3730-3FCC-4E11-9338-7774AB7D5045}",
+  "win32TunnelServiceMutex": "eolympcode-tunnelservice",
+  "win32TunnelMutex": "eolympcode-tunnel",
+  "win32ContextMenu": {
+    "x64": {
+      "clsid": "FDBC98A2-3CC3-4AE0-BDF6-87DF2004B903"
+    },
+    "arm64": {
+      "clsid": "B5D4F611-CBE7-4EFC-A102-792A5AB71553"
+    }
+  },
+  "licenseUrl": "https://github.com/eolymp/code",
+  "reportIssueUrl": "https://github.com/eolymp/code/issues/new",
+  "downloadUrl": "https://github.com/eolymp/code/releases"
+}

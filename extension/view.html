@@ -1,0 +1,298 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-{{nonce}}'; font-src {{source}}; script-src 'nonce-{{nonce}}';">
+<style nonce="{{nonce}}">
+  @font-face { font-family: codicon; src: url('{{font}}') format('truetype'); }
+  body { padding: 8px 12px; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); }
+  button { font: inherit; font-family: var(--vscode-font-family); font-size: calc(var(--vscode-font-size) - 1px); color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); border: 0; border-radius: 3px; padding: 2px 9px; cursor: pointer; white-space: nowrap; }
+  button:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+  button.main { color: var(--vscode-button-foreground); background: var(--vscode-button-background); }
+  button.main:hover { background: var(--vscode-button-hoverBackground); }
+  .empty { margin: 4px 6px; }
+  .empty .actions { margin-top: 10px; }
+  .empty button { font-size: var(--vscode-font-size); padding: 4px 28px; }
+  #blocks, #foot { font-family: var(--vscode-terminal-font-family, var(--vscode-editor-font-family)); font-size: var(--vscode-editor-font-size); line-height: 1.5; }
+  .block { margin: 4px 0; border-radius: 4px; background: color-mix(in srgb, var(--vscode-foreground) 7%, transparent); }
+  .block > summary { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 6px; cursor: pointer; list-style: none; border-radius: 3px; }
+  .block > summary:hover { background: var(--vscode-list-hoverBackground); }
+  .block > summary::-webkit-details-marker { display: none; }
+  .block > summary::before { content: '\eab6'; flex: 0 0 16px; font: 16px/1 codicon; color: var(--vscode-icon-foreground); }
+  .block[open] > summary::before { content: '\eab4'; }
+  .block.leaf > summary, .block.fixed > summary { cursor: default; }
+  .block.fixed > summary:hover { background: none; }
+  .block.leaf > summary::before, .block.fixed > summary::before { visibility: hidden; }
+  .mark { flex: 0 0 16px; font: 16px/1 codicon; text-align: center; color: var(--vscode-descriptionForeground); }
+  .mark.ok { color: var(--vscode-testing-iconPassed); }
+  .mark.bad { color: var(--vscode-testing-iconFailed); }
+  .mark.warn { color: var(--vscode-editorWarning-foreground); }
+  .mark.busy { animation: spin 1.5s steps(30) infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .block .title { flex: 1 1 auto; min-width: 0; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .comment, .note, .block .stats { color: var(--vscode-descriptionForeground); }
+  .block .stats { white-space: nowrap; }
+  .exit { color: var(--vscode-errorForeground); }
+  .note { margin-top: 2px; font-style: italic; white-space: nowrap; }
+  .block .body, #foot { padding: 0 6px 8px 50px; }
+  .block .body:empty { display: none; }
+  button.icon { flex: none; padding: 3px; border-radius: 4px; font: 16px/1 codicon; color: var(--vscode-icon-foreground); background: transparent; }
+  button.icon:hover { background: var(--vscode-toolbar-hoverBackground); }
+  .tools { display: flex; gap: 2px; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+  #foot { margin-top: 4px; }
+  pre { font: inherit; max-height: 240px; margin: 0; overflow: auto; white-space: pre; user-select: text; }
+  pre.bad, pre .err { color: var(--vscode-terminal-ansiRed); }
+  pre .in { color: var(--vscode-terminal-ansiCyan); }
+  pre a { color: var(--vscode-textLink-foreground); text-decoration: none; cursor: pointer; }
+  pre a:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; }
+  .stdin { display: flex; align-items: baseline; gap: 6px; color: var(--vscode-terminal-ansiCyan); }
+  .stdin input { flex: 1; font: inherit; color: inherit; background: transparent; border: 0; outline: 0; padding: 0; }
+  .stdin input::placeholder { color: var(--vscode-input-placeholderForeground); }
+</style>
+</head>
+<body>
+<div id="empty" class="empty" hidden></div>
+<div id="blocks"></div>
+<div id="foot"></div>
+<script nonce="{{nonce}}">
+  const vscode = acquireVsCodeApi();
+  const ICONS = { check: 0xeab2, close: 0xea76, warning: 0xea6c, loading: 0xeb19, dot: 0xeb8a, stop: 0xead7, disconnect: 0xead0, ellipsis: 0xea7c };
+  const MARKS = { ok: 'check', bad: 'close', warn: 'warning', none: 'dot', busy: 'loading' };
+  const FAILURES = ['runtime error', 'time limit', 'memory limit', 'output limit'];
+  const kilobytes = (count) => `${Math.ceil(count / 1024)} KB`;
+  const el = (id) => document.getElementById(id);
+  const make = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  const glyph = (name) => String.fromCharCode(ICONS[name]);
+  const send = (message) => () => vscode.postMessage(message);
+  const button = (label, message, cls) => {
+    const b = make('button', cls || '', label);
+    b.onclick = send(message);
+    return b;
+  };
+  const actions = (...items) => { const div = make('div', 'actions'); div.append(...items); return div; };
+  const mark = (kind, tip) => {
+    const span = make('span', `mark ${kind}`, glyph(MARKS[kind]));
+    span.title = tip;
+    span.setAttribute('role', 'img');
+    span.setAttribute('aria-label', tip);
+    return span;
+  };
+  const icon = (name, tip, action) => {
+    const b = make('button', 'icon', glyph(name));
+    b.title = tip;
+    b.setAttribute('aria-label', tip);
+    b.onclick = (event) => { event.preventDefault(); event.stopPropagation(); action(b); };
+    return b;
+  };
+  const more = () => icon('ellipsis', 'More actions', (b) => {
+    const box = b.getBoundingClientRect();
+    b.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: box.left, clientY: box.bottom }));
+  });
+  const folded = {};
+  let typing = '';
+  let shown = '';
+  let scope = '';
+  const block = (key, open, head, body, fixed) => {
+    const details = make('details', fixed ? 'block fixed' : body.length ? 'block' : 'block leaf');
+    details.dataset.key = key;
+    const fold = `${scope}\n${key}`;
+    details.open = fixed || (fold in folded ? !folded[fold] : open);
+    details.ontoggle = () => { folded[fold] = !details.open; };
+    const summary = make('summary');
+    if (fixed || !body.length) {
+      summary.tabIndex = -1;
+      summary.onclick = (event) => event.preventDefault();
+    }
+    summary.append(...head);
+    const inside = make('div', 'body');
+    inside.append(...body);
+    details.append(summary, inside);
+    return details;
+  };
+  const compilerLog = (text, failed) => {
+    const pre = make('pre', failed ? 'bad' : '');
+    for (const line of text.split('\n')) {
+      const place = /^(.+?):(\d+):(\d+)(?=: )/.exec(line);
+      if (place) {
+        const link = make('a', '', place[0]);
+        link.href = '#';
+        link.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'goto', file: place[1], line: Number(place[2]), column: Number(place[3]) }); };
+        pre.append(link, line.slice(place[0].length), '\n');
+      } else pre.append(`${line}\n`);
+    }
+    return pre;
+  };
+  const place = (cards) => {
+    const blocks = el('blocks');
+    const old = new Map([...blocks.children].map((node) => [node.dataset.key, node]));
+    let at = blocks.firstChild;
+    for (const card of cards) {
+      let node = old.get(card.node.dataset.key);
+      old.delete(card.node.dataset.key);
+      const fresh = !node || node.sign !== card.sign;
+      const before = fresh && node && node.querySelector('pre');
+      const top = before ? before.scrollTop : 0;
+      if (fresh) {
+        card.node.sign = card.sign;
+        if (node) node.replaceWith(card.node);
+        if (node && at === node) at = card.node;
+        node = card.node;
+      }
+      if (node === at) at = at.nextSibling;
+      else if (node.parentNode !== blocks || node.nextSibling !== at) blocks.insertBefore(node, at);
+      if (!fresh && card.patch) card.patch(node);
+      if (fresh && node.querySelector('pre')) node.querySelector('pre').scrollTop = top;
+      if (fresh && card.placed) card.placed(node);
+    }
+    for (const node of old.values()) node.remove();
+  };
+
+  window.addEventListener('message', (event) => {
+    const raw = JSON.stringify(event.data);
+    if (raw === shown) return;
+    shown = raw;
+    const s = event.data;
+    scope = s.path;
+    const fresh = !s.steps && !s.session && !s.compileError;
+    const empty = el('empty');
+    empty.textContent = '';
+    empty.hidden = Boolean(s.file) && !fresh;
+    if (!s.file) empty.append(make('div', '', 'Open a .cpp or .py file to run it here.'));
+    else if (fresh) {
+      const items = [button('Run', { type: 'single' }, 'main')];
+      if (s.tests.length) items.push(button('Test', { type: 'run' }));
+      empty.append(make('div', '', `${s.file} has not been run yet.`), actions(...items));
+    }
+
+    const cards = [];
+    const command = (text) => make('span', 'title', text);
+    const size = (bytes) => (bytes === undefined ? '' : `${(bytes / 1048576).toFixed(1)} MB`);
+    const stats = (...items) => make('span', 'stats', items.filter(Boolean).join(' · '));
+    const compile = s.steps && s.steps.compile;
+    if (compile || s.compileError) {
+      const failed = s.steps ? !s.steps.ok : true;
+      const sign = failed ? mark('bad', 'Compilation failed') : s.compileError ? mark('warn', 'Compiled with warnings') : mark('ok', 'Compiled');
+      const head = [sign, compile ? command(compile) : make('span', 'title comment', '# compile')];
+      if (s.compileError) head.push(stats(failed ? 'failed' : 'warnings'));
+      cards.push({ sign: JSON.stringify([s.path, compile, s.compileError, failed]), node: block('compile', Boolean(s.compileError), head, s.compileError ? [compilerLog(s.compileError, failed)] : []) });
+    }
+    if (s.session && s.session.state !== 'compiling' && s.steps) {
+      const x = s.session;
+      const live = x.state === 'running';
+      const sign = live ? mark('busy', 'Running') : x.code === 0 ? mark('ok', 'Finished') : mark('bad', x.stopped ? 'Stopped' : x.flooded ? 'Too much output' : x.signal ? 'Crashed' : 'Finished with an error');
+      const head = [sign, command(s.steps.run)];
+      if (live) {
+        const tools = make('span', 'tools');
+        if (!x.closed) tools.append(icon('disconnect', 'End input (Ctrl+D)', send({ type: 'eof' })));
+        tools.append(icon('stop', 'Stop (Ctrl+C)', send({ type: 'stop' })));
+        head.push(tools);
+      } else {
+        head.push(stats(x.stopped ? 'stopped' : '', `${x.ms} ms`, size(x.memory)));
+        if (!x.kept && x.typed && x.code === 0) head.push(more());
+      }
+      const body = [];
+      if (x.parts.length || live) {
+        const pre = make('pre');
+        for (const part of x.parts) pre.append(make('span', part.kind, part.text));
+        body.push(pre);
+      }
+      if (x.hidden > 0) body.push(make('div', 'note', `${kilobytes(x.hidden)} more are not shown`));
+      if (live && !x.closed) {
+        const line = make('div', 'stdin');
+        const field = make('input');
+        field.id = 'stdin';
+        field.spellcheck = false;
+        field.placeholder = 'Your program is asking for input: type it here and press Enter';
+        field.setAttribute('aria-label', 'Input for the program');
+        field.value = typing;
+        field.oninput = () => { typing = field.value; };
+        field.onkeydown = (e) => {
+          if (e.key === 'Enter') { vscode.postMessage({ type: 'stdin', text: field.value }); typing = ''; field.value = ''; }
+          if (e.ctrlKey && e.key === 'd') { e.preventDefault(); vscode.postMessage({ type: 'eof' }); }
+          if (e.ctrlKey && e.key === 'c' && field.selectionStart === field.selectionEnd) vscode.postMessage({ type: 'stop' });
+        };
+        field.onpaste = (e) => {
+          const lines = e.clipboardData.getData('text').replace(/\r/g, '').split('\n');
+          if (lines.length < 2) return;
+          e.preventDefault();
+          lines[0] = field.value + lines[0];
+          const rest = lines.pop();
+          for (const text of lines) vscode.postMessage({ type: 'stdin', text });
+          typing = rest;
+          field.value = rest;
+        };
+        line.append(make('span', '', '›'), field);
+        body.push(line);
+      } else if (live) {
+        typing = '';
+        body.push(make('div', 'note', 'input ended'));
+      } else {
+        typing = '';
+        if (x.flooded) body.push(make('div', 'exit', 'Stopped: the program printed more than 16 MB'));
+        else if (!x.stopped && x.signal) body.push(make('div', 'exit', `Crashed (${x.signal})`));
+        else if (!x.stopped && x.code) body.push(make('div', 'exit', `Exit code ${x.code}`));
+      }
+      const card = block('run', true, head, body, true);
+      if (!live && !x.kept && x.typed && x.code === 0) card.dataset.vscodeContext = JSON.stringify({ webviewSection: 'run', preventDefaultContextMenuItems: true });
+      cards.push({
+        sign: live ? JSON.stringify(['live', s.path, s.steps.run, Boolean(x.closed), x.hidden > 0]) : JSON.stringify([s.path, s.steps.run, x]),
+        node: card,
+        patch: live && ((node) => {
+          const pre = node.querySelector('pre');
+          const end = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 2;
+          x.parts.forEach((part, i) => {
+            const span = pre.children[i];
+            if (!span) pre.append(make('span', part.kind, part.text));
+            else if (span.textContent.length < part.text.length) span.append(part.text.slice(span.textContent.length));
+          });
+          if (end) pre.scrollTop = pre.scrollHeight;
+        }),
+        placed: live && ((node) => {
+          node.querySelector('pre').scrollTop = node.querySelector('pre').scrollHeight;
+          if (!el('stdin')) return;
+          el('stdin').focus();
+          el('stdin').setSelectionRange(typing.length, typing.length);
+        }),
+      });
+    }
+    const listing = !fresh && !s.session && !(s.steps && !s.steps.ok);
+    for (const t of listing ? s.tests : []) {
+      const r = s.results[t.id];
+      const finished = r && r.verdict !== 'running';
+      const run = s.steps && s.steps.run;
+      const sign = !r || r.verdict === 'no answer' ? mark('none', r ? 'No answer to compare with' : 'Not run yet')
+        : r.verdict === 'running' ? mark('busy', 'Running')
+        : r.verdict === 'match' ? mark('ok', 'The output matches the answer')
+        : mark('bad', r.verdict === 'differs' ? 'The output differs from the answer' : r.verdict);
+      const head = [sign, run ? command(`${run} < ${t.id}.in`) : make('span', 'title comment', `# test ${t.id}`)];
+      const text = r ? (r.stdout || '') + (r.stderr ? (r.stdout && !r.stdout.endsWith('\n') ? '\n' : '') + r.stderr : '') : '';
+      const bad = finished && r.verdict !== 'match' && r.verdict !== 'no answer';
+      const body = !r ? [make('div', 'note', 'not run yet')] : text ? [make('pre', bad ? 'bad' : '', text)] : [];
+      if (r && r.hidden > 0) body.push(make('div', 'note', `${kilobytes(r.hidden)} more are not shown; the whole output is compared with the answer`));
+      if (finished && r.verdict === 'runtime error' && (r.signal || r.code)) body.push(make('div', 'exit', r.signal ? `Crashed (${r.signal})` : `Exit code ${r.code}`));
+      const failure = finished && FAILURES.includes(r.verdict) ? r.verdict : '';
+      const changed = finished && r.verdict === 'no answer' && r.changed ? 'output changed' : '';
+      head.push(stats(failure || changed, r && r.ms !== undefined ? `${r.ms} ms` : '', r ? size(r.memory) : ''));
+      head.push(more());
+      const card = block(`test-${t.id}`, true, head, body);
+      card.dataset.vscodeContext = JSON.stringify({
+        webviewSection: 'test',
+        test: t.id,
+        hasAnswer: t.answered,
+        canDiff: Boolean(finished && (r.verdict === 'differs' || r.changed)),
+        canAccept: Boolean(finished && r.verdict !== 'match'),
+        preventDefaultContextMenuItems: true,
+      });
+      cards.push({ sign: JSON.stringify([s.path, t, r, run]), node: card });
+    }
+    place(cards);
+    const foot = el('foot');
+    foot.textContent = '';
+    if (s.file && listing && s.meta.url) foot.append(actions(button('Copy and open problem', { type: 'submit' })));
+  });
+  vscode.postMessage({ type: 'ready' });
+</script>
+</body>
+</html>

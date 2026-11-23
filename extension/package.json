@@ -1,0 +1,442 @@
+{
+  "name": "eolymp-code",
+  "displayName": "Eolymp Code",
+  "description": "Solve competitive programming problems: a problem list, tests with saved answers, and Run and Debug on a test.",
+  "version": "0.1.0",
+  "publisher": "eolymp",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eolymp/code"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "eolympCode",
+          "title": "Console",
+          "icon": "$(terminal)"
+        }
+      ],
+      "activitybar": [
+        {
+          "id": "eolympCodeSidebar",
+          "title": "Practice",
+          "icon": "icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "eolympCode": [
+        {
+          "type": "webview",
+          "id": "eolympCode.tests",
+          "name": "Console"
+        }
+      ],
+      "eolympCodeSidebar": [
+        {
+          "id": "eolympCode.problems",
+          "name": "Practice"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "eolympCode.run",
+        "title": "Run",
+        "category": "Eolymp Code",
+        "icon": "$(play)"
+      },
+      {
+        "command": "eolympCode.runTests",
+        "title": "Test",
+        "category": "Eolymp Code",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "eolympCode.newProblem",
+        "title": "New Problem Workspace",
+        "category": "Eolymp Code",
+        "icon": "$(add)"
+      },
+      {
+        "command": "eolympCode.newSolution",
+        "title": "New Solution",
+        "category": "Eolymp Code",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "eolympCode.newTest",
+        "title": "New Test",
+        "category": "Eolymp Code",
+        "icon": "$(symbol-field)"
+      },
+      {
+        "command": "eolympCode.renameProblem",
+        "title": "Rename Problem",
+        "category": "Eolymp Code"
+      },
+      {
+        "command": "eolympCode.checkSetup",
+        "title": "Check Setup",
+        "category": "Eolymp Code"
+      },
+      {
+        "command": "eolympCode.openInput",
+        "title": "Open Input"
+      },
+      {
+        "command": "eolympCode.openAnswer",
+        "title": "Open Answer"
+      },
+      {
+        "command": "eolympCode.addAnswer",
+        "title": "Add Answer"
+      },
+      {
+        "command": "eolympCode.showDiff",
+        "title": "Show Diff"
+      },
+      {
+        "command": "eolympCode.markCorrect",
+        "title": "Use Output as Answer"
+      },
+      {
+        "command": "eolympCode.debugTest",
+        "title": "Debug"
+      },
+      {
+        "command": "eolympCode.deleteTest",
+        "title": "Delete"
+      },
+      {
+        "command": "eolympCode.addAsTest",
+        "title": "Add as Test"
+      },
+      {
+        "command": "eolympCode.renameTest",
+        "title": "Rename"
+      },
+      {
+        "command": "eolympCode.renameSolution",
+        "title": "Rename"
+      },
+      {
+        "command": "eolympCode.deleteSolution",
+        "title": "Delete"
+      },
+      {
+        "command": "eolympCode.newFile",
+        "title": "New File"
+      },
+      {
+        "command": "eolympCode.stop",
+        "title": "Stop",
+        "category": "Eolymp Code",
+        "icon": "$(debug-stop)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "eolympCode.run",
+          "group": "navigation@0",
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !eolympCode.running"
+        },
+        {
+          "command": "eolympCode.runTests",
+          "group": "navigation@1",
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !eolympCode.running"
+        },
+        {
+          "command": "eolympCode.stop",
+          "group": "navigation@0",
+          "when": "(resourceLangId == cpp || resourceLangId == python) && eolympCode.running"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "eolympCode.newProblem",
+          "group": "navigation",
+          "when": "view == eolympCode.problems"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "eolympCode.newSolution",
+          "group": "inline@1",
+          "when": "view == eolympCode.problems && viewItem == problem"
+        },
+        {
+          "command": "eolympCode.newTest",
+          "group": "inline@2",
+          "when": "view == eolympCode.problems && viewItem == problem"
+        },
+        {
+          "command": "eolympCode.newSolution",
+          "group": "1@1",
+          "when": "view == eolympCode.problems && viewItem == problem"
+        },
+        {
+          "command": "eolympCode.newTest",
+          "group": "1@2",
+          "when": "view == eolympCode.problems && viewItem == problem"
+        },
+        {
+          "command": "eolympCode.renameProblem",
+          "group": "2@1",
+          "when": "view == eolympCode.problems && viewItem == problem"
+        },
+        {
+          "command": "eolympCode.run",
+          "group": "inline@1",
+          "when": "view == eolympCode.problems && viewItem == solution"
+        },
+        {
+          "command": "eolympCode.runTests",
+          "group": "inline@2",
+          "when": "view == eolympCode.problems && viewItem == solution"
+        },
+        {
+          "command": "eolympCode.renameTest",
+          "group": "1@1",
+          "when": "view == eolympCode.problems && viewItem == test"
+        },
+        {
+          "command": "eolympCode.deleteTest",
+          "group": "2@1",
+          "when": "view == eolympCode.problems && viewItem == test"
+        },
+        {
+          "command": "eolympCode.run",
+          "group": "1@1",
+          "when": "view == eolympCode.problems && viewItem == solution"
+        },
+        {
+          "command": "eolympCode.runTests",
+          "group": "1@2",
+          "when": "view == eolympCode.problems && viewItem == solution"
+        },
+        {
+          "command": "eolympCode.renameSolution",
+          "group": "2@1",
+          "when": "view == eolympCode.problems && viewItem == solution"
+        },
+        {
+          "command": "eolympCode.deleteSolution",
+          "group": "3@1",
+          "when": "view == eolympCode.problems && viewItem == solution"
+        },
+        {
+          "command": "eolympCode.newFile",
+          "group": "1@3",
+          "when": "view == eolympCode.problems && viewItem == problem"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "eolympCode.newSolution",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.newTest",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.renameProblem",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.openInput",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.openAnswer",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.addAnswer",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.showDiff",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.markCorrect",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.debugTest",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.deleteTest",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.addAsTest",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.renameTest",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.renameSolution",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.deleteSolution",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.newFile",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.stop",
+          "when": "eolympCode.running"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "eolympCode.openInput",
+          "group": "1@1",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
+        },
+        {
+          "command": "eolympCode.openAnswer",
+          "group": "1@2",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && hasAnswer"
+        },
+        {
+          "command": "eolympCode.addAnswer",
+          "group": "1@2",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && !hasAnswer"
+        },
+        {
+          "command": "eolympCode.showDiff",
+          "group": "1@4",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && canDiff"
+        },
+        {
+          "command": "eolympCode.markCorrect",
+          "group": "1@3",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && canAccept"
+        },
+        {
+          "command": "eolympCode.debugTest",
+          "group": "1@5",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
+        },
+        {
+          "command": "eolympCode.deleteTest",
+          "group": "2@1",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
+        },
+        {
+          "command": "eolympCode.addAsTest",
+          "group": "1@1",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'run'"
+        },
+        {
+          "command": "eolympCode.renameTest",
+          "group": "1@6",
+          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "eolympCode.run",
+        "key": "f5",
+        "when": "editorTextFocus && !inDebugMode && (editorLangId == cpp || editorLangId == python)"
+      },
+      {
+        "command": "eolympCode.runTests",
+        "key": "shift+f5",
+        "when": "editorTextFocus && !inDebugMode && (editorLangId == cpp || editorLangId == python)"
+      }
+    ],
+    "configuration": {
+      "title": "Eolymp Code",
+      "properties": {
+        "eolympCode.cxx": {
+          "type": "string",
+          "default": "g++",
+          "description": "C++ compiler.",
+          "scope": "machine"
+        },
+        "eolympCode.cxxFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "-std=c++17",
+            "-O2",
+            "-Wall"
+          ],
+          "description": "Flags for running tests.",
+          "scope": "machine"
+        },
+        "eolympCode.includePath": {
+          "type": "string",
+          "default": "",
+          "description": "Extra folder with C++ headers, passed to the compiler as CPLUS_INCLUDE_PATH.",
+          "scope": "machine"
+        },
+        "eolympCode.python": {
+          "type": "string",
+          "default": "",
+          "description": "Python interpreter. Empty means python on Windows and python3 elsewhere.",
+          "scope": "machine"
+        },
+        "eolympCode.language": {
+          "type": "string",
+          "enum": [
+            "cpp",
+            "py"
+          ],
+          "default": "cpp",
+          "description": "Language of new problems."
+        },
+        "eolympCode.timeLimit": {
+          "type": "number",
+          "default": 5000,
+          "description": "Time limit of one test, in milliseconds."
+        },
+        "eolympCode.companionPort": {
+          "type": "number",
+          "default": 27121,
+          "description": "Port that receives problems from the Competitive Companion browser extension.",
+          "scope": "machine"
+        }
+      }
+    },
+    "viewsWelcome": [
+      {
+        "view": "eolympCode.problems",
+        "contents": "No problems are being solved here yet.\n[New Problem Workspace](command:eolympCode.newProblem)",
+        "when": "workbenchState != empty"
+      },
+      {
+        "view": "eolympCode.problems",
+        "contents": "Open a folder to keep your solutions in.\n[Open Folder](command:vscode.openFolder)",
+        "when": "workbenchState == empty"
+      }
+    ]
+  }
+}

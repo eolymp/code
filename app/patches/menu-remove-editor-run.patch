@@ -1,0 +1,14 @@
+--- a/src/vs/workbench/services/actions/common/menusExtensionPoint.ts
++++ b/src/vs/workbench/services/actions/common/menusExtensionPoint.ts
+@@ -58,11 +58,6 @@
+ 		description: localize('menus.modalEditorEditorTitle', "The editor title menu in the modal editor")
+ 	},
+ 	{
+-		key: 'editor/title/run',
+-		id: MenuId.EditorTitleRun,
+-		description: localize('menus.editorTitleRun', "Run submenu inside the editor title menu")
+-	},
+-	{
+ 		key: 'editor/context',
+ 		id: MenuId.EditorContext,
+ 		description: localize('menus.editorContext', "The editor context menu")

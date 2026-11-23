@@ -1,0 +1,43 @@
+{
+  "eolympCode.cxx": "g++",
+  "python.languageServer": "None",
+  "python.terminal.activateEnvironment": false,
+  "basedpyright.analysis.typeCheckingMode": "basic",
+  "basedpyright.analysis.inlayHints.variableTypes": false,
+  "basedpyright.analysis.inlayHints.functionReturnTypes": false,
+  "ruff.lint.enable": false,
+  "clangd.checkUpdates": false,
+  "clangd.arguments": [
+    "--header-insertion=never",
+    "--fallback-style=Google"
+  ],
+  "clangd.fallbackFlags": [
+    "-std=c++17",
+    "-Wall"
+  ],
+  "lldb.suppressUpdateNotifications": true,
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "editor.formatOnSave": true,
+  "editor.minimap.enabled": false,
+  "files.autoSave": "afterDelay",
+  "files.exclude": {
+    "**/.cp": true,
+    "**/.clang-format": true
+  },
+  "git.enabled": false,
+  "security.workspace.trust.enabled": false,
+  "workbench.startupEditor": "none",
+  "workbench.tips.enabled": false,
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
+  "chat.disableAIFeatures": true,
+  "telemetry.telemetryLevel": "off",
+  "update.mode": "none",
+  "extensions.ignoreRecommendations": true,
+  "extensions.autoUpdate": false,
+  "extensions.autoCheckUpdates": false
+}
