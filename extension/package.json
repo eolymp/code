@@ -421,12 +421,6 @@
           "type": "number",
           "default": 5000,
           "description": "%setting.timeLimit%"
-        },
-        "eolympCode.companionPort": {
-          "type": "number",
-          "default": 27121,
-          "description": "%setting.companionPort%",
-          "scope": "machine"
         }
       }
     },
