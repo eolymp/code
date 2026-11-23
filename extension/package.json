@@ -246,6 +246,10 @@
       ],
       "commandPalette": [
         {
+          "command": "eolympCode.checkSetup",
+          "when": "eolympCode.app"
+        },
+        {
           "command": "eolympCode.newSolution",
           "when": "false"
         },
