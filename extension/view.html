@@ -282,7 +282,7 @@
         test: t.id,
         hasAnswer: t.answered,
         canDiff: Boolean(finished && (r.verdict === 'differs' || r.changed)),
-        canAccept: Boolean(finished && r.verdict !== 'match'),
+        canAccept: Boolean(finished && r.verdict !== 'match' && !FAILURES.includes(r.verdict)),
         preventDefaultContextMenuItems: true,
       });
       cards.push({ sign: JSON.stringify([s.path, t, r, run]), node: card });

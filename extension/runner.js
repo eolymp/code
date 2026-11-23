@@ -8,6 +8,7 @@ const checked = {};
 const children = new Set();
 let folder;
 let counter = 0;
+let stopped = false;
 
 function start(command, args, options) {
   const child = childProcess.spawn(command, args, options);
@@ -15,16 +16,23 @@ function start(command, args, options) {
   const gone = () => children.delete(child);
   child.on('error', gone);
   child.on('close', gone);
+  if (stopped) child.kill();
   return child;
 }
 
 function measures(python) {
-  if (!(python in checked)) checked[python] = childProcess.spawnSync(python, ['-c', 'pass'], { timeout: 10000 }).status === 0;
+  if (!(python in checked)) {
+    checked[python] = new Promise((resolve) => {
+      const child = start(python, ['-c', 'pass'], { stdio: 'ignore', timeout: 10000 });
+      child.on('error', () => resolve(false));
+      child.on('close', (code) => resolve(code === 0));
+    }).catch(() => false);
+  }
   return checked[python];
 }
 
-function measured(python, command, args) {
-  if (!measures(python)) return { command, args, finish: (result) => result };
+async function measured(python, command, args) {
+  if (!await measures(python) || stopped) return { command, args, finish: (result) => result };
   if (!folder) folder = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-'));
   const stats = path.join(folder, `${counter += 1}.json`);
   const finish = (result) => {
@@ -41,11 +49,14 @@ function measured(python, command, args) {
   return { command: python, args: [path.join(__dirname, 'measure.py'), stats, command, ...args], finish };
 }
 
-function collect(command, args, options, input) {
+async function collect(command, args, options, input) {
+  const wrapped = options.python ? await measured(options.python, command, args) : { command, args, finish: (result) => result };
   return new Promise((done) => {
     const started = Date.now();
-    const wrapped = options.python ? measured(options.python, command, args) : { command, args, finish: (result) => result };
-    const resolve = (result) => done(wrapped.finish(result));
+    const resolve = (result) => {
+      const r = wrapped.finish(result);
+      done(r.failure ? { ...r, stderr: `${r.stderr}${r.stderr && !r.stderr.endsWith('\n') ? '\n' : ''}${r.failure}\n` } : r);
+    };
     const child = start(wrapped.command, wrapped.args, { cwd: options.cwd, env: options.env });
     let stdout = '';
     let stderr = '';
@@ -71,6 +82,7 @@ function collect(command, args, options, input) {
 }
 
 function stopAll() {
+  stopped = true;
   for (const child of children) child.kill();
   children.clear();
   if (folder) fs.rmSync(folder, { recursive: true, force: true });
