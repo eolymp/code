@@ -103,4 +103,4 @@ function forget() {
   for (const python of Object.keys(checked)) delete checked[python];
 }
 
-module.exports = { SHOWN, start, measures, measured, collect, stopAll, forget };
+module.exports = { SHOWN, start, measured, collect, stopAll, forget };
