@@ -10,7 +10,6 @@
   "command.newSolution": "New Solution",
   "command.newTest": "New Test",
   "command.renameProblem": "Rename Problem",
-  "command.checkSetup": "Diagnostics",
   "command.openInput": "Open Input",
   "command.openAnswer": "Open Answer",
   "command.addAnswer": "Add Answer",

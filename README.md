@@ -19,7 +19,8 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 ## Layout
 
 - `app/` builds the editor from source with [VSCodium](https://github.com/VSCodium/vscodium)'s build scripts.
-- `extension/` is the Eolymp Code extension.
+- `extension/` is the Eolymp Code extension: the problem list, tests and the console.
+- `setup/` is the extension built into the app that installs the compiler and Python.
 - `editor/` holds the default settings and the list of pinned downloads.
 - `l10n/` holds the Ukrainian language pack for the editor.
 - `install/` holds the installer templates.
@@ -33,6 +34,8 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 ## Test
 
     cd tests && npm ci && npm test
+
+The tests drive the installed app. With `EOLYMP_CODE_SOURCE=1` they load `extension/` and `setup/` from this checkout into it.
 
 ## Licences
 

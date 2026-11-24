@@ -2,11 +2,8 @@ const vscode = require('vscode');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const ws = require('./workspace');
 const runner = require('./runner');
-const toolset = require('./tools');
-const doctor = require('./doctor');
 
 const TEMPLATES = {
   cpp: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n',
@@ -26,12 +23,7 @@ let target;
 let active;
 let testing;
 let pending;
-let toolsRoot;
-let managed;
-const inApp = vscode.env.appName === 'Eolymp Code';
-const standIn = inApp && process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
-let setup;
-let terminalEnv;
+let provided = {};
 let building = Promise.resolve();
 let starting = false;
 
@@ -68,29 +60,29 @@ function solutionIn(document) {
 
 function toolDirs() {
   const dirs = path.isAbsolute(cxxPath()) ? [path.dirname(cxxPath())] : [];
-  return managed ? [...dirs, path.dirname(managed.python)] : dirs;
+  return provided.python ? [...dirs, path.dirname(provided.python)] : dirs;
 }
 
 function toolEnv() {
   const env = { ...process.env };
   const key = Object.keys(env).find((k) => k.toLowerCase() === 'path') || 'PATH';
   env[key] = [...toolDirs(), env[key] || ''].join(path.delimiter);
-  if (managed && cxxPath() === managed.cxx) Object.assign(env, managed.env);
-  else if (config().get('includePath') || standIn) env.CPLUS_INCLUDE_PATH = config().get('includePath') || standIn;
+  if (provided.cxx && cxxPath() === provided.cxx) Object.assign(env, provided.env);
+  else if (config().get('includePath') || provided.include) env.CPLUS_INCLUDE_PATH = config().get('includePath') || provided.include;
   env.PYTHONUTF8 = '1';
   return env;
 }
 
 function cxxPath() {
-  return config().inspect('cxx').globalValue || (managed ? managed.cxx : config().get('cxx'));
+  return config().inspect('cxx').globalValue || provided.cxx || config().get('cxx');
 }
 
 function cxxFlags() {
-  return [...config().get('cxxFlags'), ...(managed && cxxPath() === managed.cxx ? managed.flags : [])];
+  return [...config().get('cxxFlags'), ...(provided.cxx && cxxPath() === provided.cxx ? provided.flags : [])];
 }
 
 function pythonPath() {
-  return config().get('python') || (managed && managed.python) || (process.platform === 'win32' ? 'python' : 'python3');
+  return config().get('python') || provided.python || (process.platform === 'win32' ? 'python' : 'python3');
 }
 
 function shortName(command) {
@@ -98,7 +90,11 @@ function shortName(command) {
 }
 
 function build(s, debug) {
-  const built = building.then(() => compile(s, debug)).catch((err) => ({ ok: false, command: '', args: [], compile: '', log: t('Could not build: {0}', err.message), run: '' }));
+  const built = building.then(async () => {
+    const helper = vscode.extensions.getExtension('eolymp.eolymp-code-setup');
+    if (helper) await helper.activate();
+    return compile(s, debug);
+  }).catch((err) => ({ ok: false, command: '', args: [], compile: '', log: t('Could not build: {0}', err.message), run: '' }));
   building = built;
   return built;
 }
@@ -136,7 +132,7 @@ function flush() {
     results: state ? Object.fromEntries(Object.entries(sync(state, target.dir)).map(([id, r]) => [id, shownResult(r)])) : {},
     compileError: state ? state.compileError : '',
     steps: state ? state.steps : null,
-    setup: Boolean(inApp && state && state.steps && state.steps.missing),
+    setup: Boolean(provided.diagnose && state && state.steps && state.steps.missing),
     session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, over: x.over, cap: x.cap, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
 }
@@ -412,44 +408,6 @@ async function showDiff(id) {
   await vscode.commands.executeCommand('vscode.diff', base, output, title);
 }
 
-function checkSetup() {
-  return setup && setup.open();
-}
-
-function adopt() {
-  managed = toolset.installed(toolsRoot);
-  runner.forget();
-  terminalEnv.clear();
-  if (!managed && !standIn) return;
-  const updates = [];
-  const flags = ['-std=c++17'];
-  if (managed) {
-    terminalEnv.prepend(process.platform === 'win32' ? 'Path' : 'PATH', toolDirs().join(path.delimiter) + path.delimiter);
-    for (const [name, value] of Object.entries(managed.env)) terminalEnv.replace(name, value);
-    const python = vscode.workspace.getConfiguration('python');
-    if (python.get('defaultInterpreterPath') !== managed.python) updates.push(python.update('defaultInterpreterPath', managed.python, vscode.ConfigurationTarget.Global));
-    const clangd = vscode.workspace.getConfiguration('clangd');
-    if (managed.clangd && clangd.get('path') !== managed.clangd) updates.push(clangd.update('path', managed.clangd, vscode.ConfigurationTarget.Global));
-    const driver = `--query-driver=${path.dirname(managed.cxx)}${path.sep}*`;
-    const args = clangd.get('arguments') || [];
-    if (!args.includes(driver)) updates.push(clangd.update('arguments', [...args.filter((arg) => !arg.startsWith('--query-driver=')), driver], vscode.ConfigurationTarget.Global));
-    if (managed.env.SDKROOT) flags.push('-isysroot', managed.env.SDKROOT);
-  } else {
-    terminalEnv.replace('CPLUS_INCLUDE_PATH', standIn);
-    flags.push(`-I${standIn}`);
-  }
-  if (root()) {
-    const file = path.join(root(), '.clangd');
-    const text = `# Written by Eolymp Code\nCompileFlags:\n${managed ? `  Compiler: ${JSON.stringify(managed.cxx)}\n` : ''}  Add: ${JSON.stringify(flags)}\n`;
-    const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '# Written by Eolymp Code';
-    if (current.startsWith('# Written by Eolymp Code') && current !== text) {
-      fs.writeFileSync(file, text);
-      updates.push(Promise.resolve());
-    }
-  }
-  if (updates.length) Promise.all(updates).then(() => vscode.commands.executeCommand('clangd.restart')).then(undefined, () => {});
-}
-
 async function submit() {
   if (!target) return;
   const url = ws.loadMeta(target.dir).url;
@@ -702,7 +660,7 @@ function receive(m) {
   if (m.type === 'run') runTests(shown);
   if (m.type === 'single') run(shown);
   if (m.type === 'submit') submit();
-  if (m.type === 'setup') checkSetup();
+  if (m.type === 'setup' && provided.diagnose) provided.diagnose();
   if (!target) return;
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
   const live = active && active.file === target.file && active.state === 'running' ? active : undefined;
@@ -720,48 +678,7 @@ function receive(m) {
   if (live && m.type === 'stop') stop();
 }
 
-function openPractice(context) {
-  const practice = path.join(os.homedir(), 'Eolymp', 'practice');
-  const sample = path.join(practice, 'sum', 'sum.cpp');
-  if (root()) {
-    if (root() === practice && !context.globalState.get('welcomed') && fs.existsSync(sample)) {
-      context.globalState.update('welcomed', true);
-      vscode.window.showTextDocument(vscode.Uri.file(sample));
-    }
-    return;
-  }
-  if (context.globalState.get('practice') || vscode.window.visibleTextEditors.length) return;
-  context.globalState.update('practice', true);
-  try {
-    if (!fs.existsSync(practice)) {
-      fs.mkdirSync(path.dirname(sample), { recursive: true });
-      fs.writeFileSync(sample, "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << '\\n';\n    return 0;\n}\n");
-      fs.writeFileSync(path.join(practice, 'sum', '1.in'), '12\n9\n');
-      fs.writeFileSync(path.join(practice, 'sum', '1.answer'), '21\n');
-    }
-    const style = path.join(path.dirname(practice), '.clang-format');
-    if (!fs.existsSync(style)) fs.copyFileSync(path.join(__dirname, 'clang-format'), style);
-  } catch {
-    return;
-  }
-  vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(practice), { forceReuseWindow: true });
-}
-
 function activate(context) {
-  if (inApp && !vscode.workspace.workspaceFile) openPractice(context);
-  vscode.commands.executeCommand('setContext', 'eolympCode.app', inApp);
-  if (inApp) {
-    toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
-    fs.mkdirSync(toolsRoot, { recursive: true });
-    terminalEnv = context.environmentVariableCollection;
-    adopt();
-    setup = doctor.create(context, toolsRoot, adopt);
-    setup.start().catch(() => {});
-    context.subscriptions.push(vscode.window.onDidChangeWindowState((window) => {
-      const have = window.focused ? toolset.installed(toolsRoot) : undefined;
-      if (have && (!managed || managed.dir !== have.dir)) adopt();
-    }));
-  } else context.environmentVariableCollection.clear();
   const problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree });
   const describe = () => {
     if (!root()) return;
@@ -789,7 +706,7 @@ function activate(context) {
     renameTest: (id, dir) => renameTest(dir, id),
     deleteTest: (id, dir) => deleteTest(dir, id),
   };
-  const commands = { run, runTests, stop, checkSetup, newProblem, newSolution, newTest, newFile, renameProblem, renameSolution, deleteSolution, addAsTest: keepSession };
+  const commands = { run, runTests, stop, newProblem, newSolution, newTest, newFile, renameProblem, renameSolution, deleteSolution, addAsTest: keepSession };
   context.subscriptions.push(
     problems,
     watcher,
@@ -823,7 +740,13 @@ function activate(context) {
     }),
   );
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
-  if (inApp && root()) vscode.commands.executeCommand('eolympCode.problems.focus');
+  return {
+    provide(tools) {
+      provided = tools;
+      runner.forget();
+      update();
+    },
+  };
 }
 
 function deactivate() {
