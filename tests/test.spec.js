@@ -24,5 +24,5 @@ test('Test compares each output with its answer and keeps long output in a file'
   const second = editor.panel.locator('details[data-key="test-2"]');
   await expect(second.getByRole('img', { name: 'No answer to compare with' })).toBeVisible();
   await expect(second.getByText('Output trimmed, open 2.out')).toBeVisible();
-  expect(fs.statSync(path.join(editor.workspace, 'lines/.cp/lines/2.out')).size).toBe(500000);
+  expect(fs.statSync(path.join(editor.workspace, 'lines/2.out')).size).toBe(500000);
 });

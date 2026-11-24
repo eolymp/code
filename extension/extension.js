@@ -40,7 +40,7 @@ function stateOf(file) {
 function judge(s, id, size, answer) {
   if (answer === undefined) return 'no answer';
   if (size > answer.length * 4 + (1 << 20)) return 'differs';
-  return ws.verdictOf(ws.read(path.join(s.outDir, `${id}.out`)), answer);
+  return ws.verdictOf(ws.read(path.join(s.dir, `${id}.out`)), answer);
 }
 
 function sync(state, s) {
@@ -250,7 +250,7 @@ function keepSession() {
   if (!x || x.state !== 'finished' || x.kept) return;
   const id = ws.nextTest(x.dir);
   ws.saveTest(x.dir, id, x.input, undefined);
-  fs.copyFileSync(x.out, path.join(path.dirname(x.out), `${id}.out`));
+  fs.copyFileSync(x.out, path.join(x.dir, `${id}.out`));
   const stdout = x.parts.filter((part) => part.kind === 'out').map((part) => part.text).join('');
   state.results[id] = { verdict: 'no answer', ms: x.ms, memory: x.memory, stdout, size: fs.statSync(x.out).size, trimmed: x.size > x.shown };
   x.kept = id;
@@ -288,7 +288,8 @@ async function runAll(s, state, previous, job) {
     if (job.cancelled) break;
     state.results[test.id] = { verdict: 'running' };
     update();
-    const out = path.join(s.outDir, `${test.id}.out`);
+    const out = path.join(s.dir, `${test.id}.out`);
+    for (const [file, other] of states) if (file !== s.file && path.dirname(file) === s.dir) delete other.results[test.id];
     const options = { cwd: s.dir, env: toolEnv(), python: pythonPath(), out, onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
     const r = await runner.collect(built.command, built.args, options, test.input);
     if (job.cancelled) {
@@ -381,7 +382,7 @@ async function debugTest(id) {
 function acceptOutput(id) {
   const r = sync(stateOf(target.file), target)[id];
   if (!r || r.verdict === 'running' || r.verdict === 'runtime error') return;
-  fs.copyFileSync(path.join(target.outDir, `${id}.out`), path.join(target.dir, `${id}.answer`));
+  fs.copyFileSync(path.join(target.dir, `${id}.out`), path.join(target.dir, `${id}.answer`));
   refresh();
 }
 
@@ -393,7 +394,7 @@ async function showDiff(id) {
     vscode.window.showInformationMessage(t('There is nothing to compare this output with yet.'));
     return;
   }
-  const output = vscode.Uri.file(path.join(s.outDir, `${id}.out`));
+  const output = vscode.Uri.file(path.join(s.dir, `${id}.out`));
   await vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(answer), output, t('Test {0}: answer ↔ output of {1}', id, path.basename(s.file)));
 }
 
@@ -529,8 +530,6 @@ async function deleteSolution(node) {
 function moveResults(dir, id, name) {
   for (const [file, state] of states) {
     if (path.dirname(file) !== dir || !state.results[id]) continue;
-    const out = path.join(ws.solutionOf(file).outDir, `${id}.out`);
-    if (name && fs.existsSync(out)) fs.renameSync(out, path.join(path.dirname(out), `${name}.out`));
     if (name) state.results[name] = state.results[id];
     delete state.results[id];
   }
@@ -638,7 +637,7 @@ function receive(m) {
   if (m.type === 'single') run(shown);
   if (m.type === 'setup' && provided.diagnose) provided.diagnose();
   if (!target) return;
-  if (m.type === 'output' && (m.test === undefined || ws.testIds(target.dir).includes(m.test))) vscode.window.showTextDocument(vscode.Uri.file(path.join(target.outDir, `${m.test === undefined ? 'run' : m.test}.out`)));
+  if (m.type === 'output' && (m.test === undefined || ws.testIds(target.dir).includes(m.test))) vscode.window.showTextDocument(vscode.Uri.file(m.test === undefined ? path.join(target.outDir, 'run.out') : path.join(target.dir, `${m.test}.out`)));
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
   const live = active && active.file === target.file && active.state === 'running' ? active : undefined;
   if (live && m.type === 'stdin' && !live.closed) {
