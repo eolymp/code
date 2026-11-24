@@ -36,7 +36,6 @@
   "Test": "Probar",
   "Test {0}": "Prueba {0}",
   "Test {0}: answer ↔ output of {1}": "Prueba {0}: respuesta ↔ salida de {1}",
-  "Test {0}: previous output ↔ output of {1}": "Prueba {0}: salida anterior ↔ salida de {1}",
   "The compiler was not found: {0}": "No se encontró el compilador: {0}",
   "The name {0} is already used.": "El nombre {0} ya está en uso.",
   "The output differs from the answer": "La salida no coincide con la respuesta",

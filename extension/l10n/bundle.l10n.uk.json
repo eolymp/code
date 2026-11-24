@@ -36,7 +36,6 @@
   "Test": "Тестувати",
   "Test {0}": "Тест {0}",
   "Test {0}: answer ↔ output of {1}": "Тест {0}: відповідь ↔ вивід {1}",
-  "Test {0}: previous output ↔ output of {1}": "Тест {0}: попередній вивід ↔ вивід {1}",
   "The compiler was not found: {0}": "Компілятор не знайдено: {0}",
   "The name {0} is already used.": "Назва {0} вже використовується.",
   "The output differs from the answer": "Вивід відрізняється від відповіді",

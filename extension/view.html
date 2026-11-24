@@ -285,7 +285,7 @@
         webviewSection: 'test',
         test: t.id,
         hasAnswer: t.answered,
-        canDiff: Boolean(finished && (r.verdict === 'differs' || r.changed)),
+        canDiff: Boolean(finished && r.verdict === 'differs'),
         canAccept: Boolean(finished && r.verdict !== 'match' && r.verdict !== 'runtime error'),
         preventDefaultContextMenuItems: true,
       });

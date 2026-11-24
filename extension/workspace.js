@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const LANGS = { '.cpp': 'cpp', '.cc': 'cpp', '.cxx': 'cpp', '.py': 'py' };
-const TEST_FILES = ['in', 'answer'];
+const TEST_FILES = ['in', 'out', 'answer'];
 
 function natural(a, b) {
   return a.localeCompare(b, undefined, { numeric: true });
@@ -57,7 +57,7 @@ function othersIn(dir) {
   return fs.readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && !entry.name.startsWith('.') && !langOf(entry.name))
     .map((entry) => entry.name)
-    .filter((name) => !(/\.(in|answer)$/.test(name) && tests.has(name.replace(/\.[^.]+$/, ''))))
+    .filter((name) => !(/\.(in|out|answer)$/.test(name) && tests.has(name.replace(/\.[^.]+$/, ''))))
     .sort(natural)
     .map((name) => path.join(dir, name));
 }
