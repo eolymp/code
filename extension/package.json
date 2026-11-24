@@ -407,11 +407,6 @@
           ],
           "default": "cpp",
           "description": "%setting.language%"
-        },
-        "eolympCode.timeLimit": {
-          "type": "number",
-          "default": 5000,
-          "description": "%setting.timeLimit%"
         }
       }
     },

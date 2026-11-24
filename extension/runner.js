@@ -1,9 +1,10 @@
 const childProcess = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const OUTPUT_LIMIT = 16 << 20;
+const SHOWN = 256 << 10;
 const checked = {};
 const children = new Set();
 let folder;
@@ -31,7 +32,7 @@ function measures(python) {
   return checked[python];
 }
 
-async function measured(python, command, args, memory) {
+async function measured(python, command, args) {
   if (!await measures(python) || stopped) return { command, args, finish: (result) => result };
   if (!folder) folder = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-'));
   const stats = path.join(folder, `${counter += 1}.json`);
@@ -44,13 +45,13 @@ async function measured(python, command, args, memory) {
     }
     fs.rmSync(stats, { force: true });
     if (found.error) return { ...result, code: -1, signal: undefined, failure: found.error };
-    return { ...result, code: found.code === undefined ? null : found.code, signal: found.signal, ms: found.cpu === undefined ? result.ms : found.cpu, memory: found.memory, over: Boolean(found.over) };
+    return { ...result, code: found.code === undefined ? null : found.code, signal: found.signal, ms: found.cpu === undefined ? result.ms : found.cpu, memory: found.memory };
   };
-  return { command: python, args: [path.join(__dirname, 'measure.py'), stats, String(Math.floor(memory || 0)), command, ...args], finish };
+  return { command: python, args: [path.join(__dirname, 'measure.py'), stats, command, ...args], finish };
 }
 
 async function collect(command, args, options, input) {
-  const wrapped = options.python ? await measured(options.python, command, args, options.memory) : { command, args, finish: (result) => result };
+  const wrapped = options.python ? await measured(options.python, command, args) : { command, args, finish: (result) => result };
   return new Promise((done) => {
     const started = Date.now();
     const resolve = (result) => {
@@ -58,23 +59,32 @@ async function collect(command, args, options, input) {
       done(r.failure ? { ...r, stderr: `${r.stderr}${r.stderr && !r.stderr.endsWith('\n') ? '\n' : ''}${r.failure}\n` } : r);
     };
     const child = start(wrapped.command, wrapped.args, { cwd: options.cwd, env: options.env });
-    let stdout = '';
+    const file = options.out && fs.createWriteStream(options.out);
+    const hash = crypto.createHash('sha256');
+    const head = [];
+    let kept = 0;
+    let size = 0;
     let stderr = '';
-    let timedOut = false;
-    let flooded = false;
-    const timer = options.timeout && setTimeout(() => { timedOut = true; child.kill(); }, options.timeout);
-    const take = (kept, chunk) => {
-      if (kept.length + chunk.length <= OUTPUT_LIMIT) return kept + chunk;
-      if (!flooded) child.kill();
-      flooded = true;
-      return kept + chunk.slice(0, OUTPUT_LIMIT - kept.length);
+    const result = (more) => ({ stdout: Buffer.concat(head).toString('utf8'), stderr, size, trimmed: kept < size, hash: hash.digest('hex'), ms: Date.now() - started, ...more });
+    const settle = (more) => {
+      if (!file) resolve(result(more));
+      else file.end(() => resolve(result(more)));
     };
-    child.stdout.setEncoding('utf8');
     child.stderr.setEncoding('utf8');
-    child.stdout.on('data', (d) => { stdout = take(stdout, d); });
-    child.stderr.on('data', (d) => { stderr = take(stderr, d); });
-    child.on('error', (err) => { clearTimeout(timer); resolve({ code: -1, missing: err.code === 'ENOENT', stdout, stderr: String(err.message), ms: Date.now() - started, timedOut, flooded }); });
-    child.on('close', (code, signal) => { clearTimeout(timer); resolve({ code, signal, stdout, stderr, ms: Date.now() - started, timedOut, flooded }); });
+    child.stdout.on('data', (d) => {
+      size += d.length;
+      hash.update(d);
+      if (file && kept >= SHOWN) return;
+      head.push(file ? d.subarray(0, SHOWN - kept) : d);
+      kept += head[head.length - 1].length;
+    });
+    if (file) {
+      file.on('error', () => {});
+      child.stdout.pipe(file, { end: false });
+    }
+    child.stderr.on('data', (d) => { if (!file || stderr.length < SHOWN) stderr += d; });
+    child.on('error', (err) => { stderr = String(err.message); settle({ code: -1, missing: err.code === 'ENOENT' }); });
+    child.on('close', (code, signal) => settle({ code, signal }));
     child.stdin.on('error', () => {});
     child.stdin.end(input || '');
     if (options.onStart) options.onStart(child);
@@ -93,4 +103,4 @@ function forget() {
   for (const python of Object.keys(checked)) delete checked[python];
 }
 
-module.exports = { OUTPUT_LIMIT, start, measures, measured, collect, stopAll, forget };
+module.exports = { SHOWN, start, measures, measured, collect, stopAll, forget };

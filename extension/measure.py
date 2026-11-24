@@ -7,47 +7,20 @@ import threading
 import time
 
 
-def linux(pid):
-    status = open("/proc/%d/status" % pid)
-
-    def read():
-        status.seek(0)
-        for line in status.read().splitlines():
-            if line.startswith("VmHWM:"):
-                return int(line.split()[1]) * 1024
-        return 0
-
-    return read
-
-
-def darwin(pid):
-    import ctypes
-
-    libproc = ctypes.CDLL("/usr/lib/libproc.dylib")
-    info = (ctypes.c_uint64 * 12)()
-
-    def read():
-        if libproc.proc_pid_rusage(pid, 0, info) != 0:
-            raise OSError("the process is gone")
-        return info[9]
-
-    return read
-
-
-def watch(read, seen, limit, pid):
+def watch(pid, seen):
     try:
-        while True:
-            seen[0] = max(seen[0], read())
-            if limit and seen[0] > limit:
-                seen[1] = True
-                os.kill(pid, signal.SIGKILL)
-                return
-            time.sleep(0.002)
+        with open("/proc/%d/status" % pid) as status:
+            while True:
+                status.seek(0)
+                for line in status.read().splitlines():
+                    if line.startswith("VmHWM:"):
+                        seen[0] = max(seen[0], int(line.split()[1]) * 1024)
+                time.sleep(0.002)
     except (OSError, ValueError):
         pass
 
 
-def posix(command, limit):
+def posix(command):
     child = subprocess.Popen(command)
 
     def stop(number, frame):
@@ -66,27 +39,22 @@ def posix(command, limit):
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     threading.Thread(target=orphaned, daemon=True).start()
-    seen = [0, False]
-    try:
-        read = darwin(child.pid) if sys.platform == "darwin" else linux(child.pid)
-        threading.Thread(target=watch, args=(read, seen, limit, child.pid), daemon=True).start()
-    except OSError:
-        pass
+    seen = [0]
+    if sys.platform.startswith("linux"):
+        threading.Thread(target=watch, args=(child.pid, seen), daemon=True).start()
     _, status, usage = os.wait4(child.pid, 0)
     child.returncode = 0
     memory = usage.ru_maxrss * (1 if sys.platform == "darwin" else 1024)
-    if seen[0] and sys.platform != "darwin":
+    if seen[0]:
         import resource
 
         # on Linux the child's figure never drops below what this wrapper used when it started the child
         own = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
         if memory <= own:
             memory = seen[0]
-    over = seen[1] and os.WIFSIGNALED(status) and os.WTERMSIG(status) == signal.SIGKILL
     stats = {
         "cpu": round((usage.ru_utime + usage.ru_stime) * 1000),
-        "memory": max(memory, seen[0]) if over else memory,
-        "over": over,
+        "memory": memory,
     }
     if os.WIFSIGNALED(status):
         number = os.WTERMSIG(status)
@@ -99,7 +67,7 @@ def posix(command, limit):
     return stats
 
 
-def windows(command, limit):
+def windows(command):
     import ctypes
     from ctypes import wintypes
 
@@ -148,7 +116,6 @@ def windows(command, limit):
     kernel.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
     kernel.K32GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD]
     kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.c_void_p] * 4
-    kernel.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
 
     child = subprocess.Popen(command)
     handle = int(child._handle)
@@ -158,24 +125,9 @@ def windows(command, limit):
         limits.BasicLimitInformation.LimitFlags = 0x2000
         kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits))
         kernel.AssignProcessToJobObject(job, handle)
-    over = [False]
-
-    def guard():
-        used = Counters()
-        used.cb = ctypes.sizeof(used)
-        while child.poll() is None and kernel.K32GetProcessMemoryInfo(handle, ctypes.byref(used), used.cb):
-            if used.PeakWorkingSetSize > limit:
-                over[0] = True
-                kernel.TerminateProcess(handle, 0x4D454D)
-                return
-            time.sleep(0.005)
-
-    if limit:
-        threading.Thread(target=guard, daemon=True).start()
     child.wait()
     code = child.returncode & 0xFFFFFFFF
     stats = {"signal": "0x%08X" % code} if code >= 0xC0000000 else {"code": child.returncode}
-    stats["over"] = over[0] and code == 0x4D454D
     counters = Counters()
     counters.cb = ctypes.sizeof(counters)
     if kernel.K32GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb):
@@ -187,10 +139,10 @@ def windows(command, limit):
 
 
 def main():
-    target, limit, command = sys.argv[1], int(sys.argv[2]), sys.argv[3:]
+    target, command = sys.argv[1], sys.argv[2:]
     started = time.monotonic()
     try:
-        stats = windows(command, limit) if os.name == "nt" else posix(command, limit)
+        stats = windows(command) if os.name == "nt" else posix(command)
     except OSError as error:
         stats = {"error": str(error)}
     stats["wall"] = round((time.monotonic() - started) * 1000)

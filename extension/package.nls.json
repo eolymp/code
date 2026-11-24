@@ -29,6 +29,5 @@
   "setting.cxxFlags": "Flags for running tests.",
   "setting.includePath": "Extra folder with C++ headers, passed to the compiler as CPLUS_INCLUDE_PATH.",
   "setting.python": "Python interpreter. Empty means python on Windows and python3 elsewhere.",
-  "setting.language": "Language of new problems.",
-  "setting.timeLimit": "Time limit of one test, in milliseconds."
+  "setting.language": "Language of new problems."
 }

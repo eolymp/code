@@ -11,13 +11,9 @@ const TEMPLATES = {
 };
 const CURSOR = { cpp: new vscode.Position(4, 4), py: new vscode.Position(3, 0) };
 const t = vscode.l10n.t;
-const FINAL = ['runtime error', 'time limit', 'memory limit', 'output limit'];
-const SHOWN = 256 << 10;
-const MEMORY_CAP = 1024;
 
 const states = new Map();
 const changed = new vscode.EventEmitter();
-const outputs = new vscode.EventEmitter();
 let view;
 let target;
 let active;
@@ -41,13 +37,19 @@ function stateOf(file) {
   return states.get(file);
 }
 
-function sync(state, dir) {
-  const ids = new Set(ws.testIds(dir));
+function judge(s, id, size, answer) {
+  if (answer === undefined) return 'no answer';
+  if (size > answer.length * 4 + (1 << 20)) return 'differs';
+  return ws.verdictOf(ws.read(path.join(s.outDir, `${id}.out`)), answer);
+}
+
+function sync(state, s) {
+  const ids = new Set(ws.testIds(s.dir));
   for (const [id, r] of Object.entries(state.results)) {
     if (!ids.has(id)) delete state.results[id];
-    else if (r.verdict !== 'running' && !FINAL.includes(r.verdict)) {
-      const answer = ws.answerOf(dir, id);
-      if (r.judged !== answer) r.verdict = ws.verdictOf(r.stdout, answer);
+    else if (r.verdict !== 'running' && r.verdict !== 'runtime error') {
+      const answer = ws.answerOf(s.dir, id);
+      if (r.judged !== answer) r.verdict = judge(s, id, r.size, answer);
       r.judged = answer;
     }
   }
@@ -128,18 +130,12 @@ function flush() {
     file: target ? path.basename(target.file) : '',
     path: target ? target.file : '',
     tests: target ? ws.testIds(target.dir).map((id) => ({ id, answered: ws.answerOf(target.dir, id) !== undefined })) : [],
-    results: state ? Object.fromEntries(Object.entries(sync(state, target.dir)).map(([id, r]) => [id, shownResult(r)])) : {},
+    results: state ? Object.fromEntries(Object.entries(sync(state, target)).map(([id, r]) => [id, { verdict: r.verdict, ms: r.ms, memory: r.memory, code: r.code, signal: r.signal, changed: r.changed, stdout: r.stdout, stderr: r.stderr, trimmed: r.trimmed }])) : {},
     compileError: state ? state.compileError : '',
     steps: state ? state.steps : null,
     setup: Boolean(provided.diagnose && state && state.steps && state.steps.missing),
-    session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, over: x.over, cap: x.cap, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
+    session: x ? { parts: x.parts, trimmed: x.size > x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
-}
-
-function shownResult(r) {
-  const cut = (text) => (text && text.length > SHOWN ? text.slice(0, SHOWN) : text);
-  const hidden = Math.max(0, (r.stdout || '').length - SHOWN);
-  return { verdict: r.verdict, ms: r.ms, memory: r.memory, code: r.code, signal: r.signal, changed: r.changed, stdout: cut(r.stdout), stderr: cut(r.stderr), hidden };
 }
 
 function update() {
@@ -170,20 +166,13 @@ function stopActive() {
 }
 
 function say(session, kind, text) {
-  if (session.size >= runner.OUTPUT_LIMIT) return;
-  const room = runner.OUTPUT_LIMIT - session.size;
-  const kept = text.length > room ? text.slice(0, room) : text;
-  session.size += kept.length;
-  if (kind === 'out') session.output += kept;
-  const shown = kept.slice(0, Math.max(0, SHOWN - session.shown));
+  session.size += text.length;
+  const shown = text.slice(0, Math.max(0, runner.SHOWN - session.shown));
+  if (!shown) return;
   session.shown += shown.length;
   const last = session.parts[session.parts.length - 1];
-  if (shown && last && last.kind === kind) last.text += shown;
-  else if (shown) session.parts.push({ kind, text: shown });
-  if (session.size >= runner.OUTPUT_LIMIT && session.child) {
-    session.flooded = true;
-    session.child.kill();
-  }
+  if (last && last.kind === kind) last.text += shown;
+  else session.parts.push({ kind, text: shown });
   update();
 }
 
@@ -213,7 +202,7 @@ async function run(node) {
   const s = await prepare(node, t('Open a .cpp or .py file to run it.'));
   if (!s) return;
   const state = stateOf(s.file);
-  const mine = { file: s.file, dir: s.dir, parts: [], size: 0, shown: 0, state: 'compiling', input: '', output: '' };
+  const mine = { file: s.file, dir: s.dir, out: path.join(s.outDir, 'run.out'), parts: [], size: 0, shown: 0, state: 'compiling', input: '' };
   state.session = mine;
   active = mine;
   setBusy();
@@ -227,12 +216,16 @@ async function run(node) {
     update();
     return;
   }
-  const wrapped = await runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args, MEMORY_CAP * 1048576);
+  const wrapped = await runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args);
   if (active !== mine) return;
   const started = Date.now();
   mine.state = 'running';
   mine.child = runner.start(wrapped.command, wrapped.args, { cwd: s.dir, env: toolEnv() });
   mine.child.stdin.on('error', () => {});
+  fs.mkdirSync(s.outDir, { recursive: true });
+  const file = fs.createWriteStream(mine.out);
+  file.on('error', () => {});
+  mine.child.stdout.pipe(file);
   mine.child.stdout.setEncoding('utf8');
   mine.child.stderr.setEncoding('utf8');
   mine.child.stdout.on('data', (d) => say(mine, 'out', d));
@@ -240,7 +233,7 @@ async function run(node) {
   const finish = (code, signal, text) => {
     if (mine.state === 'finished') return;
     const r = wrapped.finish({ code, signal, ms: Date.now() - started });
-    Object.assign(mine, { state: 'finished', child: undefined, code: r.code, signal: r.signal, ms: r.ms, memory: r.memory, over: r.over, cap: MEMORY_CAP });
+    Object.assign(mine, { state: 'finished', child: undefined, code: r.code, signal: r.signal, ms: r.ms, memory: r.memory });
     if (text || r.failure) say(mine, 'err', text || `${r.failure}\n`);
     if (active === mine) active = undefined;
     setBusy();
@@ -257,7 +250,9 @@ function keepSession() {
   if (!x || x.state !== 'finished' || x.kept) return;
   const id = ws.nextTest(x.dir);
   ws.saveTest(x.dir, id, x.input, undefined);
-  state.results[id] = { verdict: 'no answer', ms: x.ms, memory: x.memory, stdout: x.output };
+  fs.copyFileSync(x.out, path.join(path.dirname(x.out), `${id}.out`));
+  const stdout = x.parts.filter((part) => part.kind === 'out').map((part) => part.text).join('');
+  state.results[id] = { verdict: 'no answer', ms: x.ms, memory: x.memory, stdout, size: fs.statSync(x.out).size, trimmed: x.size > x.shown };
   x.kept = id;
   refresh();
 }
@@ -266,7 +261,7 @@ async function runTests(node) {
   const s = await prepare(node, t('Open a .cpp or .py file to test it.'));
   if (!s) return;
   const state = stateOf(s.file);
-  const previous = { ...sync(state, s.dir) };
+  const previous = { ...sync(state, s) };
   const job = { cancelled: false };
   state.results = {};
   state.session = null;
@@ -288,25 +283,34 @@ async function runAll(s, state, previous, job) {
   const built = await build(s, false);
   state.steps = { compile: built.compile, run: built.run, ok: built.ok, missing: built.missing };
   state.compileError = built.log;
-  const timeLimit = config().get('timeLimit');
+  fs.mkdirSync(s.outDir, { recursive: true });
   for (const test of built.ok ? ws.loadTests(s.dir) : []) {
     if (job.cancelled) break;
     state.results[test.id] = { verdict: 'running' };
     update();
-    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), memory: MEMORY_CAP * 1048576, onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
+    const out = path.join(s.outDir, `${test.id}.out`);
+    if (fs.existsSync(out)) fs.renameSync(out, path.join(s.outDir, `${test.id}.previous`));
+    const options = { cwd: s.dir, env: toolEnv(), python: pythonPath(), out, onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
     const r = await runner.collect(built.command, built.args, options, test.input);
     if (job.cancelled) {
       delete state.results[test.id];
       break;
     }
-    let verdict = ws.verdictOf(r.stdout, test.answer);
-    if (r.flooded) verdict = 'output limit';
-    else if (r.timedOut || r.ms > timeLimit) verdict = 'time limit';
-    else if (r.over) verdict = 'memory limit';
-    else if (r.code !== 0) verdict = 'runtime error';
     const before = previous[test.id];
-    const differs = Boolean(before) && ws.normalize(before.stdout) !== ws.normalize(r.stdout);
-    state.results[test.id] = { verdict, ms: r.ms, memory: r.memory, code: r.code, signal: r.signal, stdout: r.stdout, stderr: r.stderr, changed: differs, previous: differs ? before.stdout : before && before.previous };
+    state.results[test.id] = {
+      verdict: r.code === 0 ? judge(s, test.id, r.size, test.answer) : 'runtime error',
+      judged: test.answer,
+      ms: r.ms,
+      memory: r.memory,
+      code: r.code,
+      signal: r.signal,
+      stdout: r.stdout,
+      stderr: r.stderr,
+      size: r.size,
+      trimmed: r.trimmed,
+      hash: r.hash,
+      changed: Boolean(before && before.hash && before.hash !== r.hash),
+    };
   }
 }
 
@@ -376,29 +380,24 @@ async function debugTest(id) {
 }
 
 function acceptOutput(id) {
-  const r = sync(stateOf(target.file), target.dir)[id];
-  if (!r || r.verdict === 'running' || FINAL.includes(r.verdict)) return;
-  fs.writeFileSync(path.join(target.dir, `${id}.answer`), r.stdout);
+  const r = sync(stateOf(target.file), target)[id];
+  if (!r || r.verdict === 'running' || r.verdict === 'runtime error') return;
+  fs.copyFileSync(path.join(target.outDir, `${id}.out`), path.join(target.dir, `${id}.answer`));
   refresh();
-}
-
-function outputUri(s, id, kind) {
-  return vscode.Uri.from({ scheme: 'eolymp-output', path: `/${id}.${kind}`, query: JSON.stringify({ file: s.file, id, kind }) });
 }
 
 async function showDiff(id) {
   const s = target;
-  const r = sync(stateOf(s.file), s.dir)[id];
+  const r = sync(stateOf(s.file), s)[id];
   const answer = path.join(s.dir, `${id}.answer`);
   const answered = fs.existsSync(answer);
-  if (!r || (!answered && r.previous === undefined)) {
+  const previous = path.join(s.outDir, `${id}.previous`);
+  if (!r || (!answered && !fs.existsSync(previous))) {
     vscode.window.showInformationMessage(t('There is nothing to compare this output with yet.'));
     return;
   }
-  const base = answered ? vscode.Uri.file(answer) : outputUri(s, id, 'previous');
-  const output = outputUri(s, id, 'out');
-  outputs.fire(base);
-  outputs.fire(output);
+  const base = vscode.Uri.file(answered ? answer : previous);
+  const output = vscode.Uri.file(path.join(s.outDir, `${id}.out`));
   const title = answered ? t('Test {0}: answer ↔ output of {1}', id, path.basename(s.file)) : t('Test {0}: previous output ↔ output of {1}', id, path.basename(s.file));
   await vscode.commands.executeCommand('vscode.diff', base, output, title);
 }
@@ -499,7 +498,7 @@ async function renameProblem(node) {
   for (const [name, state] of kept) {
     const renamed = path.parse(name).name === old ? slug + path.extname(name) : name;
     if (renamed !== name && await move(path.join(dir, name), path.join(dir, renamed))) {
-      fs.rmSync(path.join(dir, '.cp', old), { recursive: true, force: true });
+      if (fs.existsSync(path.join(dir, '.cp', old))) fs.renameSync(path.join(dir, '.cp', old), path.join(dir, '.cp', slug));
       recall(path.join(dir, renamed), state);
     } else recall(path.join(dir, name), state);
   }
@@ -518,7 +517,7 @@ async function renameSolution(node) {
   const shown = target && target.file === old.file;
   const state = await forget(old.file);
   const moved = await move(old.file, file);
-  if (moved) fs.rmSync(old.outDir, { recursive: true, force: true });
+  if (moved && fs.existsSync(old.outDir)) fs.renameSync(old.outDir, ws.solutionOf(file).outDir);
   recall(moved ? file : old.file, state);
   if (shown) target = ws.solutionOf(moved ? file : old.file);
   refresh();
@@ -535,6 +534,8 @@ async function deleteSolution(node) {
 function moveResults(dir, id, name) {
   for (const [file, state] of states) {
     if (path.dirname(file) !== dir || !state.results[id]) continue;
+    const out = path.join(ws.solutionOf(file).outDir, `${id}.out`);
+    if (name && fs.existsSync(out)) fs.renameSync(out, path.join(path.dirname(out), `${name}.out`));
     if (name) state.results[name] = state.results[id];
     delete state.results[id];
   }
@@ -601,7 +602,7 @@ const tree = {
     if (node.kind === 'solution') {
       const item = new vscode.TreeItem(path.basename(node.file));
       const state = states.get(node.file);
-      const verdicts = state ? Object.values(sync(state, node.dir)).map((r) => r.verdict) : [];
+      const verdicts = state ? Object.values(sync(state, ws.solutionOf(node.file))).map((r) => r.verdict) : [];
       const answered = ws.testIds(node.dir).filter((id) => ws.answerOf(node.dir, id) !== undefined).length;
       item.id = node.file;
       item.resourceUri = vscode.Uri.file(node.file);
@@ -626,7 +627,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Stopped: the program used more than {0} MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Diagnostics", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "Input for the program", "input ended", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "output changed", "Diagnostics", "More actions", "runtime error", "Output trimmed, open {0}", "{0} ms", "{0} MB", "# compile", "# test {0}"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -642,6 +643,7 @@ function receive(m) {
   if (m.type === 'single') run(shown);
   if (m.type === 'setup' && provided.diagnose) provided.diagnose();
   if (!target) return;
+  if (m.type === 'output' && (m.test === undefined || ws.testIds(target.dir).includes(m.test))) vscode.window.showTextDocument(vscode.Uri.file(path.join(target.outDir, `${m.test === undefined ? 'run' : m.test}.out`)));
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
   const live = active && active.file === target.file && active.state === 'running' ? active : undefined;
   if (live && m.type === 'stdin' && !live.closed) {
@@ -685,14 +687,6 @@ function activate(context) {
   context.subscriptions.push(
     problems,
     watcher,
-    vscode.workspace.registerTextDocumentContentProvider('eolymp-output', {
-      onDidChange: outputs.event,
-      provideTextDocumentContent(uri) {
-        const { file, id, kind } = JSON.parse(uri.query);
-        const r = states.has(file) && states.get(file).results[id];
-        return (r && (kind === 'out' ? r.stdout : r.previous)) || '';
-      },
-    }),
     vscode.window.registerWebviewViewProvider('eolympCode.tests', {
       resolveWebviewView(v) {
         view = v;
