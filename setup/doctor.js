@@ -89,7 +89,7 @@ function create(context, root, changed) {
       const text = stage === 'download' ? t('{0} MB downloaded', Math.round(value / 1048576)) : stage === 'unpack' ? t('Unpacking…') : t('Preparing…');
       if (text !== state.progress) progress(text);
     }, stopper.signal);
-    changed();
+    await changed();
   };
 
   const failed = (message) => {
@@ -129,7 +129,7 @@ function create(context, root, changed) {
     const have = toolset.installed(root);
     await vscode.commands.executeCommand('clangd.shutdown').then(undefined, () => {});
     if (have) fs.rmSync(path.join(have.dir, 'ready'), { force: true });
-    changed();
+    await changed();
     if (await fix()) vscode.commands.executeCommand('clangd.restart').then(undefined, () => {});
   };
 
