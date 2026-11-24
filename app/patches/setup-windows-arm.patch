@@ -1,0 +1,13 @@
+--- a/build/gulpfile.vscode.win32.ts
++++ b/build/gulpfile.vscode.win32.ts
+@@ -101,8 +101,8 @@
+ 			AppId: { 'x64': x64AppId, 'arm64': arm64AppId }[arch],
+ 			IncompatibleTargetAppId: { 'x64': product.win32x64AppId, 'arm64': product.win32arm64AppId }[arch],
+ 			AppUserId: product.win32AppUserModelId,
+-			ArchitecturesAllowed: { 'x64': 'x64', 'arm64': 'arm64' }[arch],
+-			ArchitecturesInstallIn64BitMode: { 'x64': 'x64', 'arm64': 'arm64' }[arch],
++			ArchitecturesAllowed: { 'x64': 'x64compatible', 'arm64': 'arm64' }[arch],
++			ArchitecturesInstallIn64BitMode: { 'x64': 'x64compatible', 'arm64': 'arm64' }[arch],
+ 			SourceDir: sourcePath,
+ 			RepoDir: repoPath,
+ 			OutputDir: outputPath,
