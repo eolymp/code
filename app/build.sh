@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the editor. Usage: build.sh [build|package]; output in artifacts/.
+# Builds the editor. Usage: build.sh [build|package]; output in artifacts/: a disk image, a setup program, or a .deb and an archive.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -103,6 +103,7 @@ if [ "$step" != package ]; then
   done
   node "$here/bundle.js" "$resources" "$platform-$arch" "$work/pins"
   [ "$platform" != win32 ] || (cd "$work/vscodium/vscode" && npm run gulp "vscode-win32-$arch-inno-updater")
+  [ "$platform" != linux ] || (cd "$work/vscodium/vscode" && npm run gulp "vscode-linux-$arch-prepare-deb" && npm run gulp "vscode-linux-$arch-build-deb")
 fi
 
 [ "$step" != build ] || exit 0
@@ -111,6 +112,7 @@ mkdir -p "$out"
 if [ "$platform" = darwin ]; then
   "$here/mac.sh" "$built/Eolymp Code.app" "$out/EolympCode-$platform-$arch-$version.dmg" "$work/vscodium/vscode/build/azure-pipelines/darwin"
 elif [ "$platform" = linux ]; then
+  cp "$work"/vscodium/vscode/.build/linux/deb/*/deb/*.deb "$out/EolympCode-$platform-$arch-$version.deb"
   tar -czf "$out/EolympCode-$platform-$arch-$version.tar.gz" -C "$built" .
 else
   (cd "$work/vscodium/vscode" && npm run gulp "vscode-win32-$arch-user-setup")

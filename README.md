@@ -6,9 +6,7 @@ An editor for competitive programming: C++ and Python with completion, a debugge
 
 macOS: download the disk image for [Apple Silicon](https://downloads.eolymp.com/code/EolympCode-macos-arm64.dmg) or [Intel](https://downloads.eolymp.com/code/EolympCode-macos-x64.dmg) and drag Eolymp Code to Applications.
 
-Linux:
-
-    curl -fsSL https://downloads.eolymp.com/code/install.sh | bash
+Linux: download the package for [x64](https://downloads.eolymp.com/code/EolympCode-linux-x64.deb) or [arm64](https://downloads.eolymp.com/code/EolympCode-linux-arm64.deb) and install it with `sudo apt install ./EolympCode-linux-x64.deb`. Other distributions can unpack the [x64](https://downloads.eolymp.com/code/EolympCode-linux-x64.tar.gz) or [arm64](https://downloads.eolymp.com/code/EolympCode-linux-arm64.tar.gz) archive.
 
 Windows: download and run the [setup program](https://downloads.eolymp.com/code/EolympCode-windows-x64.exe).
 
@@ -19,15 +17,13 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 - `app/` builds the editor from source with [VSCodium](https://github.com/VSCodium/vscodium)'s build scripts.
 - `extension/` is the Eolymp Code extension: the problem list, tests and the console.
 - `setup/` is the extension built into the app that installs the compiler and Python.
-- `editor/` holds the default settings and the list of pinned downloads.
+- `editor/` holds the default settings and the list of pinned extensions.
 - `l10n/` holds the Ukrainian language pack for the editor.
-- `install/` holds the installer templates.
 - `tests/` drives the installed app with Playwright.
 
 ## Build
 
-    ./app/build.sh    # the editor, for this machine; on macOS a disk image in artifacts/
-    ./build.sh        # dist/: installers and release files
+    ./app/build.sh    # the editor for this machine, packaged in artifacts/
 
 ## Test
 

@@ -5,7 +5,7 @@ const path = require('path');
 
 const PROGRAM = process.env.EOLYMP_CODE_APP || {
   darwin: '/Applications/Eolymp Code.app/Contents/MacOS/Eolymp Code',
-  linux: path.join(os.homedir(), '.local/share/eolymp-code/editor/eolymp-code'),
+  linux: '/usr/share/eolymp-code/eolymp-code',
   win32: path.join(process.env.LOCALAPPDATA || '', 'Programs/Eolymp Code/Eolymp Code.exe'),
 }[process.platform];
 
