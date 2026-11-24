@@ -3,6 +3,7 @@
   "nameLong": "Eolymp Code",
   "applicationName": "eolymp-code",
   "dataFolderName": ".eolymp-code",
+  "linuxDesktopName": "com.eolymp.code",
   "linuxIconName": "eolymp-code",
   "urlProtocol": "eolymp-code",
   "serverApplicationName": "eolymp-code-server",
