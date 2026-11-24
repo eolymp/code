@@ -47,8 +47,8 @@
   pre .in { color: var(--vscode-terminal-ansiCyan); }
   pre a { color: var(--vscode-textLink-foreground); text-decoration: none; cursor: pointer; }
   pre a:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; }
-  .stdin { display: flex; align-items: baseline; gap: 6px; color: var(--vscode-terminal-ansiCyan); }
-  .stdin input { flex: 1; font: inherit; color: inherit; background: transparent; border: 0; outline: 0; padding: 0; }
+  .stdin { display: flex; color: var(--vscode-terminal-ansiCyan); }
+  .stdin input { flex: 1; font: inherit; color: inherit; background: transparent; border: 0; outline: 0; padding: 0; caret-shape: block; caret-color: var(--vscode-terminalCursor-foreground, var(--vscode-foreground)); }
 </style>
 </head>
 <body>
@@ -228,7 +228,7 @@
           typing = rest;
           field.value = rest;
         };
-        line.append(make('span', '', '›'), field);
+        line.append(field);
         body.push(line);
       } else if (live) {
         typing = '';
