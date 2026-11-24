@@ -9,7 +9,7 @@ const PROGRAM = process.env.EOLYMP_CODE_APP || {
   win32: path.join(process.env.LOCALAPPDATA || '', 'Programs/Eolymp Code/Eolymp Code.exe'),
 }[process.platform];
 
-async function launch(files, tools) {
+async function launch(files, tools, settings) {
   if (!fs.existsSync(PROGRAM)) throw new Error(`Eolymp Code is not at ${PROGRAM}. Install it, or set EOLYMP_CODE_APP to its program.`);
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-test-'));
   const workspace = path.join(sandbox, 'practice');
@@ -24,6 +24,7 @@ async function launch(files, tools) {
   fs.mkdirSync(cache, { recursive: true });
   fs.mkdirSync(path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup'), { recursive: true });
   fs.symlinkSync(cache, path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup/tools'));
+  if (settings) fs.writeFileSync(path.join(data, 'user-data/User/settings.json'), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(__dirname, '../editor/settings.json'), 'utf8')), ...settings }));
   const opened = Object.keys(files).slice(0, 1).map((file) => path.join(workspace, file));
   const app = await electron.launch({
     executablePath: PROGRAM,
@@ -45,8 +46,9 @@ async function launch(files, tools) {
 const test = base.extend({
   files: [{}, { option: true }],
   tools: [true, { option: true }],
-  editor: async ({ files, tools }, use, testInfo) => {
-    const editor = await launch(files, tools);
+  settings: [undefined, { option: true }],
+  editor: async ({ files, tools, settings }, use, testInfo) => {
+    const editor = await launch(files, tools, settings);
     await editor.app.context().tracing.start({ screenshots: true, snapshots: true });
     await use(editor);
     const failed = testInfo.status !== testInfo.expectedStatus;

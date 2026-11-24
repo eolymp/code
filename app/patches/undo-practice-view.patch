@@ -1,0 +1,51 @@
+--- a/src/vs/workbench/api/browser/mainThreadBulkEdits.ts
++++ b/src/vs/workbench/api/browser/mainThreadBulkEdits.ts
+@@ -5,16 +5,39 @@
+ 
+ import { VSBuffer, decodeBase64 } from '../../../base/common/buffer.js';
+ import { revive } from '../../../base/common/marshalling.js';
++import { RedoCommand, UndoCommand } from '../../../editor/browser/editorExtensions.js';
+ import { IBulkEditService, ResourceFileEdit, ResourceTextEdit } from '../../../editor/browser/services/bulkEditService.js';
+ import { WorkspaceEdit } from '../../../editor/common/languages.js';
++import { IContextKeyService } from '../../../platform/contextkey/common/contextkey.js';
+ import { ILogService } from '../../../platform/log/common/log.js';
++import { IUndoRedoService, UndoRedoSource } from '../../../platform/undoRedo/common/undoRedo.js';
+ import { IUriIdentityService } from '../../../platform/uriIdentity/common/uriIdentity.js';
++import { FocusedViewContext } from '../../common/contextkeys.js';
+ import { IWorkspaceCellEditDto, IWorkspaceEditDto, IWorkspaceFileEditDto, MainContext, MainThreadBulkEditsShape } from '../common/extHost.protocol.js';
+ import { ResourceNotebookCellEdit } from '../../contrib/bulkEdit/browser/bulkCellEdits.js';
+ import { CellEditType } from '../../contrib/notebook/common/notebookCommon.js';
+ import { IExtHostContext, extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';
+ import { SerializableObjectWithBuffers } from '../../services/extensions/common/proxyIdentifier.js';
+ 
++const FILE_EDITS = new UndoRedoSource();
++
++UndoCommand.addImplementation(110, 'eolymp-practice', accessor => {
++	const undoRedoService = accessor.get(IUndoRedoService);
++	if (FocusedViewContext.getValue(accessor.get(IContextKeyService)) !== 'eolympCode.problems' || !undoRedoService.canUndo(FILE_EDITS)) {
++		return false;
++	}
++	undoRedoService.undo(FILE_EDITS);
++	return true;
++});
++
++RedoCommand.addImplementation(110, 'eolymp-practice', accessor => {
++	const undoRedoService = accessor.get(IUndoRedoService);
++	if (FocusedViewContext.getValue(accessor.get(IContextKeyService)) !== 'eolympCode.problems' || !undoRedoService.canRedo(FILE_EDITS)) {
++		return false;
++	}
++	undoRedoService.redo(FILE_EDITS);
++	return true;
++});
+ 
+ @extHostNamedCustomer(MainContext.MainThreadBulkEdits)
+ export class MainThreadBulkEdits implements MainThreadBulkEditsShape {
+@@ -30,7 +53,7 @@
+ 
+ 	$tryApplyWorkspaceEdit(dto: SerializableObjectWithBuffers<IWorkspaceEditDto>, undoRedoGroupId?: number, isRefactoring?: boolean): Promise<boolean> {
+ 		const edits = reviveWorkspaceEditDto(dto.value, this._uriIdentService);
+-		return this._bulkEditService.apply(edits, { undoRedoGroupId, respectAutoSaveConfig: isRefactoring }).then((res) => res.isApplied, err => {
++		return this._bulkEditService.apply(edits, { undoRedoGroupId, undoRedoSource: edits.edits.every(edit => ResourceFileEdit.is(edit)) ? FILE_EDITS : undefined, respectAutoSaveConfig: isRefactoring }).then((res) => res.isApplied, err => {
+ 			this._logService.warn(`IGNORING workspace edit: ${err}`);
+ 			return false;
+ 		});
