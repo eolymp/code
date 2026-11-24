@@ -5,15 +5,11 @@ cd "$(dirname "$0")"
 rm -rf dist
 mkdir -p dist/files
 (cd extension && npx --yes @vscode/vsce@4.1.1 package --out ../dist/files/eolymp-code.vsix)
-(cd l10n/uk && npx --yes @vscode/vsce@4.1.1 package --out ../../dist/files/eolymp-code-uk.vsix)
-cp editor/settings.json setup/clang-format editor/icon.png dist/files/
-cp editor/pins.txt dist/pins.txt
+cp editor/icon.png dist/files/
 digest() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi
 }
-for file in dist/files/*; do
-  echo "all $(digest "$file") $(basename "$file")" >> dist/pins.txt
-done
+echo "all $(digest dist/files/icon.png) icon.png" > dist/pins.txt
 for archive in artifacts/EolympCode-*; do
   [ -e "$archive" ] || continue
   name="$(basename "$archive")"
