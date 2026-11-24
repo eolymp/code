@@ -4,6 +4,7 @@ const os = require('os');
 const path = require('path');
 const toolset = require('./tools');
 const doctor = require('./doctor');
+const update = require('./update');
 
 const standIn = process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
 let core;
@@ -90,6 +91,7 @@ function activate(context) {
   adopt();
   setup = doctor.create(context, toolsRoot, adopt);
   setup.start().catch(() => {});
+  update.check(context).catch(() => {});
   context.subscriptions.push(
     vscode.commands.registerCommand('eolympCode.checkSetup', () => setup.open()),
     vscode.window.onDidChangeWindowState((window) => {
