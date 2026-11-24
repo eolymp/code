@@ -102,6 +102,7 @@ if [ "$step" != package ]; then
     grep -qx "$name" "$here/extensions.keep" || rm -rf "${bundled:?}/$name"
   done
   node "$here/bundle.js" "$resources" "$platform-$arch" "$work/pins"
+  [ "$platform" != win32 ] || (cd "$work/vscodium/vscode" && npm run gulp "vscode-win32-$arch-inno-updater")
 fi
 
 [ "$step" != build ] || exit 0
@@ -112,6 +113,7 @@ if [ "$platform" = darwin ]; then
 elif [ "$platform" = linux ]; then
   tar -czf "$out/EolympCode-$platform-$arch-$version.tar.gz" -C "$built" .
 else
-  (cd "$built" && 7z a -tzip "$out/EolympCode-$platform-$arch-$version.zip" . >/dev/null)
+  (cd "$work/vscodium/vscode" && npm run gulp "vscode-win32-$arch-user-setup")
+  cp "$work/vscodium/vscode/.build/win32-$arch/user-setup/VSCodeSetup.exe" "$out/EolympCode-$platform-$arch-$version.exe"
 fi
 ls -lh "$out"

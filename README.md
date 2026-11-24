@@ -10,9 +10,7 @@ Linux:
 
     curl -fsSL https://downloads.eolymp.com/code/install.sh | bash
 
-Windows, in PowerShell:
-
-    irm https://downloads.eolymp.com/code/install.ps1 | iex
+Windows: download and run the [setup program](https://downloads.eolymp.com/code/EolympCode-windows-x64.exe).
 
 The app installs its own GCC and Python. On Intel Macs and on macOS older than 15 it uses Apple's compiler and Python instead.
 
