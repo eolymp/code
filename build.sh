@@ -14,14 +14,12 @@ for archive in artifacts/EolympCode-*; do
   [ -e "$archive" ] || continue
   name="$(basename "$archive")"
   cp "$archive" dist/files/
-  case "$name" in *.dmg) continue ;; esac
+  case "$name" in *.dmg|*.exe) continue ;; esac
   echo "$(echo "$name" | cut -d- -f2-3) $(digest "$archive") $name" >> dist/pins.txt
 done
 mv dist/pins.txt dist/files/pins.txt
 pins="$(digest dist/files/pins.txt)"
 release="${pins:0:12}"
 mv dist/files "dist/$release"
-for installer in install.sh install.ps1; do
-  sed -e "s/@RELEASE@/$release/" -e "s/@PINS@/$pins/" "install/$installer" > "dist/$installer"
-done
+sed -e "s/@RELEASE@/$release/" -e "s/@PINS@/$pins/" install/install.sh > dist/install.sh
 echo "release $release"
