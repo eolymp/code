@@ -31,15 +31,19 @@ function placed(source) {
 
 async function main() {
   fs.mkdirSync(cache, { recursive: true });
+  let pinned = 0;
   for (const line of fs.readFileSync(path.join(repo, 'editor', 'pins.txt'), 'utf8').split('\n')) {
-    const [target, sha256, url] = line.split(' ');
+    const [target, sha256, url] = line.trim().split(' ');
     if (target !== platform || !url.endsWith('.vsix')) continue;
+    pinned += 1;
     const unpacked = path.join(cache, `${sha256}.dir`);
     fs.rmSync(unpacked, { recursive: true, force: true });
     childProcess.execFileSync('unzip', ['-q', await fetched(url, sha256), 'extension/*', '-d', unpacked]);
     placed(path.join(unpacked, 'extension'));
     fs.rmSync(unpacked, { recursive: true, force: true });
   }
+
+  if (!pinned) throw new Error(`editor/pins.txt lists no extensions for ${platform}`);
 
   const own = placed(path.join(repo, 'extension'));
   if (process.env.EOLYMP_CODE_VERSION) {
@@ -53,7 +57,7 @@ async function main() {
     const id = `${manifest.publisher}.${manifest.name}`;
     for (const localization of manifest.contributes.localizations) {
       packs[localization.languageId] = {
-        hash: crypto.createHash('md5').update(id).update(manifest.version).digest('hex'),
+        hash: localization.translations.reduce((hash, translation) => hash.update(fs.readFileSync(path.join(target, translation.path))), crypto.createHash('md5').update(id).update(manifest.version)).digest('hex'),
         label: localization.localizedLanguageName || localization.languageName,
         extensions: [{ extensionIdentifier: { id }, version: manifest.version }],
         translations: Object.fromEntries(localization.translations.map((translation) => [translation.id, path.join(path.relative(app, target), translation.path)])),

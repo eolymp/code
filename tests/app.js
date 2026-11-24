@@ -22,12 +22,13 @@ async function launch(files, tools) {
   const cache = path.join(os.tmpdir(), 'eolymp-code-test-tools');
   if (!tools) fs.rmSync(cache, { recursive: true, force: true });
   fs.mkdirSync(cache, { recursive: true });
-  fs.mkdirSync(path.join(data, 'User/globalStorage/eolymp.eolymp-code'), { recursive: true });
-  fs.symlinkSync(cache, path.join(data, 'User/globalStorage/eolymp.eolymp-code/tools'));
+  fs.mkdirSync(path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code'), { recursive: true });
+  fs.symlinkSync(cache, path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code/tools'));
   const opened = Object.keys(files).slice(0, 1).map((file) => path.join(workspace, file));
   const app = await electron.launch({
     executablePath: PROGRAM,
-    args: [workspace, ...opened, '--user-data-dir', data, '--extensions-dir', path.join(sandbox, 'extensions'), '--use-mock-keychain'],
+    args: [workspace, ...opened, '--use-mock-keychain'],
+    env: { ...process.env, VSCODE_PORTABLE: data },
   });
   const window = await app.firstWindow();
   return {

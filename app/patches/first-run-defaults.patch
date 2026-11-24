@@ -15,7 +15,7 @@
 +		const root = path.join(import.meta.dirname, '..');
 +		const file = path.join(userDataPath, 'languagepacks.json');
 +		const bundled = JSON.parse(fs.readFileSync(path.join(defaults, 'languagepacks.json'), 'utf8'));
-+		let known: Record<string, { translations: Record<string, string> }> = {};
++		let known: Record<string, { hash: string; translations: Record<string, string> }> = {};
 +		try {
 +			known = JSON.parse(fs.readFileSync(file, 'utf8'));
 +		} catch {
@@ -27,7 +27,7 @@
 +			for (const id of Object.keys(pack.translations)) {
 +				pack.translations[id] = path.join(root, pack.translations[id]);
 +			}
-+			if (!known[language] || !Object.values(known[language].translations).every(translation => fs.existsSync(translation))) {
++			if (!known[language] || known[language].hash !== pack.hash || !Object.values(known[language].translations).every(translation => fs.existsSync(translation))) {
 +				known[language] = pack;
 +				changed = true;
 +			}

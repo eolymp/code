@@ -36,20 +36,6 @@ jobs:
       - name: Add swap (Linux)
         if: runner.os == 'Linux'
         run: sudo fallocate -l 8G /swap-build && sudo chmod 600 /swap-build && sudo mkswap /swap-build && sudo swapon /swap-build
-      - name: Import the Apple certificate (macOS)
-        if: runner.os == 'macOS' && vars.APPLE_SIGN_IDENTITY != '' && startsWith(github.ref, 'refs/tags/v')
-        env:
-          CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          keychain="$RUNNER_TEMP/signing.keychain-db"
-          echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
-          security create-keychain -p runner "$keychain"
-          security set-keychain-settings -lut 21600 "$keychain"
-          security unlock-keychain -p runner "$keychain"
-          security import "$RUNNER_TEMP/certificate.p12" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
-          security set-key-partition-list -S apple-tool:,apple: -k runner "$keychain"
-          security list-keychain -d user -s "$keychain"
       - name: Build the editor
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -76,16 +62,33 @@ jobs:
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
+      - name: Import the Apple certificate (macOS)
+        if: runner.os == 'macOS' && vars.APPLE_SIGN_IDENTITY != '' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p runner "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p runner "$keychain"
+          security import "$RUNNER_TEMP/certificate.p12" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -k runner "$keychain"
+          security list-keychain -d user -s "$keychain"
       - name: Package the editor
         env:
           EOLYMP_CODE_SIGN_IDENTITY: ${{ startsWith(github.ref, 'refs/tags/v') && vars.APPLE_SIGN_IDENTITY || '' }}
           APPLE_API_KEY_ID: ${{ vars.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ vars.APPLE_API_ISSUER }}
-          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_CONTENT: ${{ runner.os == 'macOS' && secrets.APPLE_API_KEY || '' }}
         run: |
-          if [ -n "$EOLYMP_CODE_SIGN_IDENTITY" ] && [ -n "$APPLE_API_KEY_CONTENT" ]; then
-            echo "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/notary.p8"
-            export APPLE_API_KEY="$RUNNER_TEMP/notary.p8"
+          if [ "$RUNNER_OS" = macOS ]; then
+            case "$GITHUB_REF" in refs/tags/v*)
+              [ -n "$EOLYMP_CODE_SIGN_IDENTITY" ] && [ -n "$APPLE_API_KEY_CONTENT" ] && [ -n "$APPLE_API_KEY_ID" ] && [ -n "$APPLE_API_ISSUER" ] || { echo "the signing identity or the notarization key is missing"; exit 1; }
+              echo "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/notary.p8"
+              export APPLE_API_KEY="$RUNNER_TEMP/notary.p8"
+            ;; esac
           fi
           ./app/build.sh package
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -136,7 +139,7 @@ jobs:
             aws s3 cp "dist/$installer" "$bucket/$channel$installer" --cache-control "public, max-age=300"
           done
           for arch in arm64 x64; do
-            aws s3 cp "$bucket/$release/$(basename dist/"$release"/EolympCode-darwin-"$arch"-*.dmg)" "$bucket/${channel}EolympCode-macos-$arch.dmg" --cache-control "public, max-age=300"
+            aws s3 cp dist/"$release"/EolympCode-darwin-"$arch"-*.dmg "$bucket/${channel}EolympCode-macos-$arch.dmg" --cache-control "public, max-age=300"
           done
       - name: Publish the extension to Open VSX and the Visual Studio Marketplace
         if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')

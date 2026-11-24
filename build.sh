@@ -18,6 +18,7 @@ for archive in artifacts/EolympCode-*; do
   [ -e "$archive" ] || continue
   name="$(basename "$archive")"
   cp "$archive" dist/files/
+  case "$name" in *.dmg) continue ;; esac
   echo "$(echo "$name" | cut -d- -f2-3) $(digest "$archive") $name" >> dist/pins.txt
 done
 mv dist/pins.txt dist/files/pins.txt
