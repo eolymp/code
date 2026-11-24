@@ -90,7 +90,11 @@ function shortName(command) {
 }
 
 function build(s, debug) {
-  const built = building.then(() => compile(s, debug)).catch((err) => ({ ok: false, command: '', args: [], compile: '', log: t('Could not build: {0}', err.message), run: '' }));
+  const built = building.then(async () => {
+    const helper = vscode.extensions.getExtension('eolymp.eolymp-code-setup');
+    if (helper) await helper.activate();
+    return compile(s, debug);
+  }).catch((err) => ({ ok: false, command: '', args: [], compile: '', log: t('Could not build: {0}', err.message), run: '' }));
   building = built;
   return built;
 }
