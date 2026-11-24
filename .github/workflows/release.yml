@@ -117,20 +117,11 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 24
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: editor-*
           path: artifacts
           merge-multiple: true
-      - name: Set the extension version from the tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: cd extension && npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
-      - name: Package the extension
-        run: cd extension && npx --yes @vscode/vsce@4.1.1 package --out ../artifacts/eolymp-code.vsix
       - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         if: startsWith(github.ref, 'refs/tags/v')
         with:
@@ -148,12 +139,3 @@ jobs:
             put "artifacts/EolympCode-linux-$arch-*.deb" "EolympCode-linux-$arch.deb"
             put "artifacts/EolympCode-linux-$arch-*.tar.gz" "EolympCode-linux-$arch.tar.gz"
           done
-      - name: Publish the extension to Open VSX and the Visual Studio Marketplace
-        if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_TOKEN }}
-          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
-        run: |
-          vsix=artifacts/eolymp-code.vsix
-          [ -z "$OVSX_PAT" ] || npx --yes ovsx@1.4.0 publish "$vsix"
-          [ -z "$VSCE_PAT" ] || npx --yes @vscode/vsce@4.1.1 publish --packagePath "$vsix"
