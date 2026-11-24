@@ -6,7 +6,7 @@ const path = require('path');
 const toolset = require('./tools');
 
 const t = vscode.l10n.t;
-const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Reinstall', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', '{0} MB downloaded', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. The setup continues by itself.', 'Cancel'];
+const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Reinstall', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', 'Cancel'];
 
 function hasAppleTools() {
   return process.platform !== 'darwin' || (childProcess.spawnSync('xcode-select', ['-p']).status === 0 && toolset.sdk(true) !== '');
