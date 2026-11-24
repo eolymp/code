@@ -289,7 +289,6 @@ async function runAll(s, state, previous, job) {
     state.results[test.id] = { verdict: 'running' };
     update();
     const out = path.join(s.outDir, `${test.id}.out`);
-    if (fs.existsSync(out)) fs.renameSync(out, path.join(s.outDir, `${test.id}.previous`));
     const options = { cwd: s.dir, env: toolEnv(), python: pythonPath(), out, onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
     const r = await runner.collect(built.command, built.args, options, test.input);
     if (job.cancelled) {
@@ -390,16 +389,12 @@ async function showDiff(id) {
   const s = target;
   const r = sync(stateOf(s.file), s)[id];
   const answer = path.join(s.dir, `${id}.answer`);
-  const answered = fs.existsSync(answer);
-  const previous = path.join(s.outDir, `${id}.previous`);
-  if (!r || (!answered && !fs.existsSync(previous))) {
+  if (!r || !fs.existsSync(answer)) {
     vscode.window.showInformationMessage(t('There is nothing to compare this output with yet.'));
     return;
   }
-  const base = vscode.Uri.file(answered ? answer : previous);
   const output = vscode.Uri.file(path.join(s.outDir, `${id}.out`));
-  const title = answered ? t('Test {0}: answer ↔ output of {1}', id, path.basename(s.file)) : t('Test {0}: previous output ↔ output of {1}', id, path.basename(s.file));
-  await vscode.commands.executeCommand('vscode.diff', base, output, title);
+  await vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(answer), output, t('Test {0}: answer ↔ output of {1}', id, path.basename(s.file)));
 }
 
 async function openSolution(file, lang) {
