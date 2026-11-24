@@ -1,4 +1,4 @@
-"""Writes setup/tools.json: the compiler and Python the Doctor installs, with their SHA-256."""
+"""Writes setup/tools.json: the compiler and Python the app installs, with their SHA-256."""
 import hashlib
 import json
 import re

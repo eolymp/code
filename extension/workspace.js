@@ -36,7 +36,7 @@ function solutionOf(file) {
   if (!lang) return undefined;
   const dir = path.dirname(file);
   const name = path.basename(file, path.extname(file));
-  return { file, dir, name, lang, outDir: path.join(dir, '.cp', name) };
+  return { file, dir, name, lang, outDir: path.join(dir, '.build', name) };
 }
 
 function solutionsIn(dir) {
@@ -95,10 +95,9 @@ function loadTests(dir) {
   return testIds(dir).map((id) => ({ id, input: read(path.join(dir, `${id}.in`)), answer: answerOf(dir, id) }));
 }
 
-function saveTest(dir, id, input, answer) {
+function saveTest(dir, id, input) {
   fs.writeFileSync(path.join(dir, `${id}.in`), input);
-  if (answer !== undefined) fs.writeFileSync(path.join(dir, `${id}.answer`), answer);
-  else fs.rmSync(path.join(dir, `${id}.answer`), { force: true });
+  fs.rmSync(path.join(dir, `${id}.answer`), { force: true });
 }
 
 function nextTest(dir) {

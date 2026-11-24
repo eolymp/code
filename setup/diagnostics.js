@@ -6,7 +6,7 @@ const path = require('path');
 const toolset = require('./tools');
 
 const t = vscode.l10n.t;
-const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Reinstall', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', '{0} MB downloaded', 'Unpacking…', 'Preparing…', 'Finish the installation in the window Apple opened. The setup continues by itself.', 'Cancel'];
+const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Reinstall', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', 'Cancel'];
 
 function hasAppleTools() {
   return process.platform !== 'darwin' || (childProcess.spawnSync('xcode-select', ['-p']).status === 0 && toolset.sdk(true) !== '');
@@ -149,7 +149,7 @@ function create(context, root, changed) {
     panel = vscode.window.createWebviewPanel('eolympCode.setup', t('Diagnostics'), vscode.ViewColumn.Active, { enableScripts: true, localResourceRoots: [vscode.Uri.file(vscode.extensions.getExtension('eolymp.eolymp-code').extensionPath)] });
     const nonce = crypto.randomBytes(16).toString('base64');
     const font = panel.webview.asWebviewUri(vscode.Uri.file(path.join(vscode.extensions.getExtension('eolymp.eolymp-code').extensionPath, 'codicon.ttf')));
-    panel.webview.html = fs.readFileSync(path.join(__dirname, 'doctor.html'), 'utf8')
+    panel.webview.html = fs.readFileSync(path.join(__dirname, 'diagnostics.html'), 'utf8')
       .replace(/{{nonce}}/g, nonce).replace(/{{font}}/g, String(font)).replace(/{{source}}/g, panel.webview.cspSource)
       .replace('{{strings}}', JSON.stringify(Object.fromEntries(STRINGS.map((text) => [text, t(text)]))).replace(/</g, '\\u003c'));
     panel.onDidDispose(() => { panel = undefined; });

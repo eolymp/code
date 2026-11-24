@@ -249,7 +249,7 @@ function keepSession() {
   const x = state && state.session;
   if (!x || x.state !== 'finished' || x.kept) return;
   const id = ws.nextTest(x.dir);
-  ws.saveTest(x.dir, id, x.input, undefined);
+  ws.saveTest(x.dir, id, x.input);
   fs.copyFileSync(x.out, path.join(x.dir, `${id}.out`));
   const stdout = x.parts.filter((part) => part.kind === 'out').map((part) => part.text).join('');
   state.results[id] = { verdict: 'no answer', ms: x.ms, memory: x.memory, stdout, size: fs.statSync(x.out).size, trimmed: x.size > x.shown };
@@ -283,7 +283,6 @@ async function runAll(s, state, previous, job) {
   const built = await build(s, false);
   state.steps = { compile: built.compile, run: built.run, ok: built.ok, missing: built.missing };
   state.compileError = built.log;
-  fs.mkdirSync(s.outDir, { recursive: true });
   for (const test of built.ok ? ws.loadTests(s.dir) : []) {
     if (job.cancelled) break;
     state.results[test.id] = { verdict: 'running' };
@@ -494,7 +493,7 @@ async function renameProblem(node) {
   for (const [name, state] of kept) {
     const renamed = path.parse(name).name === old ? slug + path.extname(name) : name;
     if (renamed !== name && await move(path.join(dir, name), path.join(dir, renamed))) {
-      if (fs.existsSync(path.join(dir, '.cp', old))) fs.renameSync(path.join(dir, '.cp', old), path.join(dir, '.cp', slug));
+      if (fs.existsSync(path.join(dir, '.build', old))) fs.renameSync(path.join(dir, '.build', old), path.join(dir, '.build', slug));
       recall(path.join(dir, renamed), state);
     } else recall(path.join(dir, name), state);
   }
@@ -662,7 +661,7 @@ function activate(context) {
     clearTimeout(settle);
     settle = setTimeout(refresh, 200);
   };
-  const generated = (uri) => uri.fsPath.includes(`${path.sep}.cp${path.sep}`);
+  const generated = (uri) => uri.fsPath.includes(`${path.sep}.build${path.sep}`);
   const watcher = vscode.workspace.createFileSystemWatcher('**/*');
   watcher.onDidCreate((uri) => { if (!generated(uri)) later(); });
   watcher.onDidDelete((uri) => { if (!generated(uri)) later(); });

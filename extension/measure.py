@@ -140,12 +140,10 @@ def windows(command):
 
 def main():
     target, command = sys.argv[1], sys.argv[2:]
-    started = time.monotonic()
     try:
         stats = windows(command) if os.name == "nt" else posix(command)
     except OSError as error:
         stats = {"error": str(error)}
-    stats["wall"] = round((time.monotonic() - started) * 1000)
     with open(target, "x", encoding="utf-8") as file:
         json.dump(stats, file)
 
