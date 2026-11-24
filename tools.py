@@ -1,4 +1,4 @@
-"""Writes extension/tools.json: the compiler and Python the Doctor installs, with their SHA-256."""
+"""Writes setup/tools.json: the compiler and Python the Doctor installs, with their SHA-256."""
 import hashlib
 import json
 import re
@@ -97,7 +97,7 @@ def main():
     }
     for key, tool in tools.items():
         tool["id"] = hashlib.sha256(json.dumps(tool, sort_keys=True).encode()).hexdigest()[:12]
-    with open("extension/tools.json", "w") as file:
+    with open("setup/tools.json", "w") as file:
         json.dump(tools, file, indent=1)
     print({key: (len(tool["items"]), tool["id"]) for key, tool in tools.items()})
 

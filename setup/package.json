@@ -1,0 +1,134 @@
+{
+  "name": "eolymp-code-setup",
+  "displayName": "Eolymp Code Setup",
+  "description": "%description%",
+  "version": "0.1.0",
+  "publisher": "eolymp",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eolymp/code"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "extensionDependencies": [
+    "eolymp.eolymp-code"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "eolympCode.checkSetup",
+        "title": "%command.checkSetup%",
+        "category": "Eolymp Code"
+      }
+    ],
+    "configurationDefaults": {
+      "workbench.colorCustomizations": {
+        "[Dark 2026]": {
+          "focusBorder": "#39BCB0B3",
+          "textLink.foreground": "#48C7BC",
+          "textLink.activeForeground": "#53CABF",
+          "button.background": "#29A095",
+          "button.hoverBackground": "#2BA398",
+          "button.border": "#29A095",
+          "inputValidation.infoBackground": "#1E4743",
+          "inputValidation.infoBorder": "#39BCB0",
+          "badge.background": "#309F95",
+          "list.dropBackground": "#39BCB01A",
+          "list.focusOutline": "#39BCB0B3",
+          "list.highlightForeground": "#48C7BC",
+          "activityBar.activeFocusBorder": "#39BCB0B3",
+          "activityBarBadge.background": "#309F95",
+          "menu.selectionBackground": "#39BCB026",
+          "menu.selectionBorder": "#39BCB0",
+          "editor.selectionBackground": "#27827ADD",
+          "editor.inactiveSelectionBackground": "#27827A60",
+          "editor.selectionHighlightBackground": "#27827A60",
+          "editor.wordHighlightBackground": "#27827A50",
+          "editor.wordHighlightStrongBackground": "#27827A80",
+          "editor.findMatchBackground": "#27827A90",
+          "editor.findMatchHighlightBackground": "#27827A80",
+          "editorLink.activeForeground": "#3ABCB0",
+          "editorBracketMatch.background": "#39BCB055",
+          "editorSuggestWidget.focusOutline": "#39BCB0B3",
+          "peekViewEditor.matchHighlightBackground": "#39BCB033",
+          "peekViewResult.matchHighlightBackground": "#39BCB033",
+          "peekViewResult.selectionBackground": "#39BCB026",
+          "editorOverviewRuler.findMatchForeground": "#3ABCB099",
+          "panelTitle.activeBorder": "#39BCB0",
+          "statusBar.focusBorder": "#39BCB0B3",
+          "statusBar.debuggingBackground": "#39BCB0",
+          "statusBarItem.focusBorder": "#39BCB0B3",
+          "statusBarItem.prominentBackground": "#39BCB0",
+          "statusBarItem.prominentHoverBackground": "#39BCB0",
+          "tab.activeBorderTop": "#39BCB0",
+          "notificationLink.foreground": "#3ABCB0",
+          "notificationsInfoIcon.foreground": "#3ABCB0",
+          "extensionButton.prominentBackground": "#29A095",
+          "extensionButton.prominentHoverBackground": "#2BA398",
+          "quickInputList.focusBackground": "#29A095",
+          "terminal.selectionBackground": "#39BCB033",
+          "terminal.tab.activeBorder": "#39BCB000",
+          "editorCommentsWidget.rangeBackground": "#48AEA526",
+          "editorCommentsWidget.rangeActiveBackground": "#48AEA546"
+        },
+        "[Light 2026]": {
+          "focusBorder": "#007E73",
+          "textLink.foreground": "#007E73",
+          "textLink.activeForeground": "#007E73",
+          "button.background": "#007E73",
+          "button.hoverBackground": "#00786D",
+          "button.border": "#007E73",
+          "inputValidation.infoBorder": "#007E73",
+          "badge.background": "#007E73",
+          "progressBar.background": "#007E73",
+          "list.dropBackground": "#007E7315",
+          "list.focusOutline": "#007E73",
+          "list.highlightForeground": "#007E73",
+          "activityBar.activeFocusBorder": "#007E73",
+          "activityBarBadge.background": "#007E73",
+          "menu.selectionBackground": "#007E731A",
+          "menu.selectionBorder": "#007E73",
+          "editor.selectionBackground": "#007E7340",
+          "editor.inactiveSelectionBackground": "#007E731A",
+          "editor.selectionHighlightBackground": "#007E7315",
+          "editor.wordHighlightBackground": "#007E7326",
+          "editor.wordHighlightStrongBackground": "#007E7326",
+          "editor.findMatchBackground": "#007E7340",
+          "editor.findMatchHighlightBackground": "#007E731A",
+          "editorLink.activeForeground": "#007E73",
+          "editorBracketMatch.background": "#007E7340",
+          "editorSuggestWidget.highlightForeground": "#007E73",
+          "editorSuggestWidget.focusOutline": "#007E73",
+          "peekView.border": "#007E73",
+          "peekViewEditor.matchHighlightBackground": "#007E7333",
+          "peekViewResult.matchHighlightBackground": "#007E7333",
+          "peekViewResult.selectionBackground": "#007E7326",
+          "editorOverviewRuler.findMatchForeground": "#007E7399",
+          "editorOverviewRuler.modifiedForeground": "#007E73",
+          "statusBar.focusBorder": "#007E73",
+          "statusBar.debuggingBackground": "#007E73",
+          "statusBarItem.focusBorder": "#007E73",
+          "statusBarItem.prominentBackground": "#007E73DD",
+          "statusBarItem.prominentHoverBackground": "#007E73",
+          "notificationLink.foreground": "#007E73",
+          "notificationsInfoIcon.foreground": "#007E73",
+          "extensionButton.prominentBackground": "#007E73",
+          "extensionButton.prominentHoverBackground": "#007E73",
+          "quickInputList.focusBackground": "#007E73",
+          "terminal.selectionBackground": "#007E7326"
+        }
+      }
+    }
+  },
+  "l10n": "./l10n"
+}

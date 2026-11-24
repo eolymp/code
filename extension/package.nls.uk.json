@@ -10,7 +10,6 @@
   "command.newSolution": "Новий розв'язок",
   "command.newTest": "Новий тест",
   "command.renameProblem": "Перейменувати задачу",
-  "command.checkSetup": "Діагностика",
   "command.openInput": "Відкрити вхідні дані",
   "command.openAnswer": "Відкрити відповідь",
   "command.addAnswer": "Додати відповідь",
