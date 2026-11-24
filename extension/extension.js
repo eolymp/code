@@ -126,7 +126,6 @@ function flush() {
   const x = state && state.session;
   view.webview.postMessage({
     file: target ? path.basename(target.file) : '',
-    meta: target ? ws.loadMeta(target.dir) : {},
     path: target ? target.file : '',
     tests: target ? ws.testIds(target.dir).map((id) => ({ id, answered: ws.answerOf(target.dir, id) !== undefined })) : [],
     results: state ? Object.fromEntries(Object.entries(sync(state, target.dir)).map(([id, r]) => [id, shownResult(r)])) : {},
@@ -228,9 +227,7 @@ async function run(node) {
     update();
     return;
   }
-  const limit = ws.loadMeta(s.dir).memoryLimit;
-  const cap = limit > 0 ? limit : MEMORY_CAP;
-  const wrapped = await runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args, cap * 1048576);
+  const wrapped = await runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args, MEMORY_CAP * 1048576);
   if (active !== mine) return;
   const started = Date.now();
   mine.state = 'running';
@@ -243,7 +240,7 @@ async function run(node) {
   const finish = (code, signal, text) => {
     if (mine.state === 'finished') return;
     const r = wrapped.finish({ code, signal, ms: Date.now() - started });
-    Object.assign(mine, { state: 'finished', child: undefined, code: r.code, signal: r.signal, ms: r.ms, memory: r.memory, over: r.over, cap });
+    Object.assign(mine, { state: 'finished', child: undefined, code: r.code, signal: r.signal, ms: r.ms, memory: r.memory, over: r.over, cap: MEMORY_CAP });
     if (text || r.failure) say(mine, 'err', text || `${r.failure}\n`);
     if (active === mine) active = undefined;
     setBusy();
@@ -291,14 +288,12 @@ async function runAll(s, state, previous, job) {
   const built = await build(s, false);
   state.steps = { compile: built.compile, run: built.run, ok: built.ok, missing: built.missing };
   state.compileError = built.log;
-  const meta = ws.loadMeta(s.dir);
-  const timeLimit = meta.timeLimit > 0 ? meta.timeLimit : config().get('timeLimit');
-  const memoryLimit = (meta.memoryLimit > 0 ? meta.memoryLimit : MEMORY_CAP) * 1048576;
+  const timeLimit = config().get('timeLimit');
   for (const test of built.ok ? ws.loadTests(s.dir) : []) {
     if (job.cancelled) break;
     state.results[test.id] = { verdict: 'running' };
     update();
-    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), memory: memoryLimit, onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
+    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), memory: MEMORY_CAP * 1048576, onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
     const r = await runner.collect(built.command, built.args, options, test.input);
     if (job.cancelled) {
       delete state.results[test.id];
@@ -307,7 +302,7 @@ async function runAll(s, state, previous, job) {
     let verdict = ws.verdictOf(r.stdout, test.answer);
     if (r.flooded) verdict = 'output limit';
     else if (r.timedOut || r.ms > timeLimit) verdict = 'time limit';
-    else if (r.over || (meta.memoryLimit > 0 && r.memory > memoryLimit)) verdict = 'memory limit';
+    else if (r.over) verdict = 'memory limit';
     else if (r.code !== 0) verdict = 'runtime error';
     const before = previous[test.id];
     const differs = Boolean(before) && ws.normalize(before.stdout) !== ws.normalize(r.stdout);
@@ -406,17 +401,6 @@ async function showDiff(id) {
   outputs.fire(output);
   const title = answered ? t('Test {0}: answer ↔ output of {1}', id, path.basename(s.file)) : t('Test {0}: previous output ↔ output of {1}', id, path.basename(s.file));
   await vscode.commands.executeCommand('vscode.diff', base, output, title);
-}
-
-async function submit() {
-  if (!target) return;
-  const url = ws.loadMeta(target.dir).url;
-  if (typeof url !== 'string' || !/^https?:\/\//i.test(url) || url.length > 2000) return;
-  const document = await vscode.workspace.openTextDocument(target.file);
-  await document.save();
-  await vscode.env.clipboard.writeText(document.getText());
-  await vscode.env.openExternal(vscode.Uri.parse(url));
-  vscode.window.showInformationMessage(t('Your solution is copied. Paste it into the submit form on the problem page.'));
 }
 
 async function openSolution(file, lang) {
@@ -608,11 +592,8 @@ const tree = {
   },
   getTreeItem(node) {
     if (node.kind === 'problem') {
-      const meta = ws.loadMeta(node.dir);
-      const named = typeof meta.name === 'string' && meta.name;
-      const item = new vscode.TreeItem(named || path.basename(node.dir), vscode.TreeItemCollapsibleState.Expanded);
+      const item = new vscode.TreeItem(path.basename(node.dir), vscode.TreeItemCollapsibleState.Expanded);
       item.id = node.dir;
-      item.description = named ? path.basename(node.dir) : '';
       item.iconPath = new vscode.ThemeIcon('symbol-event');
       item.contextValue = 'problem';
       return item;
@@ -645,7 +626,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Stopped: the program used more than {0} MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "Diagnostics", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Stopped: the program used more than {0} MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Diagnostics", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -659,7 +640,6 @@ function receive(m) {
   const shown = target && { kind: 'solution', file: target.file };
   if (m.type === 'run') runTests(shown);
   if (m.type === 'single') run(shown);
-  if (m.type === 'submit') submit();
   if (m.type === 'setup' && provided.diagnose) provided.diagnose();
   if (!target) return;
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
@@ -680,22 +660,17 @@ function receive(m) {
 
 function activate(context) {
   const problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree });
-  const describe = () => {
-    if (!root()) return;
-    const title = ws.readJson(path.join(root(), 'workspace.json')).title;
-    problems.description = (typeof title === 'string' && title) || (path.basename(root()) === 'practice' ? '' : path.basename(root()));
-  };
-  describe();
+  if (root() && path.basename(root()) !== 'practice') problems.description = path.basename(root());
   let settle;
   const later = () => {
     clearTimeout(settle);
-    settle = setTimeout(() => { describe(); refresh(); }, 200);
+    settle = setTimeout(refresh, 200);
   };
   const generated = (uri) => uri.fsPath.includes(`${path.sep}.cp${path.sep}`);
   const watcher = vscode.workspace.createFileSystemWatcher('**/*');
   watcher.onDidCreate((uri) => { if (!generated(uri)) later(); });
   watcher.onDidDelete((uri) => { if (!generated(uri)) later(); });
-  watcher.onDidChange((uri) => { if (/\.(in|answer|json)$/.test(uri.fsPath) && !generated(uri)) later(); });
+  watcher.onDidChange((uri) => { if (/\.(in|answer)$/.test(uri.fsPath) && !generated(uri)) later(); });
   const testCommands = {
     openInput: (id) => openTestFile(id, 'in'),
     openAnswer: (id) => openTestFile(id, 'answer'),

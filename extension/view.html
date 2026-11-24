@@ -14,7 +14,7 @@
   .empty { margin: 4px 6px; }
   .empty .actions { margin-top: 10px; }
   .empty button { font-size: var(--vscode-font-size); padding: 4px 28px; }
-  #blocks, #foot { font-family: var(--vscode-terminal-font-family, var(--vscode-editor-font-family)); font-size: var(--vscode-editor-font-size); line-height: 1.5; }
+  #blocks { font-family: var(--vscode-terminal-font-family, var(--vscode-editor-font-family)); font-size: var(--vscode-editor-font-size); line-height: 1.5; }
   .block { margin: 4px 0; border-radius: 4px; background: color-mix(in srgb, var(--vscode-foreground) 7%, transparent); }
   .block > summary { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 6px; cursor: pointer; list-style: none; border-radius: 3px; }
   .block > summary:hover { background: var(--vscode-list-hoverBackground); }
@@ -35,13 +35,12 @@
   .block .stats { white-space: nowrap; }
   .exit { color: var(--vscode-errorForeground); }
   .note { margin-top: 2px; font-style: italic; white-space: nowrap; }
-  .block .body, #foot { padding: 0 6px 8px 50px; }
+  .block .body { padding: 0 6px 8px 50px; }
   .block .body:empty { display: none; }
   button.icon { flex: none; padding: 3px; border-radius: 4px; font: 16px/1 codicon; color: var(--vscode-icon-foreground); background: transparent; }
   button.icon:hover { background: var(--vscode-toolbar-hoverBackground); }
   .tools { display: flex; gap: 2px; }
   .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
-  #foot { margin-top: 4px; }
   pre { font: inherit; max-height: 240px; margin: 0; overflow: auto; white-space: pre; user-select: text; }
   pre.bad, pre .err { color: var(--vscode-terminal-ansiRed); }
   pre .in { color: var(--vscode-terminal-ansiCyan); }
@@ -54,7 +53,6 @@
 <body>
 <div id="empty" class="empty" hidden></div>
 <div id="blocks"></div>
-<div id="foot"></div>
 <script nonce="{{nonce}}">
   const vscode = acquireVsCodeApi();
   const STRINGS = {{strings}};
@@ -291,9 +289,6 @@
       cards.push({ sign: JSON.stringify([s.path, t, r, run]), node: card });
     }
     place(cards);
-    const foot = el('foot');
-    foot.textContent = '';
-    if (s.file && listing && s.meta.url) foot.append(actions(button(T('Copy and open problem'), { type: 'submit' })));
   });
   vscode.postMessage({ type: 'ready' });
 </script>
