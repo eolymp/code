@@ -27,10 +27,10 @@ function examine(root) {
     ['llvm-vs-code-extensions.vscode-clangd', t('C++ completion and errors')],
     ['vadimcn.vscode-lldb', t('C++ debugger')],
     ['detachhead.basedpyright', t('Python completion and errors')],
-    ['ms-python.debugpy', t('Python debugger')],
+    ['ms-python.debugpy', t('Python debugger'), 'ms-python.python'],
     ['charliermarsh.ruff', t('Python formatting')],
   ];
-  for (const [id, label] of extensions) add(id, label, Boolean(vscode.extensions.getExtension(id)), t('the extension is not installed'));
+  for (const [id, label, needs] of extensions) add(id, label, Boolean(vscode.extensions.getExtension(id) && (!needs || vscode.extensions.getExtension(needs))), t('the extension is not installed'));
   const clangd = vscode.workspace.getConfiguration('clangd').get('path') || 'clangd';
   const dirs = path.isAbsolute(clangd) ? [''] : (process.env.PATH || '').split(path.delimiter);
   const served = clangd.includes('${') || dirs.some((dir) => fs.existsSync(path.join(dir, clangd)) || fs.existsSync(path.join(dir, `${clangd}.exe`)));
