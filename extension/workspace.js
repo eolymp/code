@@ -12,15 +12,6 @@ function read(file) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
 }
 
-function readJson(file) {
-  try {
-    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
-  } catch (err) {
-    return {};
-  }
-}
-
 function normalize(text) {
   return text.replace(/\r/g, '').split('\n').map((l) => l.trimEnd()).join('\n').replace(/\n+$/, '');
 }
@@ -72,7 +63,7 @@ function othersIn(dir) {
 }
 
 function isProblem(dir) {
-  return solutionsIn(dir).length > 0 || testIds(dir).length > 0 || fs.existsSync(path.join(dir, 'problem.json'));
+  return solutionsIn(dir).length > 0 || testIds(dir).length > 0;
 }
 
 function problemsIn(dir) {
@@ -115,16 +106,12 @@ function nextTest(dir) {
   return String(numbers.length ? Math.max(...numbers) + 1 : 1);
 }
 
-function loadMeta(dir) {
-  return readJson(path.join(dir, 'problem.json'));
-}
-
 function verdictOf(output, answer) {
   if (answer === undefined) return 'no answer';
   return normalize(output) === normalize(answer) ? 'match' : 'differs';
 }
 
 module.exports = {
-  LANGS, TEST_FILES, natural, read, readJson, normalize, slugOf, badName, langOf, solutionOf, solutionsIn, testIds,
-  othersIn, problemsIn, answerOf, loadTests, saveTest, nextTest, loadMeta, verdictOf,
+  LANGS, TEST_FILES, natural, read, normalize, slugOf, badName, langOf, solutionOf, solutionsIn, testIds,
+  othersIn, problemsIn, answerOf, loadTests, saveTest, nextTest, verdictOf,
 };
