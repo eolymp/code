@@ -263,7 +263,10 @@ async function unpack(root, report) {
     else if (process.platform === 'win32') run(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe'), ['-xf', file, '-C', dest]);
     else run(path.join(dir, ...set.python.split('/')), ['-m', 'zipfile', '-e', file, dest]);
   }
-  if (process.platform === 'win32') for (const name of fs.readdirSync(path.join(dir, 'python'))) if (name.endsWith('._pth')) fs.rmSync(path.join(dir, 'python', name));
+  if (process.platform === 'win32') {
+    for (const name of fs.readdirSync(path.join(dir, 'python'))) if (name.endsWith('._pth')) fs.rmSync(path.join(dir, 'python', name));
+    fs.rmSync(path.join(dir, 'gcc', 'mingw64', 'x86_64-w64-mingw32', 'lib', 'default-manifest.o'), { force: true });
+  }
   if (set.clangd && process.platform !== 'win32') fs.chmodSync(path.join(dir, ...set.clangd.split('/')), 0o755);
   if (set.relocate) {
     report('prepare', 0);
