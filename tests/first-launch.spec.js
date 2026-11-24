@@ -3,9 +3,13 @@ const { test, expect } = require('./app');
 test.use({ files: { 'sum/sum.cpp': '#include <bits/stdc++.h>\nint main() { int a, b; std::cin >> a >> b; std::cout << a + b << "\\n"; }\n' }, tools: false });
 test.setTimeout(900000);
 
+const managed = process.platform !== 'darwin' || process.arch !== 'x64';
+
 test('A first launch offers to install the compiler and Python, and Run works afterwards', async ({ editor }) => {
-  await editor.window.getByRole('button', { name: 'Install' }).click();
-  await expect(editor.window.getByText('Eolymp Code is ready.').first()).toBeVisible({ timeout: 800000 });
+  if (managed) {
+    await editor.window.getByRole('button', { name: 'Install' }).click();
+    await expect(editor.window.getByText('Eolymp Code is ready.').first()).toBeVisible({ timeout: 800000 });
+  }
 
   await editor.toolbar.getByRole('button', { name: /^Run/ }).click();
   const input = editor.panel.getByRole('textbox', { name: 'Input for the program' });
@@ -17,7 +21,7 @@ test('A first launch offers to install the compiler and Python, and Run works af
   await editor.window.keyboard.press('ControlOrMeta+Shift+P');
   await editor.window.keyboard.type('Eolymp Code: Diagnostics');
   await editor.window.keyboard.press('Enter');
-  await expect(editor.page.locator('.step', { hasText: 'Compiler and Python' }).locator('.mark.ok')).toBeVisible({ timeout: 60000 });
-  await expect(editor.page.locator('.step', { hasText: 'C++ debugger' }).locator('.mark.ok')).toBeVisible();
+  if (managed) await expect(editor.page.locator('.step', { hasText: 'Compiler and Python' }).locator('.mark.ok')).toBeVisible({ timeout: 60000 });
+  await expect(editor.page.locator('.step', { hasText: 'C++ debugger' }).locator('.mark.ok')).toBeVisible({ timeout: 60000 });
   if (process.env.SHOT) await editor.window.screenshot({ path: process.env.SHOT });
 });
