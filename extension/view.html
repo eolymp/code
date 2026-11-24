@@ -34,7 +34,8 @@
   .comment, .note, .block .stats { color: var(--vscode-descriptionForeground); }
   .block .stats { white-space: nowrap; }
   .exit { color: var(--vscode-errorForeground); }
-  .note { margin-top: 2px; font-style: italic; white-space: nowrap; }
+  .note { display: block; margin-top: 2px; font-style: italic; white-space: nowrap; }
+  a.note { color: var(--vscode-textLink-foreground); text-decoration: none; cursor: pointer; }
   .block .body { padding: 0 6px 8px 50px; }
   .block .body:empty { display: none; }
   button.icon { flex: none; padding: 3px; border-radius: 4px; font: 16px/1 codicon; color: var(--vscode-icon-foreground); background: transparent; }
@@ -59,8 +60,12 @@
   const T = (text, ...args) => (STRINGS[text] || text).replace(/\{(\d)\}/g, (all, i) => args[i]);
   const ICONS = { check: 0xeab2, close: 0xea76, warning: 0xea6c, loading: 0xeb19, dot: 0xeb8a, stop: 0xead7, disconnect: 0xead0, ellipsis: 0xea7c };
   const MARKS = { ok: 'check', bad: 'close', warn: 'warning', none: 'dot', busy: 'loading' };
-  const FAILURES = ['runtime error', 'time limit', 'memory limit', 'output limit'];
-  const kilobytes = (count) => T('{0} KB', Math.ceil(count / 1024));
+  const trimmed = (name, test) => {
+    const link = make('a', 'note', T('Output trimmed, open {0}', name));
+    link.href = '#';
+    link.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'output', test }); };
+    return link;
+  };
   const el = (id) => document.getElementById(id);
   const make = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
   const glyph = (name) => String.fromCharCode(ICONS[name]);
@@ -182,7 +187,7 @@
     if (s.session && s.session.state !== 'compiling' && s.steps) {
       const x = s.session;
       const live = x.state === 'running';
-      const sign = live ? mark('busy', T('Running')) : x.code === 0 ? mark('ok', T('Finished')) : mark('bad', x.stopped ? T('Stopped') : x.flooded ? T('Too much output') : x.over ? T('memory limit') : x.signal ? T('Crashed') : T('Finished with an error'));
+      const sign = live ? mark('busy', T('Running')) : x.code === 0 ? mark('ok', T('Finished')) : mark('bad', x.stopped ? T('Stopped') : x.signal ? T('Crashed') : T('Finished with an error'));
       const head = [sign, command(s.steps.run)];
       if (live) {
         const tools = make('span', 'tools');
@@ -199,7 +204,7 @@
         for (const part of x.parts) pre.append(make('span', part.kind, part.text));
         body.push(pre);
       }
-      if (x.hidden > 0) body.push(make('div', 'note', T('{0} more are not shown', kilobytes(x.hidden))));
+      if (x.trimmed) body.push(trimmed('run.out'));
       if (live && !x.closed) {
         const line = make('div', 'stdin');
         const field = make('input');
@@ -230,15 +235,13 @@
         body.push(make('div', 'note', T('input ended')));
       } else {
         typing = '';
-        if (x.flooded) body.push(make('div', 'exit', T('Stopped: the program printed more than 16 MB')));
-        else if (x.over) body.push(make('div', 'exit', T('Stopped: the program used more than {0} MB', x.cap)));
-        else if (!x.stopped && x.signal) body.push(make('div', 'exit', T('Crashed ({0})', x.signal)));
+        if (!x.stopped && x.signal) body.push(make('div', 'exit', T('Crashed ({0})', x.signal)));
         else if (!x.stopped && x.code) body.push(make('div', 'exit', T('Exit code {0}', x.code)));
       }
       const card = block('run', true, head, body, true);
       if (!live && !x.kept && x.typed && x.code === 0) card.dataset.vscodeContext = JSON.stringify({ webviewSection: 'run', preventDefaultContextMenuItems: true });
       cards.push({
-        sign: live ? JSON.stringify(['live', s.path, s.steps.run, Boolean(x.closed), x.hidden > 0]) : JSON.stringify([s.path, s.steps.run, x]),
+        sign: live ? JSON.stringify(['live', s.path, s.steps.run, Boolean(x.closed), x.trimmed]) : JSON.stringify([s.path, s.steps.run, x]),
         node: card,
         patch: live && ((node) => {
           const pre = node.querySelector('pre');
@@ -271,9 +274,9 @@
       const text = r ? (r.stdout || '') + (r.stderr ? (r.stdout && !r.stdout.endsWith('\n') ? '\n' : '') + r.stderr : '') : '';
       const bad = finished && r.verdict !== 'match' && r.verdict !== 'no answer';
       const body = !r ? [make('div', 'note', T('not run yet'))] : text ? [make('pre', bad ? 'bad' : '', text)] : [];
-      if (r && r.hidden > 0) body.push(make('div', 'note', T('{0} more are not shown; the whole output is compared with the answer', kilobytes(r.hidden))));
+      if (r && r.trimmed) body.push(trimmed(`${t.id}.out`, t.id));
       if (finished && r.verdict === 'runtime error' && (r.signal || r.code)) body.push(make('div', 'exit', r.signal ? T('Crashed ({0})', r.signal) : T('Exit code {0}', r.code)));
-      const failure = finished && FAILURES.includes(r.verdict) ? T(r.verdict) : '';
+      const failure = finished && r.verdict === 'runtime error' ? T(r.verdict) : '';
       const changed = finished && r.verdict === 'no answer' && r.changed ? T('output changed') : '';
       head.push(stats(failure || changed, r && r.ms !== undefined ? T('{0} ms', r.ms) : '', r ? size(r.memory) : ''));
       head.push(more());
@@ -283,7 +286,7 @@
         test: t.id,
         hasAnswer: t.answered,
         canDiff: Boolean(finished && (r.verdict === 'differs' || r.changed)),
-        canAccept: Boolean(finished && r.verdict !== 'match' && !FAILURES.includes(r.verdict)),
+        canAccept: Boolean(finished && r.verdict !== 'match' && r.verdict !== 'runtime error'),
         preventDefaultContextMenuItems: true,
       });
       cards.push({ sign: JSON.stringify([s.path, t, r, run]), node: card });
