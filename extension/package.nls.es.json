@@ -9,7 +9,6 @@
   "command.newProblem": "Nuevo problema",
   "command.newSolution": "Nueva solución",
   "command.newTest": "Nueva prueba",
-  "command.renameProblem": "Cambiar el nombre del problema",
   "command.openInput": "Abrir la entrada",
   "command.openAnswer": "Abrir la respuesta",
   "command.addAnswer": "Añadir respuesta",
@@ -19,8 +18,6 @@
   "command.deleteTest": "Eliminar",
   "command.addAsTest": "Añadir como prueba",
   "command.renameTest": "Cambiar nombre",
-  "command.renameSolution": "Cambiar nombre",
-  "command.deleteSolution": "Eliminar",
   "command.newFile": "Nuevo archivo",
   "command.stop": "Detener",
   "welcome.0": "Todavía no hay ningún problema aquí.\n[Nuevo problema](command:eolympCode.newProblem)",
@@ -29,5 +26,10 @@
   "setting.cxxFlags": "Opciones del compilador para ejecutar y probar.",
   "setting.includePath": "Carpeta adicional con archivos de cabecera de C++. El compilador la recibe en CPLUS_INCLUDE_PATH.",
   "setting.python": "Intérprete de Python. Si está vacío, se usa python en Windows y python3 en los demás sistemas.",
-  "setting.language": "Lenguaje de los problemas nuevos."
+  "setting.language": "Lenguaje de los problemas nuevos.",
+  "command.rename": "Cambiar nombre",
+  "command.delete": "Eliminar",
+  "command.cut": "Cortar",
+  "command.copy": "Copiar",
+  "command.paste": "Pegar"
 }

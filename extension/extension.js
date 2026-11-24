@@ -15,6 +15,8 @@ const t = vscode.l10n.t;
 const states = new Map();
 const changed = new vscode.EventEmitter();
 let view;
+let problems;
+let clip;
 let target;
 let active;
 let testing;
@@ -176,10 +178,15 @@ function say(session, kind, text) {
   update();
 }
 
-async function prepare(node, missing) {
+async function prepare(from, missing) {
+  const node = from === 'focused' ? chosen()[0] : from;
   const picked = node && node.kind === 'solution';
-  const document = picked ? await vscode.workspace.openTextDocument(node.file) : vscode.window.activeTextEditor && vscode.window.activeTextEditor.document;
-  const s = solutionIn(document);
+  let document = picked ? await vscode.workspace.openTextDocument(node.file) : vscode.window.activeTextEditor && vscode.window.activeTextEditor.document;
+  let s = solutionIn(document);
+  if (!s && target && fs.existsSync(target.file)) {
+    s = target;
+    document = await vscode.workspace.openTextDocument(s.file);
+  }
   if (!s) {
     vscode.window.showInformationMessage(missing);
     return undefined;
@@ -454,6 +461,12 @@ async function newFile(node) {
   refresh();
 }
 
+async function erase(files) {
+  const edit = new vscode.WorkspaceEdit();
+  for (const file of files) edit.deleteFile(vscode.Uri.file(file), { ignoreIfNotExists: true, maxSize: 5000000 });
+  await vscode.workspace.applyEdit(edit);
+}
+
 async function move(from, to) {
   const edit = new vscode.WorkspaceEdit();
   edit.renameFile(vscode.Uri.file(from), vscode.Uri.file(to));
@@ -518,12 +531,142 @@ async function renameSolution(node) {
   refresh();
 }
 
-async function deleteSolution(node) {
-  const s = ws.solutionOf(node.file);
-  await forget(s.file);
-  await vscode.workspace.fs.delete(vscode.Uri.file(s.file), { useTrash: true });
-  fs.rmSync(s.outDir, { recursive: true, force: true });
+async function deleteProblem(dir) {
+  for (const file of ws.solutionsIn(dir)) await forget(file);
+  const edit = new vscode.WorkspaceEdit();
+  edit.deleteFile(vscode.Uri.file(dir), { recursive: true, folder: true });
+  await vscode.workspace.applyEdit(edit);
   refresh();
+}
+
+async function renameFile(node) {
+  const base = path.basename(node.file);
+  const name = await askName({ prompt: t('New name of the file'), value: base, valueSelection: [0, path.parse(base).name.length] }, (value) => value !== base && fs.existsSync(path.join(node.dir, value)) && value);
+  if (name && name !== base && await move(node.file, path.join(node.dir, name))) refresh();
+}
+
+function testName(id) {
+  return /^\d+$/.test(id) ? t('Test {0}', id) : t('Test "{0}"', id);
+}
+
+function chosen(node, nodes) {
+  if (nodes && nodes.length) return nodes;
+  if (node) return [node];
+  const focused = problems.activeItem;
+  return focused && !problems.selection.includes(focused) ? [focused] : problems.selection;
+}
+
+function rename(node) {
+  const picked = chosen(node).length === 1 ? chosen(node)[0] : undefined;
+  if (!picked) return undefined;
+  if (picked.kind === 'problem') return renameProblem(picked);
+  if (picked.kind === 'solution') return renameSolution(picked);
+  if (picked.kind === 'file') return renameFile(picked);
+  return renameTest(picked.dir, picked.id);
+}
+
+async function remove(node, nodes) {
+  const picked = chosen(node, nodes);
+  const whole = (n) => n.kind === 'test' || (n.kind === 'testFile' && n.file.endsWith('.in'));
+  const items = picked.filter((n) => {
+    if (n.kind !== 'problem' && picked.some((p) => p.kind === 'problem' && p.dir === n.dir)) return false;
+    return n.kind !== 'testFile' || !picked.some((p) => p !== n && p.dir === n.dir && p.id === n.id && whole(p));
+  });
+  if (!items.length) return;
+  const names = items.map((n) => (n.kind === 'problem' ? path.basename(n.dir) : whole(n) ? testName(n.id) : path.basename(n.file)));
+  const message = items.length === 1 ? t("Are you sure you want to delete '{0}'?", names[0]) : t('Are you sure you want to delete these {0} items?', items.length);
+  const button = process.platform === 'win32' ? t('Move to Recycle Bin') : t('Move to Trash');
+  if (await vscode.window.showWarningMessage(message, { modal: true, detail: items.length === 1 ? undefined : names.join('\n') }, button) !== button) return;
+  const files = [];
+  for (const n of items) {
+    if (n.kind === 'problem') await deleteProblem(n.dir);
+    else if (whole(n)) files.push(...ws.TEST_FILES.map((ext) => path.join(n.dir, `${n.id}.${ext}`)));
+    else files.push(n.file);
+    if (n.kind === 'solution') await forget(n.file);
+  }
+  await erase(files);
+  for (const n of items) {
+    if (n.kind === 'solution') fs.rmSync(ws.solutionOf(n.file).outDir, { recursive: true, force: true });
+    else if (whole(n)) moveResults(n.dir, n.id);
+  }
+  refresh();
+}
+
+function copy(node, nodes, cut) {
+  const picked = chosen(node, nodes);
+  const items = picked.filter((n) => !cut || n.kind !== 'problem');
+  if (!items.length) return;
+  clip = { items, cut };
+  vscode.commands.executeCommand('setContext', 'eolympCode.canPaste', true);
+}
+
+async function paste(node) {
+  const at = node || problems.activeItem || problems.selection[0];
+  if (!clip || !root()) return;
+  const edit = new vscode.WorkspaceEdit();
+  const taken = new Set();
+  const free = (dir, name, mark) => {
+    const { name: stem, ext } = path.parse(name);
+    for (let n = 0; ; n += 1) {
+      const candidate = n === 0 ? name : `${stem}${mark}${n > 1 ? `${mark === '-copy' ? '-' : ' '}${n}` : ''}${ext}`;
+      const file = path.join(dir, candidate);
+      if (!fs.existsSync(file) && !taken.has(file)) {
+        taken.add(file);
+        return file;
+      }
+    }
+  };
+  const put = (from, to) => {
+    if (clip.cut) edit.renameFile(vscode.Uri.file(from), vscode.Uri.file(to));
+    else edit.createFile(vscode.Uri.file(to), { contents: fs.readFileSync(from) });
+  };
+  for (const n of clip.items) {
+    if (n.kind === 'problem') {
+      const old = path.basename(n.dir);
+      const dir = free(root(), old, '-copy');
+      for (const entry of fs.readdirSync(n.dir, { recursive: true, withFileTypes: true })) {
+        const inside = path.relative(n.dir, path.join(entry.parentPath, entry.name));
+        if (entry.isDirectory() || inside.startsWith('.build')) continue;
+        const own = !inside.includes(path.sep) && path.parse(inside).name === old && ws.langOf(inside);
+        put(path.join(n.dir, inside), path.join(dir, own ? path.basename(dir) + path.extname(inside) : inside));
+      }
+      continue;
+    }
+    if (!at || (n.file && !fs.existsSync(n.file)) || (clip.cut && at.dir === n.dir)) continue;
+    if (n.kind === 'test' || (n.kind === 'testFile' && n.file.endsWith('.in'))) {
+      const numbers = [...ws.testIds(at.dir), ...[...taken].filter((file) => path.dirname(file) === at.dir).map((file) => path.parse(file).name)].map(Number).filter(Number.isInteger);
+      const used = fs.existsSync(path.join(at.dir, `${n.id}.in`)) || taken.has(path.join(at.dir, `${n.id}.in`));
+      const id = used ? String(Math.max(0, ...numbers) + 1) : n.id;
+      taken.add(path.join(at.dir, `${id}.in`));
+      for (const ext of clip.cut ? ws.TEST_FILES : ['in', 'answer']) if (fs.existsSync(path.join(n.dir, `${n.id}.${ext}`))) put(path.join(n.dir, `${n.id}.${ext}`), path.join(at.dir, `${id}.${ext}`));
+      if (clip.cut) moveResults(n.dir, n.id);
+    } else {
+      if (clip.cut && n.kind === 'solution') await forget(n.file);
+      put(n.file, free(at.dir, path.basename(n.file), ' copy'));
+    }
+  }
+  await vscode.workspace.applyEdit(edit);
+  if (clip.cut) {
+    clip = undefined;
+    vscode.commands.executeCommand('setContext', 'eolympCode.canPaste', false);
+  }
+  refresh();
+}
+
+function nodeOf(file) {
+  const dir = path.dirname(file);
+  const label = path.basename(file);
+  if (!root() || path.dirname(dir) !== root() || label.startsWith('.')) return undefined;
+  if (ws.langOf(file)) return { kind: 'solution', dir, file };
+  const found = /^(.*)\.(in|out|answer)$/.exec(label);
+  if (found && ws.testIds(dir).includes(found[1])) return { kind: 'testFile', dir, id: found[1], label, file };
+  return { kind: 'file', dir, label, file };
+}
+
+function show(editor) {
+  const node = editor && editor.document.uri.scheme === 'file' ? nodeOf(editor.document.fileName) : undefined;
+  if (!node || !problems.visible || problems.selection.some((n) => n.file === node.file || (n.kind === 'test' && n.dir === node.dir && n.id === node.id))) return;
+  problems.reveal(node, { select: true, focus: false }).then(undefined, () => {});
 }
 
 function moveResults(dir, id, name) {
@@ -547,10 +690,7 @@ async function renameTest(dir, id) {
 }
 
 async function deleteTest(dir, id) {
-  for (const ext of ws.TEST_FILES) {
-    const file = path.join(dir, `${id}.${ext}`);
-    if (fs.existsSync(file)) await vscode.workspace.fs.delete(vscode.Uri.file(file), { useTrash: true });
-  }
+  await erase(ws.TEST_FILES.map((ext) => path.join(dir, `${id}.${ext}`)));
   moveResults(dir, id);
   refresh();
 }
@@ -574,15 +714,19 @@ const tree = {
     if (!node) return root() ? ws.problemsIn(root()).map((dir) => ({ kind: 'problem', dir })) : [];
     if (node.kind === 'problem') {
       return [
-        ...ws.solutionsIn(node.dir).map((file) => ({ kind: 'solution', dir: node.dir, file })),
-        ...ws.othersIn(node.dir).map((file) => ({ kind: 'file', label: path.basename(file), file })),
         ...ws.testIds(node.dir).map((id) => ({ kind: 'test', dir: node.dir, id })),
+        ...ws.solutionsIn(node.dir).map((file) => ({ kind: 'solution', dir: node.dir, file })),
+        ...ws.othersIn(node.dir).map((file) => ({ kind: 'file', dir: node.dir, label: path.basename(file), file })),
       ];
     }
     if (node.kind !== 'test') return [];
     return ws.TEST_FILES
-      .map((ext) => ({ kind: 'file', label: `${node.id}.${ext}`, file: path.join(node.dir, `${node.id}.${ext}`) }))
+      .map((ext) => ({ kind: 'testFile', dir: node.dir, id: node.id, label: `${node.id}.${ext}`, file: path.join(node.dir, `${node.id}.${ext}`) }))
       .filter((child) => fs.existsSync(child.file));
+  },
+  getParent(node) {
+    if (node.kind === 'problem') return undefined;
+    return node.kind === 'testFile' ? { kind: 'test', dir: node.dir, id: node.id } : { kind: 'problem', dir: node.dir };
   },
   getTreeItem(node) {
     if (node.kind === 'problem') {
@@ -606,13 +750,16 @@ const tree = {
       return item;
     }
     if (node.kind === 'test') {
-      const item = new vscode.TreeItem(t('Test {0}', node.id), vscode.TreeItemCollapsibleState.Collapsed);
+      const item = new vscode.TreeItem(testName(node.id), vscode.TreeItemCollapsibleState.Collapsed);
       item.id = `${node.dir}#${node.id}`;
-      item.iconPath = new vscode.ThemeIcon('symbol-field');
+      item.iconPath = { dark: vscode.Uri.file(path.join(__dirname, 'test-dark.svg')), light: vscode.Uri.file(path.join(__dirname, 'test-light.svg')) };
+      item.command = { command: 'vscode.open', title: 'Open', arguments: [vscode.Uri.file(path.join(node.dir, `${node.id}.in`))] };
       item.contextValue = 'test';
       return item;
     }
     const item = new vscode.TreeItem(node.label);
+    item.id = node.file;
+    item.contextValue = node.kind;
     item.resourceUri = vscode.Uri.file(node.file);
     item.iconPath = vscode.ThemeIcon.File;
     item.command = { command: 'vscode.open', title: 'Open', arguments: [item.resourceUri] };
@@ -654,7 +801,7 @@ function receive(m) {
 }
 
 function activate(context) {
-  const problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree });
+  problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree, canSelectMany: true, showCollapseAll: true });
   if (root() && path.basename(root()) !== 'practice') problems.description = path.basename(root());
   let settle;
   const later = () => {
@@ -676,7 +823,7 @@ function activate(context) {
     renameTest: (id, dir) => renameTest(dir, id),
     deleteTest: (id, dir) => deleteTest(dir, id),
   };
-  const commands = { run, runTests, stop, newProblem, newSolution, newTest, newFile, renameProblem, renameSolution, deleteSolution, addAsTest: keepSession };
+  const commands = { run, runTests, stop, newProblem, newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
   context.subscriptions.push(
     problems,
     watcher,
@@ -694,7 +841,9 @@ function activate(context) {
       else if (target && item && item.test) action(String(item.test), target.dir);
     })),
     ...Object.entries(commands).map(([name, action]) => vscode.commands.registerCommand(`eolympCode.${name}`, action)),
+    problems.onDidChangeVisibility(() => show(vscode.window.activeTextEditor)),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
+      show(editor);
       const s = solutionIn(editor && editor.document);
       if (!s || (target && s.file === target.file)) return;
       target = s;
@@ -702,6 +851,7 @@ function activate(context) {
     }),
   );
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
+  show(vscode.window.activeTextEditor);
   return {
     provide(tools) {
       provided = tools;

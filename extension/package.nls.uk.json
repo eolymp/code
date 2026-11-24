@@ -9,7 +9,6 @@
   "command.newProblem": "Нова задача",
   "command.newSolution": "Новий розв'язок",
   "command.newTest": "Новий тест",
-  "command.renameProblem": "Перейменувати задачу",
   "command.openInput": "Відкрити вхідні дані",
   "command.openAnswer": "Відкрити відповідь",
   "command.addAnswer": "Додати відповідь",
@@ -19,8 +18,6 @@
   "command.deleteTest": "Видалити",
   "command.addAsTest": "Додати як тест",
   "command.renameTest": "Перейменувати",
-  "command.renameSolution": "Перейменувати",
-  "command.deleteSolution": "Видалити",
   "command.newFile": "Новий файл",
   "command.stop": "Зупинити",
   "welcome.0": "Тут ще немає жодної задачі.\n[Нова задача](command:eolympCode.newProblem)",
@@ -29,5 +26,10 @@
   "setting.cxxFlags": "Прапорці компілятора для запуску й тестів.",
   "setting.includePath": "Додаткова папка із заголовковими файлами C++. Компілятор отримує її через CPLUS_INCLUDE_PATH.",
   "setting.python": "Інтерпретатор Python. Якщо поле порожнє, у Windows використовується python, а в інших системах python3.",
-  "setting.language": "Мова нових задач."
+  "setting.language": "Мова нових задач.",
+  "command.rename": "Перейменувати",
+  "command.delete": "Видалити",
+  "command.cut": "Вирізати",
+  "command.copy": "Копіювати",
+  "command.paste": "Вставити"
 }

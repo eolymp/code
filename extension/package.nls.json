@@ -9,7 +9,6 @@
   "command.newProblem": "New Problem Workspace",
   "command.newSolution": "New Solution",
   "command.newTest": "New Test",
-  "command.renameProblem": "Rename Problem",
   "command.openInput": "Open Input",
   "command.openAnswer": "Open Answer",
   "command.addAnswer": "Add Answer",
@@ -19,8 +18,6 @@
   "command.deleteTest": "Delete",
   "command.addAsTest": "Add as Test",
   "command.renameTest": "Rename",
-  "command.renameSolution": "Rename",
-  "command.deleteSolution": "Delete",
   "command.newFile": "New File",
   "command.stop": "Stop",
   "welcome.0": "No problems are being solved here yet.\n[New Problem Workspace](command:eolympCode.newProblem)",
@@ -29,5 +26,10 @@
   "setting.cxxFlags": "Flags for running tests.",
   "setting.includePath": "Extra folder with C++ headers, passed to the compiler as CPLUS_INCLUDE_PATH.",
   "setting.python": "Python interpreter. Empty means python on Windows and python3 elsewhere.",
-  "setting.language": "Language of new problems."
+  "setting.language": "Language of new problems.",
+  "command.rename": "Rename",
+  "command.delete": "Delete",
+  "command.cut": "Cut",
+  "command.copy": "Copy",
+  "command.paste": "Paste"
 }

@@ -13,6 +13,9 @@
   "engines": {
     "vscode": "^1.90.0"
   },
+  "enabledApiProposals": [
+    "treeViewActiveItem"
+  ],
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -78,12 +81,10 @@
         "command": "eolympCode.newTest",
         "title": "%command.newTest%",
         "category": "Eolymp Code",
-        "icon": "$(symbol-field)"
-      },
-      {
-        "command": "eolympCode.renameProblem",
-        "title": "%command.renameProblem%",
-        "category": "Eolymp Code"
+        "icon": {
+          "light": "new-test-light.svg",
+          "dark": "new-test-dark.svg"
+        }
       },
       {
         "command": "eolympCode.openInput",
@@ -122,14 +123,6 @@
         "title": "%command.renameTest%"
       },
       {
-        "command": "eolympCode.renameSolution",
-        "title": "%command.renameSolution%"
-      },
-      {
-        "command": "eolympCode.deleteSolution",
-        "title": "%command.deleteSolution%"
-      },
-      {
         "command": "eolympCode.newFile",
         "title": "%command.newFile%"
       },
@@ -138,6 +131,26 @@
         "title": "%command.stop%",
         "category": "Eolymp Code",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "eolympCode.rename",
+        "title": "%command.rename%"
+      },
+      {
+        "command": "eolympCode.delete",
+        "title": "%command.delete%"
+      },
+      {
+        "command": "eolympCode.cut",
+        "title": "%command.cut%"
+      },
+      {
+        "command": "eolympCode.copy",
+        "title": "%command.copy%"
+      },
+      {
+        "command": "eolympCode.paste",
+        "title": "%command.paste%"
       }
     ],
     "menus": {
@@ -187,11 +200,6 @@
           "when": "view == eolympCode.problems && viewItem == problem"
         },
         {
-          "command": "eolympCode.renameProblem",
-          "group": "2@1",
-          "when": "view == eolympCode.problems && viewItem == problem"
-        },
-        {
           "command": "eolympCode.run",
           "group": "inline@1",
           "when": "view == eolympCode.problems && viewItem == solution"
@@ -200,16 +208,6 @@
           "command": "eolympCode.runTests",
           "group": "inline@2",
           "when": "view == eolympCode.problems && viewItem == solution"
-        },
-        {
-          "command": "eolympCode.renameTest",
-          "group": "1@1",
-          "when": "view == eolympCode.problems && viewItem == test"
-        },
-        {
-          "command": "eolympCode.deleteTest",
-          "group": "2@1",
-          "when": "view == eolympCode.problems && viewItem == test"
         },
         {
           "command": "eolympCode.run",
@@ -222,19 +220,34 @@
           "when": "view == eolympCode.problems && viewItem == solution"
         },
         {
-          "command": "eolympCode.renameSolution",
-          "group": "2@1",
-          "when": "view == eolympCode.problems && viewItem == solution"
-        },
-        {
-          "command": "eolympCode.deleteSolution",
-          "group": "3@1",
-          "when": "view == eolympCode.problems && viewItem == solution"
-        },
-        {
           "command": "eolympCode.newFile",
           "group": "1@3",
           "when": "view == eolympCode.problems && viewItem == problem"
+        },
+        {
+          "command": "eolympCode.rename",
+          "group": "7_modification@1",
+          "when": "view == eolympCode.problems"
+        },
+        {
+          "command": "eolympCode.delete",
+          "group": "7_modification@2",
+          "when": "view == eolympCode.problems"
+        },
+        {
+          "command": "eolympCode.cut",
+          "group": "5_cutcopypaste@1",
+          "when": "view == eolympCode.problems && viewItem != problem"
+        },
+        {
+          "command": "eolympCode.copy",
+          "group": "5_cutcopypaste@2",
+          "when": "view == eolympCode.problems"
+        },
+        {
+          "command": "eolympCode.paste",
+          "group": "5_cutcopypaste@3",
+          "when": "view == eolympCode.problems && eolympCode.canPaste"
         }
       ],
       "commandPalette": [
@@ -244,10 +257,6 @@
         },
         {
           "command": "eolympCode.newTest",
-          "when": "false"
-        },
-        {
-          "command": "eolympCode.renameProblem",
           "when": "false"
         },
         {
@@ -287,20 +296,32 @@
           "when": "false"
         },
         {
-          "command": "eolympCode.renameSolution",
-          "when": "false"
-        },
-        {
-          "command": "eolympCode.deleteSolution",
-          "when": "false"
-        },
-        {
           "command": "eolympCode.newFile",
           "when": "false"
         },
         {
           "command": "eolympCode.stop",
           "when": "eolympCode.running"
+        },
+        {
+          "command": "eolympCode.rename",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.delete",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.cut",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.copy",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.paste",
+          "when": "false"
         }
       ],
       "webview/context": [
@@ -355,12 +376,54 @@
       {
         "command": "eolympCode.run",
         "key": "f5",
-        "when": "editorTextFocus && !inDebugMode && (editorLangId == cpp || editorLangId == python)"
+        "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
+      },
+      {
+        "command": "eolympCode.run",
+        "key": "f5",
+        "args": "focused",
+        "when": "!inDebugMode && focusedView == eolympCode.problems"
       },
       {
         "command": "eolympCode.runTests",
         "key": "shift+f5",
-        "when": "editorTextFocus && !inDebugMode && (editorLangId == cpp || editorLangId == python)"
+        "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
+      },
+      {
+        "command": "eolympCode.runTests",
+        "key": "shift+f5",
+        "args": "focused",
+        "when": "!inDebugMode && focusedView == eolympCode.problems"
+      },
+      {
+        "command": "eolympCode.delete",
+        "key": "delete",
+        "mac": "cmd+backspace",
+        "when": "focusedView == eolympCode.problems && !inputFocus"
+      },
+      {
+        "command": "eolympCode.rename",
+        "key": "f2",
+        "mac": "enter",
+        "when": "focusedView == eolympCode.problems && !inputFocus"
+      },
+      {
+        "command": "eolympCode.cut",
+        "key": "ctrl+x",
+        "mac": "cmd+x",
+        "when": "focusedView == eolympCode.problems && !inputFocus"
+      },
+      {
+        "command": "eolympCode.copy",
+        "key": "ctrl+c",
+        "mac": "cmd+c",
+        "when": "focusedView == eolympCode.problems && !inputFocus"
+      },
+      {
+        "command": "eolympCode.paste",
+        "key": "ctrl+v",
+        "mac": "cmd+v",
+        "when": "focusedView == eolympCode.problems && !inputFocus"
       }
     ],
     "configuration": {

@@ -54,5 +54,11 @@
   "{0} has not been run yet.": "{0} ще не запускався.",
   "{0} ms": "{0} мс",
   "{0}/{1} match": "{0}/{1} збігаються",
-  "Output trimmed, open {0}": "Вивід обрізано, відкрийте {0}"
+  "Output trimmed, open {0}": "Вивід обрізано, відкрийте {0}",
+  "New name of the file": "Нова назва файлу",
+  "Are you sure you want to delete '{0}'?": "Ви справді хочете видалити «{0}»?",
+  "Are you sure you want to delete these {0} items?": "Ви справді хочете видалити ці елементи ({0})?",
+  "Move to Trash": "Перемістити в смітник",
+  "Move to Recycle Bin": "Перемістити в кошик",
+  "Test \"{0}\"": "Тест \"{0}\""
 }

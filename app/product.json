@@ -34,5 +34,10 @@
   },
   "licenseUrl": "https://github.com/eolymp/code",
   "reportIssueUrl": "https://github.com/eolymp/code/issues/new",
-  "downloadUrl": "https://eolymp.com/code"
+  "downloadUrl": "https://eolymp.com/code",
+  "extensionEnabledApiProposals": {
+    "eolymp.eolymp-code": [
+      "treeViewActiveItem"
+    ]
+  }
 }

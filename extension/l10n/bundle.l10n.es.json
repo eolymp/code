@@ -54,5 +54,11 @@
   "{0} has not been run yet.": "{0} aún no se ha ejecutado.",
   "{0} ms": "{0} ms",
   "{0}/{1} match": "{0}/{1} coinciden",
-  "Output trimmed, open {0}": "Salida recortada, abre {0}"
+  "Output trimmed, open {0}": "Salida recortada, abre {0}",
+  "New name of the file": "Nuevo nombre del archivo",
+  "Are you sure you want to delete '{0}'?": "¿Seguro que quieres eliminar «{0}»?",
+  "Are you sure you want to delete these {0} items?": "¿Seguro que quieres eliminar estos {0} elementos?",
+  "Move to Trash": "Mover a la papelera",
+  "Move to Recycle Bin": "Mover a la papelera de reciclaje",
+  "Test \"{0}\"": "Prueba \"{0}\""
 }
