@@ -109,8 +109,55 @@ jobs:
           path: artifacts/EolympCode-*
           if-no-files-found: error
 
-  publish:
+  test:
     needs: editor
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, ubuntu-22.04, ubuntu-22.04-arm, windows-2022]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: editor-${{ matrix.os }}
+          path: artifacts
+      - name: Install the editor (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -y && sudo apt-get install -y xvfb ./artifacts/*.deb
+      - name: Install the editor (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          hdiutil attach artifacts/*.dmg -nobrowse -mountpoint "$RUNNER_TEMP/dmg"
+          cp -R "$RUNNER_TEMP/dmg/Eolymp Code.app" /Applications/
+          hdiutil detach "$RUNNER_TEMP/dmg"
+      - name: Install the editor (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Start-Process -Wait -FilePath (Get-Item artifacts\*.exe).FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/MERGETASKS=!runcode'
+      - name: Run the tests
+        working-directory: tests
+        run: |
+          npm ci
+          [ "$RUNNER_OS" != Linux ] || run="xvfb-run -a"
+          $run npx playwright test first-launch.spec
+          $run npx playwright test debug.spec layout.spec run.spec test.spec
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: tests/test-results
+
+  publish:
+    needs: [editor, test]
     runs-on: ubuntu-24.04
     environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || '' }}
     permissions:

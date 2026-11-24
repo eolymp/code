@@ -23,7 +23,7 @@ async function launch(files, tools) {
   if (!tools) fs.rmSync(cache, { recursive: true, force: true });
   fs.mkdirSync(cache, { recursive: true });
   fs.mkdirSync(path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup'), { recursive: true });
-  fs.symlinkSync(cache, path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup/tools'));
+  fs.symlinkSync(cache, path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup/tools'), 'junction');
   const opened = Object.keys(files).slice(0, 1).map((file) => path.join(workspace, file));
   const app = await electron.launch({
     executablePath: PROGRAM,
