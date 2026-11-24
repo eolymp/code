@@ -139,3 +139,4 @@ jobs:
             put "artifacts/EolympCode-linux-$arch-*.deb" "EolympCode-linux-$arch.deb"
             put "artifacts/EolympCode-linux-$arch-*.tar.gz" "EolympCode-linux-$arch.tar.gz"
           done
+          [ -n "$channel" ] || { echo "{\"version\":\"${GITHUB_REF_NAME#v}\"}" > latest.json; put latest.json latest.json; }
