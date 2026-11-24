@@ -5,7 +5,6 @@ const path = require('path');
 const os = require('os');
 const ws = require('./workspace');
 const runner = require('./runner');
-const companion = require('./companion');
 const toolset = require('./tools');
 const doctor = require('./doctor');
 
@@ -17,6 +16,7 @@ const CURSOR = { cpp: new vscode.Position(4, 4), py: new vscode.Position(3, 0) }
 const t = vscode.l10n.t;
 const FINAL = ['runtime error', 'time limit', 'memory limit', 'output limit'];
 const SHOWN = 256 << 10;
+const MEMORY_CAP = 1024;
 
 const states = new Map();
 const changed = new vscode.EventEmitter();
@@ -28,7 +28,8 @@ let testing;
 let pending;
 let toolsRoot;
 let managed;
-const standIn = process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
+const inApp = vscode.env.appName === 'Eolymp Code';
+const standIn = inApp && process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
 let setup;
 let terminalEnv;
 let building = Promise.resolve();
@@ -66,30 +67,30 @@ function solutionIn(document) {
 }
 
 function toolDirs() {
-  if (managed) return [path.dirname(managed.cxx), path.dirname(managed.python)];
-  return path.isAbsolute(cxxPath()) ? [path.dirname(cxxPath())] : [];
+  const dirs = path.isAbsolute(cxxPath()) ? [path.dirname(cxxPath())] : [];
+  return managed ? [...dirs, path.dirname(managed.python)] : dirs;
 }
 
 function toolEnv() {
   const env = { ...process.env };
   const key = Object.keys(env).find((k) => k.toLowerCase() === 'path') || 'PATH';
   env[key] = [...toolDirs(), env[key] || ''].join(path.delimiter);
-  if (managed) Object.assign(env, managed.env);
+  if (managed && cxxPath() === managed.cxx) Object.assign(env, managed.env);
   else if (config().get('includePath') || standIn) env.CPLUS_INCLUDE_PATH = config().get('includePath') || standIn;
   env.PYTHONUTF8 = '1';
   return env;
 }
 
 function cxxPath() {
-  return managed ? managed.cxx : config().get('cxx');
+  return config().inspect('cxx').globalValue || (managed ? managed.cxx : config().get('cxx'));
 }
 
 function cxxFlags() {
-  return [...config().get('cxxFlags'), ...(managed ? managed.flags : [])];
+  return [...config().get('cxxFlags'), ...(managed && cxxPath() === managed.cxx ? managed.flags : [])];
 }
 
 function pythonPath() {
-  return (managed && managed.python) || config().get('python') || (process.platform === 'win32' ? 'python' : 'python3');
+  return config().get('python') || (managed && managed.python) || (process.platform === 'win32' ? 'python' : 'python3');
 }
 
 function shortName(command) {
@@ -104,7 +105,7 @@ function build(s, debug) {
 
 async function compile(s, debug) {
   const source = path.basename(s.file);
-  if (s.lang === 'py') return { ok: true, command: pythonPath(), args: [s.file], compile: '', log: '', run: `${shortName(pythonPath())} ${source}` };
+  if (s.lang === 'py') return { ok: true, missing: false, command: pythonPath(), args: [s.file], compile: '', log: '', run: `${shortName(pythonPath())} ${source}` };
   fs.mkdirSync(s.outDir, { recursive: true });
   const cxx = cxxPath();
   const exe = path.join(s.outDir, (debug ? 'debug' : 'run') + (process.platform === 'win32' ? '.exe' : ''));
@@ -113,6 +114,7 @@ async function compile(s, debug) {
   const shown = path.relative(s.dir, exe);
   return {
     ok: r.code === 0,
+    missing: Boolean(r.missing),
     command: exe,
     args: [],
     compile: `${shortName(cxx)} ${flags.join(' ')} ${source} -o ${shown}`,
@@ -133,9 +135,9 @@ function flush() {
     tests: target ? ws.testIds(target.dir).map((id) => ({ id, answered: ws.answerOf(target.dir, id) !== undefined })) : [],
     results: state ? Object.fromEntries(Object.entries(sync(state, target.dir)).map(([id, r]) => [id, shownResult(r)])) : {},
     compileError: state ? state.compileError : '',
-    running: Boolean(testing),
     steps: state ? state.steps : null,
-    session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
+    setup: Boolean(inApp && state && state.steps && state.steps.missing),
+    session: x ? { parts: x.parts, hidden: x.size - x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, flooded: x.flooded, over: x.over, cap: x.cap, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
 }
 
@@ -223,15 +225,18 @@ async function run(node) {
   update();
   const built = await build(s, false);
   if (active !== mine) return;
-  state.steps = { compile: built.compile, run: built.run, ok: built.ok };
+  state.steps = { compile: built.compile, run: built.run, ok: built.ok, missing: built.missing };
   state.compileError = built.log;
   if (!built.ok) {
     await stopActive();
     update();
     return;
   }
+  const limit = ws.loadMeta(s.dir).memoryLimit;
+  const cap = limit > 0 ? limit : MEMORY_CAP;
+  const wrapped = await runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args, cap * 1048576);
+  if (active !== mine) return;
   const started = Date.now();
-  const wrapped = runner.measured(pythonPath(), built.command, s.lang === 'py' ? ['-u', ...built.args] : built.args);
   mine.state = 'running';
   mine.child = runner.start(wrapped.command, wrapped.args, { cwd: s.dir, env: toolEnv() });
   mine.child.stdin.on('error', () => {});
@@ -242,7 +247,7 @@ async function run(node) {
   const finish = (code, signal, text) => {
     if (mine.state === 'finished') return;
     const r = wrapped.finish({ code, signal, ms: Date.now() - started });
-    Object.assign(mine, { state: 'finished', child: undefined, code: r.code, signal: r.signal, ms: r.ms, memory: r.memory });
+    Object.assign(mine, { state: 'finished', child: undefined, code: r.code, signal: r.signal, ms: r.ms, memory: r.memory, over: r.over, cap });
     if (text || r.failure) say(mine, 'err', text || `${r.failure}\n`);
     if (active === mine) active = undefined;
     setBusy();
@@ -288,16 +293,16 @@ async function runTests(node) {
 
 async function runAll(s, state, previous, job) {
   const built = await build(s, false);
-  state.steps = { compile: built.compile, run: built.run, ok: built.ok };
+  state.steps = { compile: built.compile, run: built.run, ok: built.ok, missing: built.missing };
   state.compileError = built.log;
   const meta = ws.loadMeta(s.dir);
   const timeLimit = meta.timeLimit > 0 ? meta.timeLimit : config().get('timeLimit');
-  const memoryLimit = meta.memoryLimit > 0 ? meta.memoryLimit * 1048576 : Infinity;
+  const memoryLimit = (meta.memoryLimit > 0 ? meta.memoryLimit : MEMORY_CAP) * 1048576;
   for (const test of built.ok ? ws.loadTests(s.dir) : []) {
     if (job.cancelled) break;
     state.results[test.id] = { verdict: 'running' };
     update();
-    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), onStart: (child) => { job.child = child; } };
+    const options = { cwd: s.dir, env: toolEnv(), timeout: timeLimit + 1000, python: pythonPath(), memory: memoryLimit, onStart: (child) => { job.child = child; if (job.cancelled) child.kill(); } };
     const r = await runner.collect(built.command, built.args, options, test.input);
     if (job.cancelled) {
       delete state.results[test.id];
@@ -306,7 +311,7 @@ async function runAll(s, state, previous, job) {
     let verdict = ws.verdictOf(r.stdout, test.answer);
     if (r.flooded) verdict = 'output limit';
     else if (r.timedOut || r.ms > timeLimit) verdict = 'time limit';
-    else if (r.memory > memoryLimit) verdict = 'memory limit';
+    else if (r.over || (meta.memoryLimit > 0 && r.memory > memoryLimit)) verdict = 'memory limit';
     else if (r.code !== 0) verdict = 'runtime error';
     const before = previous[test.id];
     const differs = Boolean(before) && ws.normalize(before.stdout) !== ws.normalize(r.stdout);
@@ -333,7 +338,7 @@ async function debugTest(id) {
   await document.save();
   const built = await build(s, true);
   if (!built.ok) {
-    stateOf(s.file).compileError = built.log;
+    Object.assign(stateOf(s.file), { compileError: built.log, steps: { compile: built.compile, run: built.run, ok: false, missing: built.missing } });
     update();
     return;
   }
@@ -381,7 +386,7 @@ async function debugTest(id) {
 
 function acceptOutput(id) {
   const r = sync(stateOf(target.file), target.dir)[id];
-  if (!r) return;
+  if (!r || r.verdict === 'running' || FINAL.includes(r.verdict)) return;
   fs.writeFileSync(path.join(target.dir, `${id}.answer`), r.stdout);
   refresh();
 }
@@ -408,7 +413,7 @@ async function showDiff(id) {
 }
 
 function checkSetup() {
-  return setup.open();
+  return setup && setup.open();
 }
 
 function adopt() {
@@ -447,8 +452,8 @@ function adopt() {
 
 async function submit() {
   if (!target) return;
-  const url = companion.webUrl(ws.loadMeta(target.dir).url);
-  if (!url) return;
+  const url = ws.loadMeta(target.dir).url;
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url) || url.length > 2000) return;
   const document = await vscode.workspace.openTextDocument(target.file);
   await document.save();
   await vscode.env.clipboard.writeText(document.getText());
@@ -466,22 +471,6 @@ async function openSolution(file, lang) {
   refresh();
 }
 
-async function createProblem(name, tests, meta) {
-  if (!root()) {
-    vscode.window.showErrorMessage(t('Open a folder first: problems are created in it.'));
-    return;
-  }
-  let slug = ws.slugOf(name);
-  for (let n = 1; !slug; n++) if (!fs.existsSync(path.join(root(), `untitled-${n}`))) slug = `untitled-${n}`;
-  const dir = path.join(root(), slug);
-  fs.mkdirSync(dir, { recursive: true });
-  if (tests && ws.testIds(dir).length === 0) tests.forEach((t, i) => ws.saveTest(dir, String(i + 1), t.input, t.output));
-  const described = path.join(dir, 'problem.json');
-  if (meta && !fs.existsSync(described)) fs.writeFileSync(described, JSON.stringify(meta, null, 2));
-  const lang = config().get('language');
-  await openSolution(ws.solutionsIn(dir)[0] || path.join(dir, `${slug}.${lang}`), lang);
-}
-
 function askName(options, taken) {
   return vscode.window.showInputBox({
     ...options,
@@ -491,7 +480,17 @@ function askName(options, taken) {
 
 async function newProblem() {
   const name = await vscode.window.showInputBox({ prompt: t('Name of the problem'), placeHolder: t('Leave empty to name it later') });
-  if (name !== undefined) await createProblem(name);
+  if (name === undefined) return;
+  if (!root()) {
+    vscode.window.showErrorMessage(t('Open a folder first: problems are created in it.'));
+    return;
+  }
+  let slug = ws.slugOf(name);
+  for (let n = 1; !slug; n++) if (!fs.existsSync(path.join(root(), `untitled-${n}`))) slug = `untitled-${n}`;
+  const dir = path.join(root(), slug);
+  fs.mkdirSync(dir, { recursive: true });
+  const lang = config().get('language');
+  await openSolution(ws.solutionsIn(dir)[0] || path.join(dir, `${slug}.${lang}`), lang);
 }
 
 async function newSolution(node) {
@@ -688,7 +687,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Too much output", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "{0} more are not shown", "Input for the program", "input ended", "Stopped: the program printed more than 16 MB", "Stopped: the program used more than {0} MB", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "{0} more are not shown; the whole output is compared with the answer", "output changed", "Copy and open problem", "Diagnostics", "More actions", "runtime error", "time limit", "memory limit", "output limit", "{0} KB", "{0} ms", "{0} MB", "# compile", "# test {0}"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -703,6 +702,7 @@ function receive(m) {
   if (m.type === 'run') runTests(shown);
   if (m.type === 'single') run(shown);
   if (m.type === 'submit') submit();
+  if (m.type === 'setup') checkSetup();
   if (!target) return;
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
   const live = active && active.file === target.file && active.state === 'running' ? active : undefined;
@@ -743,17 +743,20 @@ function openPractice(context) {
 }
 
 function activate(context) {
-  if (vscode.env.appName === 'Eolymp Code' && !vscode.workspace.workspaceFile && openPractice(context)) return;
-  toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
-  fs.mkdirSync(toolsRoot, { recursive: true });
-  terminalEnv = context.environmentVariableCollection;
-  adopt();
-  setup = doctor.create(context, toolsRoot, { cxx: cxxPath, flags: cxxFlags, python: pythonPath, env: toolEnv }, adopt);
-  setup.start().catch(() => {});
-  context.subscriptions.push(vscode.window.onDidChangeWindowState((window) => {
-    const have = window.focused ? toolset.installed(toolsRoot) : undefined;
-    if (have && (!managed || managed.dir !== have.dir)) adopt();
-  }));
+  if (inApp && !vscode.workspace.workspaceFile && openPractice(context)) return;
+  vscode.commands.executeCommand('setContext', 'eolympCode.app', inApp);
+  if (inApp) {
+    toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
+    fs.mkdirSync(toolsRoot, { recursive: true });
+    terminalEnv = context.environmentVariableCollection;
+    adopt();
+    setup = doctor.create(context, toolsRoot, adopt);
+    setup.start().catch(() => {});
+    context.subscriptions.push(vscode.window.onDidChangeWindowState((window) => {
+      const have = window.focused ? toolset.installed(toolsRoot) : undefined;
+      if (have && (!managed || managed.dir !== have.dir)) adopt();
+    }));
+  } else context.environmentVariableCollection.clear();
   const problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree });
   const describe = () => {
     if (!root()) return;
@@ -815,11 +818,7 @@ function activate(context) {
     }),
   );
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
-  if (root()) vscode.commands.executeCommand('eolympCode.problems.focus');
-
-  const failed = (err) => vscode.window.showErrorMessage(t('Could not read the problem sent by the browser: {0}', err.message));
-  const server = companion.listen(config().get('companionPort'), (problem) => createProblem(problem.name, problem.tests, problem.meta).catch(failed), failed);
-  context.subscriptions.push({ dispose: () => server.close() });
+  if (inApp && root()) vscode.commands.executeCommand('eolympCode.problems.focus');
 }
 
 function deactivate() {

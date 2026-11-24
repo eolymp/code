@@ -177,12 +177,14 @@
       const sign = failed ? mark('bad', T('Compilation failed')) : s.compileError ? mark('warn', T('Compiled with warnings')) : mark('ok', T('Compiled'));
       const head = [sign, compile ? command(compile) : make('span', 'title comment', T('# compile'))];
       if (s.compileError) head.push(stats(failed ? T('failed') : T('warnings')));
-      cards.push({ sign: JSON.stringify([s.path, compile, s.compileError, failed]), node: block('compile', Boolean(s.compileError), head, s.compileError ? [compilerLog(s.compileError, failed)] : []) });
+      const body = s.compileError ? [compilerLog(s.compileError, failed)] : [];
+      if (s.setup) body.push(actions(button(T('Diagnostics'), { type: 'setup' })));
+      cards.push({ sign: JSON.stringify([s.path, compile, s.compileError, failed, s.setup]), node: block('compile', Boolean(s.compileError), head, body) });
     }
     if (s.session && s.session.state !== 'compiling' && s.steps) {
       const x = s.session;
       const live = x.state === 'running';
-      const sign = live ? mark('busy', T('Running')) : x.code === 0 ? mark('ok', T('Finished')) : mark('bad', x.stopped ? T('Stopped') : x.flooded ? T('Too much output') : x.signal ? T('Crashed') : T('Finished with an error'));
+      const sign = live ? mark('busy', T('Running')) : x.code === 0 ? mark('ok', T('Finished')) : mark('bad', x.stopped ? T('Stopped') : x.flooded ? T('Too much output') : x.over ? T('memory limit') : x.signal ? T('Crashed') : T('Finished with an error'));
       const head = [sign, command(s.steps.run)];
       if (live) {
         const tools = make('span', 'tools');
@@ -231,6 +233,7 @@
       } else {
         typing = '';
         if (x.flooded) body.push(make('div', 'exit', T('Stopped: the program printed more than 16 MB')));
+        else if (x.over) body.push(make('div', 'exit', T('Stopped: the program used more than {0} MB', x.cap)));
         else if (!x.stopped && x.signal) body.push(make('div', 'exit', T('Crashed ({0})', x.signal)));
         else if (!x.stopped && x.code) body.push(make('div', 'exit', T('Exit code {0}', x.code)));
       }
@@ -282,7 +285,7 @@
         test: t.id,
         hasAnswer: t.answered,
         canDiff: Boolean(finished && (r.verdict === 'differs' || r.changed)),
-        canAccept: Boolean(finished && r.verdict !== 'match'),
+        canAccept: Boolean(finished && r.verdict !== 'match' && !FAILURES.includes(r.verdict)),
         preventDefaultContextMenuItems: true,
       });
       cards.push({ sign: JSON.stringify([s.path, t, r, run]), node: card });

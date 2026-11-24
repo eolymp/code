@@ -4,3 +4,4 @@ node_modules/
 test-results/
 .build/
 artifacts/
+__pycache__/

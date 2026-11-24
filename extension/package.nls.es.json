@@ -31,6 +31,5 @@
   "setting.includePath": "Carpeta adicional con archivos de cabecera de C++. El compilador la recibe en CPLUS_INCLUDE_PATH.",
   "setting.python": "Intérprete de Python. Si está vacío, se usa python en Windows y python3 en los demás sistemas.",
   "setting.language": "Lenguaje de los problemas nuevos.",
-  "setting.timeLimit": "Límite de tiempo de una prueba, en milisegundos.",
-  "setting.companionPort": "Puerto que recibe los problemas de la extensión de navegador Competitive Companion."
+  "setting.timeLimit": "Límite de tiempo de una prueba, en milisegundos."
 }

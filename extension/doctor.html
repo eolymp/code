@@ -75,6 +75,7 @@
     }
     if (fixable) buttons.append(button(s.fresh ? T('Install') : T('Fix'), 'fix'));
     buttons.append(button(T('Check again'), 'check', fixable ? 'quiet' : ''));
+    if (s.managed && !fixable) buttons.append(button(T('Reinstall'), 'reinstall', 'quiet'));
   });
   vscode.postMessage({ type: 'ready' });
 </script>
