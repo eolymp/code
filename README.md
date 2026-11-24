@@ -4,7 +4,9 @@ An editor for competitive programming: C++ and Python with completion, a debugge
 
 ## Install
 
-macOS and Linux:
+macOS: download the disk image for [Apple Silicon](https://downloads.eolymp.com/code/EolympCode-macos-arm64.dmg) or [Intel](https://downloads.eolymp.com/code/EolympCode-macos-x64.dmg) and drag Eolymp Code to Applications.
+
+Linux:
 
     curl -fsSL https://downloads.eolymp.com/code/install.sh | bash
 
@@ -25,9 +27,8 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 
 ## Build
 
-    ./app/build.sh    # the editor, for this machine
+    ./app/build.sh    # the editor, for this machine; on macOS a disk image in artifacts/
     ./build.sh        # dist/: installers and release files
-    EOLYMP_CODE_URL="file://$PWD/dist" bash dist/install.sh
 
 ## Test
 

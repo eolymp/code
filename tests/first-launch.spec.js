@@ -17,7 +17,7 @@ test('A first launch offers to install the compiler and Python, and Run works af
   await editor.window.keyboard.press('ControlOrMeta+Shift+P');
   await editor.window.keyboard.type('Eolymp Code: Diagnostics');
   await editor.window.keyboard.press('Enter');
-  await expect(editor.page.locator('.step', { hasText: 'C++ program runs' }).locator('.mark.ok')).toBeVisible({ timeout: 60000 });
-  await expect(editor.page.locator('.step', { hasText: 'Time and memory measuring' }).locator('.mark.ok')).toBeVisible();
+  await expect(editor.page.locator('.step', { hasText: 'Compiler and Python' }).locator('.mark.ok')).toBeVisible({ timeout: 60000 });
+  await expect(editor.page.locator('.step', { hasText: 'C++ debugger' }).locator('.mark.ok')).toBeVisible();
   if (process.env.SHOT) await editor.window.screenshot({ path: process.env.SHOT });
 });

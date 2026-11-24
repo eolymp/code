@@ -1,0 +1,45 @@
+--- a/src/mainImpl.ts
++++ b/src/mainImpl.ts
+@@ -68,6 +68,42 @@
+ 	}
+ }
+ app.setPath('userData', userDataPath);
++try {
++	const defaults = path.join(import.meta.dirname, '..', 'defaults');
++	const settings = path.join(userDataPath, 'User', 'settings.json');
++	if (!fs.existsSync(settings) && fs.existsSync(path.join(defaults, 'settings.json'))) {
++		fs.mkdirSync(path.dirname(settings), { recursive: true });
++		fs.copyFileSync(path.join(defaults, 'settings.json'), settings);
++	}
++	if (fs.existsSync(path.join(defaults, 'languagepacks.json'))) {
++		const root = path.join(import.meta.dirname, '..');
++		const file = path.join(userDataPath, 'languagepacks.json');
++		const bundled = JSON.parse(fs.readFileSync(path.join(defaults, 'languagepacks.json'), 'utf8'));
++		let known: Record<string, { hash: string; translations: Record<string, string> }> = {};
++		try {
++			known = JSON.parse(fs.readFileSync(file, 'utf8'));
++		} catch {
++			known = {};
++		}
++		let changed = false;
++		for (const language of Object.keys(bundled)) {
++			const pack = bundled[language];
++			for (const id of Object.keys(pack.translations)) {
++				pack.translations[id] = path.join(root, pack.translations[id]);
++			}
++			if (!known[language] || known[language].hash !== pack.hash || !Object.values(known[language].translations).every(translation => fs.existsSync(translation))) {
++				known[language] = pack;
++				changed = true;
++			}
++		}
++		if (changed) {
++			fs.mkdirSync(userDataPath, { recursive: true });
++			fs.writeFileSync(file, JSON.stringify(known));
++		}
++	}
++} catch {
++	// start without the defaults
++}
+ perf.mark('code/didGetUserDataPath');
+ 
+ if (process.platform === 'linux') {

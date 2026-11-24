@@ -21,8 +21,8 @@ case "$(uname -m)" in
 esac
 
 case "$(uname -s)" in
-  Linux) os=linux; package=tar.gz; data="$DEST/editor/data" ;;
-  Darwin) os=darwin; package=zip; data="$DEST/editor/eolymp-code-portable-data" ;;
+  Linux) os=linux; data="$DEST/editor/data" ;;
+  Darwin) echo "On macOS, download Eolymp Code from https://downloads.eolymp.com/code/EolympCode-macos-$arch.dmg"; exit 1 ;;
   *) echo "unsupported system: $(uname -s)"; exit 1 ;;
 esac
 
@@ -56,21 +56,15 @@ fresh=yes
 [ -d "$kept" ] && fresh=no
 rm -rf "$DEST/editor"
 mkdir -p "$DEST/editor"
-if [ "$os" = linux ]; then
-  tar -xzf "$editor" -C "$DEST/editor"
-  sudo chown root:root "$DEST/editor/chrome-sandbox"
-  sudo chmod 4755 "$DEST/editor/chrome-sandbox"
-  codium="$DEST/editor/bin/eolymp-code"
-  cp "$pinned/icon.png" "$DEST/icon.png"
-else
-  bundle="$DEST/editor/Eolymp Code.app"
-  ditto -x -k "$editor" "$DEST/editor"
-  codium="$bundle/Contents/Resources/app/bin/eolymp-code"
-fi
+tar -xzf "$editor" -C "$DEST/editor"
+sudo chown root:root "$DEST/editor/chrome-sandbox"
+sudo chmod 4755 "$DEST/editor/chrome-sandbox"
+codium="$DEST/editor/bin/eolymp-code"
+cp "$pinned/icon.png" "$DEST/icon.png"
 [ "$fresh" = yes ] || mv "$kept" "$data"
 mkdir -p "$data/user-data/User"
-case "${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}$(defaults read -g AppleLocale 2>/dev/null || true)" in
-  *uk_*|*uk-*) [ -e "$data/argv.json" ] || printf '{ "locale": "uk" }\n' > "$data/argv.json" ;;
+case "${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}" in
+  uk_*|uk-*) [ -e "$data/argv.json" ] || printf '{ "locale": "uk" }\n' > "$data/argv.json" ;;
 esac
 
 step "Writing the editor's settings"
@@ -91,9 +85,8 @@ if [ ! -e "$WORK/sum" ]; then
   printf '12\n9\n' > "$WORK/sum/1.in"
   printf '21\n' > "$WORK/sum/1.answer"
 fi
-if [ "$os" = linux ]; then
-  mkdir -p "$HOME/.local/share/applications"
-  cat > "$HOME/.local/share/applications/eolymp-code.desktop" <<DESKTOP
+mkdir -p "$HOME/.local/share/applications"
+cat > "$HOME/.local/share/applications/eolymp-code.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Name=Eolymp Code
@@ -103,36 +96,7 @@ Icon=$DEST/icon.png
 Categories=Development;IDE;
 StartupWMClass=Eolymp Code
 DESKTOP
-else
-  app="$HOME/Applications/Eolymp Code.app"
-  rm -rf "$app"
-  mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-  cp "$bundle/Contents/Resources/Eolymp Code.icns" "$app/Contents/Resources/icon.icns"
-  cat > "$app/Contents/Info.plist" <<PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>CFBundleName</key><string>Eolymp Code</string>
-  <key>CFBundleIdentifier</key><string>com.eolymp.code</string>
-  <key>CFBundleExecutable</key><string>eolymp-code</string>
-  <key>CFBundleIconFile</key><string>icon</string>
-  <key>CFBundlePackageType</key><string>APPL</string>
-  <key>LSUIElement</key><true/>
-</dict>
-</plist>
-PLIST
-  cat > "$app/Contents/MacOS/eolymp-code" <<LAUNCHER
-#!/bin/bash
-exec open -a "$bundle" --args "$WORK" --use-mock-keychain
-LAUNCHER
-  chmod +x "$app/Contents/MacOS/eolymp-code"
-fi
 
 rm -rf "$DEST/downloads"
 step "Done in $(( $(date +%s) - started )) seconds. Starting Eolymp Code"
-if [ "$os" = linux ]; then
-  nohup "$DEST/editor/eolymp-code" --password-store=basic "$WORK" "$sample" >/dev/null 2>&1 &
-else
-  open -a "$bundle" --args "$WORK" "$sample" --use-mock-keychain
-fi
+nohup "$DEST/editor/eolymp-code" --password-store=basic "$WORK" "$sample" >/dev/null 2>&1 &
