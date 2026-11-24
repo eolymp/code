@@ -40,6 +40,7 @@
   .block .body:empty { display: none; }
   button.icon { flex: none; padding: 3px; border-radius: 4px; font: 16px/1 codicon; color: var(--vscode-icon-foreground); background: transparent; }
   button.icon:hover { background: var(--vscode-toolbar-hoverBackground); }
+  button.icon svg { display: block; fill: currentColor; }
   .tools { display: flex; gap: 2px; }
   .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
   pre { font: inherit; max-height: 240px; margin: 0; overflow: auto; white-space: pre; user-select: text; }
@@ -58,7 +59,7 @@
   const vscode = acquireVsCodeApi();
   const STRINGS = {{strings}};
   const T = (text, ...args) => (STRINGS[text] || text).replace(/\{(\d)\}/g, (all, i) => args[i]);
-  const ICONS = { check: 0xeab2, close: 0xea76, warning: 0xea6c, loading: 0xeb19, dot: 0xeb8a, stop: 0xead7, disconnect: 0xead0, ellipsis: 0xea7c };
+  const ICONS = { check: 0xeab2, close: 0xea76, warning: 0xea6c, loading: 0xeb19, dot: 0xeb8a, stop: 0xead7, disconnect: 0xead0 };
   const MARKS = { ok: 'check', bad: 'close', warn: 'warning', none: 'dot', busy: 'loading' };
   const trimmed = (name, test) => {
     const link = make('a', 'note', T('Output trimmed, open {0}', name));
@@ -84,16 +85,30 @@
     return span;
   };
   const icon = (name, tip, action) => {
-    const b = make('button', 'icon', glyph(name));
+    const b = make('button', 'icon', name ? glyph(name) : '');
     b.title = tip;
     b.setAttribute('aria-label', tip);
     b.onclick = (event) => { event.preventDefault(); event.stopPropagation(); action(b); };
     return b;
   };
-  const more = () => icon('ellipsis', T('More actions'), (b) => {
-    const box = b.getBoundingClientRect();
-    b.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: box.left, clientY: box.bottom }));
-  });
+  const more = () => {
+    const b = icon('', T('More actions'), () => {
+      const box = b.getBoundingClientRect();
+      b.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: box.left, clientY: box.bottom }));
+    });
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '16');
+    svg.setAttribute('height', '16');
+    for (const x of [4, 8, 12]) {
+      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', x);
+      dot.setAttribute('cy', 8);
+      dot.setAttribute('r', 1.1);
+      svg.append(dot);
+    }
+    b.append(svg);
+    return b;
+  };
   const folded = {};
   let typing = '';
   let shown = '';
