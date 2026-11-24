@@ -35,6 +35,8 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 
     cd tests && npm ci && npm test
 
+The tests drive the installed app. With `EOLYMP_CODE_SOURCE=1` they load `extension/` and `setup/` from this checkout into it.
+
 ## Licences
 
 The editor is built from [Code - OSS](https://github.com/microsoft/vscode) (MIT). `extension/codicon.ttf` is from [vscode-codicons](https://github.com/microsoft/vscode-codicons) (CC BY 4.0).
