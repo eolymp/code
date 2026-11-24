@@ -22,7 +22,7 @@ function adopt() {
   const diagnose = () => setup.open();
   core.provide(managed ? { cxx: managed.cxx, python: managed.python, flags: managed.flags, env: managed.env, diagnose } : { include: standIn, diagnose });
   terminalEnv.clear();
-  if (!managed && !standIn) return;
+  if (!managed && !standIn) return undefined;
   const updates = [];
   const flags = ['-std=c++17'];
   if (managed) {
@@ -49,14 +49,16 @@ function adopt() {
       updates.push(Promise.resolve());
     }
   }
-  if (updates.length) Promise.all(updates).then(() => vscode.commands.executeCommand('clangd.restart')).then(undefined, () => {});
+  const saved = Promise.all(updates);
+  if (updates.length) saved.then(() => vscode.commands.executeCommand('clangd.restart')).then(undefined, () => {});
+  return saved.then(undefined, () => {});
 }
 
 function openPractice(context) {
   const practice = path.join(os.homedir(), 'Eolymp', 'practice');
   const sample = path.join(practice, 'sum', 'sum.cpp');
   if (root()) {
-    if (root() === practice && !context.globalState.get('welcomed') && fs.existsSync(sample)) {
+    if (!path.relative(root(), practice) && !context.globalState.get('welcomed') && fs.existsSync(sample)) {
       context.globalState.update('welcomed', true);
       vscode.window.showTextDocument(vscode.Uri.file(sample));
     }
