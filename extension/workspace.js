@@ -112,6 +112,6 @@ function verdictOf(output, answer) {
 }
 
 module.exports = {
-  LANGS, TEST_FILES, natural, read, normalize, slugOf, badName, langOf, solutionOf, solutionsIn, testIds,
+  TEST_FILES, read, slugOf, badName, langOf, solutionOf, solutionsIn, testIds,
   othersIn, problemsIn, answerOf, loadTests, saveTest, nextTest, verdictOf,
 };

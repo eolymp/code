@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { pipeline } = require('stream/promises');
 const zlib = require('zlib');
 
 const SETS = require('./tools.json');
@@ -83,43 +84,81 @@ async function download(item, file, onBytes, signal) {
   if (hash.digest('hex') !== item.sha256) throw new Error(`the download does not match its checksum: ${path.basename(item.url)}`);
 }
 
-function untar(data, dest) {
-  const text = (start, length) => data.toString('utf8', start, start + length).replace(/\0.*$/s, '');
+async function untar(source, dest) {
+  const text = (block, start, length) => block.toString('utf8', start, start + length).replace(/\0.*$/s, '');
   const links = [];
+  let held = Buffer.alloc(0);
+  let entry;
   let longName;
   let longLink;
-  for (let at = 0; at + 512 <= data.length;) {
-    if (data[at] === 0) break;
-    const size = parseInt(text(at + 124, 12).trim() || '0', 8);
-    const type = String.fromCharCode(data[at + 156] || 48);
-    const body = data.subarray(at + 512, at + 512 + size);
-    at += 512 + Math.ceil(size / 512) * 512;
-    if (type === 'L') { longName = body.toString('utf8').replace(/\0.*$/s, ''); continue; }
-    if (type === 'K') { longLink = body.toString('utf8').replace(/\0.*$/s, ''); continue; }
-    if (type === 'x' || type === 'g') {
-      for (const record of body.toString('utf8').split('\n')) {
-        const found = /^\d+ (path|linkpath)=(.*)$/s.exec(record);
-        if (found && type === 'x') { if (found[1] === 'path') longName = found[2]; else longLink = found[2]; }
-      }
-      continue;
+  let ended = false;
+  const close = () => {
+    if (entry.handle !== undefined) {
+      fs.closeSync(entry.handle);
+      fs.chmodSync(entry.target, entry.mode | 0o200);
+      return;
     }
-    const header = at - 512 - Math.ceil(size / 512) * 512;
-    const prefix = text(header + 345, 155);
-    const name = longName || (prefix ? `${prefix}/` : '') + text(header, 100);
-    const link = longLink || text(header + 157, 100);
-    const mode = parseInt(text(header + 100, 8).trim() || '644', 8);
+    if (!entry.kept) return;
+    const body = Buffer.concat(entry.kept).toString('utf8');
+    if (entry.type === 'L') longName = body.replace(/\0.*$/s, '');
+    else if (entry.type === 'K') longLink = body.replace(/\0.*$/s, '');
+    else if (entry.type === 'x') {
+      for (const record of body.split('\n')) {
+        const found = /^\d+ (path|linkpath)=(.*)$/s.exec(record);
+        if (found && found[1] === 'path') longName = found[2];
+        else if (found) longLink = found[2];
+      }
+    }
+  };
+  const open = (header) => {
+    const size = parseInt(text(header, 124, 12).trim() || '0', 8);
+    const type = String.fromCharCode(header[156] || 48);
+    entry = { type, left: size, pad: Math.ceil(size / 512) * 512 - size };
+    if (type === 'L' || type === 'K' || type === 'x' || type === 'g') { entry.kept = []; return; }
+    const prefix = text(header, 345, 155);
+    const name = longName || (prefix ? `${prefix}/` : '') + text(header, 0, 100);
+    const link = longLink || text(header, 157, 100);
     longName = undefined;
     longLink = undefined;
     const target = path.join(dest, name);
-    if (!target.startsWith(dest + path.sep) && target !== dest) continue;
+    if (!target.startsWith(dest + path.sep) && target !== dest) return;
     if (type === '5') fs.mkdirSync(target, { recursive: true });
     else if (type === '2' || type === '1') links.push({ type, target, link });
     else if (type === '0' || type === '7') {
       fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.writeFileSync(target, body);
-      fs.chmodSync(target, mode | 0o200);
+      entry.target = target;
+      entry.mode = parseInt(text(header, 100, 8).trim() || '644', 8);
+      entry.handle = fs.openSync(target, 'w');
     }
+  };
+  try {
+    for await (const chunk of source) {
+      if (ended) continue;
+      held = held.length ? Buffer.concat([held, chunk]) : chunk;
+      for (;;) {
+        if (entry) {
+          const count = Math.min(entry.left, held.length);
+          if (count) {
+            if (entry.handle !== undefined) fs.writeSync(entry.handle, held, 0, count);
+            else if (entry.kept) entry.kept.push(Buffer.from(held.subarray(0, count)));
+            entry.left -= count;
+            held = held.subarray(count);
+          }
+          if (entry.left || held.length < entry.pad) break;
+          held = held.subarray(entry.pad);
+          close();
+          entry = undefined;
+        }
+        if (held.length < 512) break;
+        if (held[0] === 0) { ended = true; break; }
+        open(held.subarray(0, 512));
+        held = held.subarray(512);
+      }
+    }
+  } finally {
+    if (entry && entry.handle !== undefined) fs.closeSync(entry.handle);
   }
+  if (entry) throw new Error('the archive is cut short');
   for (const { type, target, link } of links) {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.rmSync(target, { force: true });
@@ -128,21 +167,37 @@ function untar(data, dest) {
   }
 }
 
-function conda(file, dest) {
-  const data = fs.readFileSync(file);
-  let end = data.length - 22;
-  while (data.readUInt32LE(end) !== 0x06054b50) end -= 1;
-  let at = data.readUInt32LE(end + 16);
-  for (let i = data.readUInt16LE(end + 10); i > 0; i -= 1) {
-    const name = data.toString('utf8', at + 46, at + 46 + data.readUInt16LE(at + 28));
-    const size = data.readUInt32LE(at + 20);
-    const local = data.readUInt32LE(at + 42);
-    if (name.startsWith('pkg-')) {
-      if (data.readUInt16LE(at + 10) !== 0) throw new Error(`unexpected compression in ${path.basename(file)}`);
-      const start = local + 30 + data.readUInt16LE(local + 26) + data.readUInt16LE(local + 28);
-      untar(zlib.zstdDecompressSync(data.subarray(start, start + size), { maxOutputLength: 2 ** 31 - 1 }), dest);
+async function conda(file, dest) {
+  const handle = fs.openSync(file, 'r');
+  const read = (start, length) => {
+    const block = Buffer.alloc(length);
+    fs.readSync(handle, block, 0, length, start);
+    return block;
+  };
+  const parts = [];
+  try {
+    const total = fs.fstatSync(handle).size;
+    const tail = read(Math.max(0, total - 65558), Math.min(total, 65558));
+    let end = tail.length - 22;
+    while (end >= 0 && tail.readUInt32LE(end) !== 0x06054b50) end -= 1;
+    if (end < 0) throw new Error(`not an archive: ${path.basename(file)}`);
+    const list = read(tail.readUInt32LE(end + 16), tail.readUInt32LE(end + 12));
+    let at = 0;
+    for (let i = tail.readUInt16LE(end + 10); i > 0; i -= 1) {
+      const name = list.toString('utf8', at + 46, at + 46 + list.readUInt16LE(at + 28));
+      if (name.startsWith('pkg-')) {
+        if (list.readUInt16LE(at + 10) !== 0) throw new Error(`unexpected compression in ${path.basename(file)}`);
+        const local = list.readUInt32LE(at + 42);
+        const head = read(local, 30);
+        parts.push({ start: local + 30 + head.readUInt16LE(26) + head.readUInt16LE(28), size: list.readUInt32LE(at + 20) });
+      }
+      at += 46 + list.readUInt16LE(at + 28) + list.readUInt16LE(at + 30) + list.readUInt16LE(at + 32);
     }
-    at += 46 + data.readUInt16LE(at + 28) + data.readUInt16LE(at + 30) + data.readUInt16LE(at + 32);
+  } finally {
+    fs.closeSync(handle);
+  }
+  for (const part of parts) {
+    if (part.size) await pipeline(fs.createReadStream(file, { start: part.start, end: part.start + part.size - 1 }), zlib.createZstdDecompress(), (source) => untar(source, dest));
   }
 }
 
@@ -190,7 +245,7 @@ function stored(set, index) {
   return `${index}-${path.basename(new URL(set.items[index].url).pathname)}`;
 }
 
-function unpack(root, report) {
+async function unpack(root, report) {
   const set = wanted();
   const dir = path.join(root, set.id);
   const lock = path.join(root, 'lock');
@@ -203,8 +258,8 @@ function unpack(root, report) {
     const file = path.join(downloads, stored(set, index));
     const dest = path.join(dir, item.into);
     fs.mkdirSync(dest, { recursive: true });
-    if (item.type === 'conda') conda(file, dest);
-    else if (item.type === 'tar.gz') untar(zlib.gunzipSync(fs.readFileSync(file), { maxOutputLength: 2 ** 31 - 1 }), dest);
+    if (item.type === 'conda') await conda(file, dest);
+    else if (item.type === 'tar.gz') await pipeline(fs.createReadStream(file), zlib.createGunzip(), (source) => untar(source, dest));
     else if (process.platform === 'win32') run(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe'), ['-xf', file, '-C', dest]);
     else run(path.join(dir, ...set.python.split('/')), ['-m', 'zipfile', '-e', file, dest]);
   }
@@ -294,12 +349,8 @@ async function install(location, report, signal) {
 }
 
 if (require.main === module && process.send) {
-  try {
-    unpack(process.argv[2], (stage, value) => process.send({ stage, value }));
-    process.disconnect();
-  } catch (err) {
-    process.send({ error: err.message }, () => process.exit(1));
-  }
+  unpack(process.argv[2], (stage, value) => process.send({ stage, value }))
+    .then(() => process.disconnect(), (err) => process.send({ error: err.message }, () => process.exit(1)));
 }
 
 module.exports = { wanted, installed, install, sdk };
