@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "publisher": "eolymp",
   "license": "MIT",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/eolymp/code"
@@ -12,9 +13,6 @@
   "engines": {
     "vscode": "^1.90.0"
   },
-  "categories": [
-    "Other"
-  ],
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -423,6 +421,5 @@
       }
     ]
   },
-  "l10n": "./l10n",
-  "icon": "icon.png"
+  "l10n": "./l10n"
 }

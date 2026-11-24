@@ -3,7 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const toolset = require('./tools');
-const doctor = require('./doctor');
+const diagnostics = require('./diagnostics');
 const update = require('./update');
 
 const standIn = process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
@@ -89,7 +89,7 @@ function activate(context) {
   fs.mkdirSync(toolsRoot, { recursive: true });
   terminalEnv = context.environmentVariableCollection;
   adopt();
-  setup = doctor.create(context, toolsRoot, adopt);
+  setup = diagnostics.create(context, toolsRoot, adopt);
   setup.start().catch(() => {});
   update.check(context).catch(() => {});
   context.subscriptions.push(

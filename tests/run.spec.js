@@ -25,5 +25,5 @@ test('Run compiles the solution, takes typed input and shows the output', async 
   const run = editor.panel.locator('details[data-key="run"]');
   await expect(run.locator('pre')).toHaveText('12 9\n21\n');
   await expect(run.getByRole('img', { name: 'Finished' })).toBeVisible();
-  expect(fs.existsSync(path.join(editor.workspace, 'sum/.cp/sum', process.platform === 'win32' ? 'run.exe' : 'run'))).toBe(true);
+  expect(fs.existsSync(path.join(editor.workspace, 'sum/.build/sum', process.platform === 'win32' ? 'run.exe' : 'run'))).toBe(true);
 });

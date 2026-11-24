@@ -25,7 +25,7 @@
   "editor.minimap.enabled": false,
   "files.autoSave": "afterDelay",
   "files.exclude": {
-    "**/.cp": true,
+    "**/.build": true,
     "**/.clang-format": true,
     "**/.clangd": true
   },

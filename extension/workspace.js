@@ -36,7 +36,7 @@ function solutionOf(file) {
   if (!lang) return undefined;
   const dir = path.dirname(file);
   const name = path.basename(file, path.extname(file));
-  return { file, dir, name, lang, outDir: path.join(dir, '.cp', name) };
+  return { file, dir, name, lang, outDir: path.join(dir, '.build', name) };
 }
 
 function solutionsIn(dir) {

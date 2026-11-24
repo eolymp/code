@@ -2,7 +2,7 @@ const { test, expect } = require('./app');
 
 const LAUNCH = {
   version: '0.2.0',
-  configurations: [{ name: 'sum', type: 'lldb', request: 'launch', program: '${workspaceFolder}/sum/.cp/sum/run' }],
+  configurations: [{ name: 'sum', type: 'lldb', request: 'launch', program: '${workspaceFolder}/sum/.build/sum/run' }],
 };
 
 test.use({
