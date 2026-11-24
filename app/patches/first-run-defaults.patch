@@ -43,3 +43,20 @@
  perf.mark('code/didGetUserDataPath');
  
  if (process.platform === 'linux') {
+@@ -151,7 +187,15 @@
+ perf.mark('code/willGetPreferredSystemLanguages');
+ const osLocale = processZhLocale((app.getPreferredSystemLanguages()?.[0] ?? 'en').toLowerCase());
+ perf.mark('code/didGetPreferredSystemLanguages');
+-const userLocale = getUserDefinedLocale(argvConfig);
++let userLocale = getUserDefinedLocale(argvConfig);
++if (!userLocale) {
++	try {
++		const bundled = Object.keys(JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'defaults', 'languagepacks.json'), 'utf8')));
++		userLocale = bundled.find(language => osLocale === language || osLocale.startsWith(`${language}-`));
++	} catch {
++		// start in English
++	}
++}
+ if (userLocale) {
+ 	nlsConfigurationPromise = resolveNLSConfiguration({
+ 		userLocale,
