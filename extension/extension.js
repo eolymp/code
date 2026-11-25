@@ -66,7 +66,7 @@ function sync(state, s) {
 }
 
 function solutionIn(document) {
-  return document && document.uri.scheme === 'file' && path.dirname(document.fileName) !== __dirname ? ws.solutionOf(document.fileName) : undefined;
+  return document && document.uri.scheme === 'file' ? ws.solutionOf(document.fileName) : undefined;
 }
 
 function toolDirs() {
@@ -421,7 +421,7 @@ async function debugWith(node, input) {
   mine.finish = () => {
     if (mine.state === 'finished') return;
     clearInterval(timer);
-    pumps.forEach((pump) => { pump(); pump(); });
+    pumps.forEach((pump) => pump());
     if (server) server.close();
     else if (typing) fs.rm(pipe, { force: true }, () => {});
     else if (mine.stdin) fs.open(pipe, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK, (err, fd) => { if (!err) fs.close(fd, () => {}); });
@@ -449,7 +449,8 @@ async function debugWith(node, input) {
     update();
     return;
   }
-  const launch = async () => {
+  let started = false;
+  try {
     fs.mkdirSync(s.outDir, { recursive: true });
     if (input.typed !== undefined) fs.writeFileSync(stdin, input.typed);
     fs.writeFileSync(mine.out, '');
@@ -464,25 +465,28 @@ async function debugWith(node, input) {
       mine.stdin = fs.createWriteStream(pipe);
       mine.stdin.on('error', () => {});
     }
-    if (active !== mine) return false;
+    if (active !== mine) {
+      mine.finish();
+      return;
+    }
     if (input.typed) say(mine, 'in', input.typed.endsWith('\n') ? input.typed : `${input.typed}\n`);
     pumps = [[mine.out, 'out'], [mine.err, 'err']].map(([file, kind]) => {
       const decoder = new StringDecoder('utf8');
       let at = 0;
       return () => {
         const size = fs.existsSync(file) ? fs.statSync(file).size : 0;
-        if (size <= at) return;
-        if (mine.shown >= runner.SHOWN) {
-          mine.size += size - at;
-          at = size;
-          return;
+        while (size > at && mine.shown < runner.SHOWN) {
+          const chunk = Buffer.alloc(Math.min(size - at, runner.SHOWN));
+          const fd = fs.openSync(file, 'r');
+          const read = fs.readSync(fd, chunk, 0, chunk.length, at);
+          fs.closeSync(fd);
+          if (!read) break;
+          at += read;
+          say(mine, kind, decoder.write(chunk.subarray(0, read)));
         }
-        const chunk = Buffer.alloc(Math.min(size - at, runner.SHOWN));
-        const fd = fs.openSync(file, 'r');
-        const read = fs.readSync(fd, chunk, 0, chunk.length, at);
-        fs.closeSync(fd);
-        at += read;
-        say(mine, kind, decoder.write(chunk.subarray(0, read)));
+        if (mine.shown < runner.SHOWN) return;
+        mine.size += Math.max(0, size - at);
+        at = Math.max(at, size);
       };
     });
     timer = setInterval(() => pumps.forEach((pump) => pump()), 100);
@@ -501,7 +505,7 @@ async function debugWith(node, input) {
     mine.state = 'running';
     launches.set(token, mine);
     update();
-    return vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(uri), s.lang === 'cpp' ? {
+    started = await vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(uri), s.lang === 'cpp' ? {
       ...common,
       type: 'lldb',
       program: built.command,
@@ -518,8 +522,10 @@ async function debugWith(node, input) {
       console: 'internalConsole',
       rules: [{ path: path.join(__dirname, '**'), include: false }],
     });
-  };
-  if (!await launch().catch((err) => say(mine, 'err', `${err.message}\n`))) mine.finish();
+  } catch (err) {
+    say(mine, 'err', `${err.message}\n`);
+  }
+  if (!started) mine.finish();
 }
 
 function acceptOutput(id) {
@@ -922,7 +928,7 @@ function receive(m) {
   if (m.type === 'rerun' && target) testWith({ ...shown, quiet: true }, stateOf(target.file).only);
   const state = target && stateOf(target.file);
   const x = state && state.session;
-  const last = !state ? undefined : x ? x.test : m.type === 'debug' ? state.only : undefined;
+  const last = !state ? undefined : m.only ? state.only : x ? x.test : undefined;
   const test = last !== undefined && ws.testIds(target.dir).includes(last) ? last : undefined;
   if (m.type === 'single' && test !== undefined) testWith({ ...shown, quiet: true }, test);
   else if (m.type === 'single') run(shown);
@@ -981,10 +987,10 @@ function activate(context) {
           onDidSendMessage: (m) => {
             if (m.type !== 'event') return;
             if (m.event === 'exited') mine.code = m.body.exitCode;
-            if (m.event !== 'stopped' || m.body.reason !== 'step') return;
+            if (m.event !== 'stopped' || m.body.reason !== 'step' || session.type !== 'lldb') return;
             session.customRequest('stackTrace', { threadId: m.body.threadId, startFrame: 0, levels: 1 }).then((trace) => {
               const frame = trace.stackFrames[0];
-              if (!frame || !frame.source || !frame.source.path || frame.source.sourceReference || path.dirname(frame.source.path) === __dirname) return session.customRequest('continue', { threadId: m.body.threadId });
+              if (!frame || !frame.source || !frame.source.path || frame.source.sourceReference) return session.customRequest('continue', { threadId: m.body.threadId });
               return undefined;
             }).then(undefined, () => {});
           },

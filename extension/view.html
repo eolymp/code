@@ -250,7 +250,7 @@
       if (typing) tools.append(icon('disconnect', T('End input (Ctrl+D)'), send({ type: 'eof' })));
       const stop = icon('stop', T('Stop (Ctrl+C)'), send({ type: 'stop' }));
       stop.classList.add('halt');
-      if (!busy && (tested ? s.only : s.session)) tools.append(icon('debug', T('Debug'), send({ type: 'debug' })));
+      if (!busy && (tested ? s.only : s.session)) tools.append(icon('debug', T('Debug'), send({ type: 'debug', only: tested })));
       tools.append(busy ? stop : icon('rerun', T('Rerun'), send({ type: tested ? 'rerun' : 'single' })));
       head.append(tools);
     }
