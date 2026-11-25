@@ -46,3 +46,25 @@ test('F5 runs the solution from a test file and from the Practice view', async (
   await editor.window.keyboard.press('Shift+F5');
   await expect(editor.panel.locator('details[data-key="test-1"]')).toBeVisible();
 });
+
+test('A compilation error shows short paths that open the place', async ({ editor }) => {
+  fs.writeFileSync(path.join(editor.workspace, 'sum/sum.cpp'), SUM.replace('cout <<', 'cfout <<'));
+  await editor.toolbar.getByRole('button', { name: /^Run/ }).click();
+
+  const log = editor.panel.locator('details[data-key="compile"] pre');
+  await expect(log.getByRole('link').first()).toHaveText('sum/sum.cpp:7:5');
+  await expect(log).not.toContainText(editor.workspace);
+});
+
+test.describe('Python', () => {
+  test.use({ files: { 'sum/sum.py': 'import json\njson.loads("x")\n' } });
+
+  test('A traceback shows short paths that open the place', async ({ editor }) => {
+    await editor.toolbar.getByRole('button', { name: /^Run/ }).click();
+
+    const log = editor.panel.locator('details[data-key="run"] pre');
+    await expect(log.getByRole('link').first()).toHaveText('sum/sum.py');
+    await expect(log).toContainText('File "stdlib:json/__init__.py", line');
+    await expect(log).not.toContainText(editor.workspace);
+  });
+});

@@ -54,6 +54,7 @@
   pre.bad, pre .err { color: var(--vscode-terminal-ansiRed); }
   pre .in { color: var(--vscode-terminal-ansiCyan); }
   pre a { color: var(--vscode-textLink-foreground); text-decoration: none; cursor: pointer; }
+  pre .stdlib { color: var(--vscode-descriptionForeground); }
   pre a:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; }
   .stdin { display: flex; color: var(--vscode-terminal-ansiCyan); }
   .stdin input { flex: 1; font: inherit; color: inherit; background: transparent; border: 0; outline: 0; padding: 0; caret-shape: block; caret-color: var(--vscode-terminalCursor-foreground, var(--vscode-foreground)); }
@@ -138,16 +139,54 @@
     details.append(summary, inside);
     return details;
   };
-  const compilerLog = (text, failed) => {
+  const STDLIB = [
+    /[\\/]include[\\/](?:[^\\/]+[\\/])?c\+\+[\\/](?:v?[\d.]+[\\/])?(.+)$/,
+    /[\\/]lib[\\/]gcc[\\/][^\\/]+[\\/][\d.]+[\\/]include(?:-fixed)?[\\/](.+)$/,
+    /[\\/]usr[\\/]include[\\/](.+)$/,
+    /[\\/]include[\\/](bits[\\/]stdc\+\+\.h)$/,
+    /[\\/]lib(?:64)?[\\/]python\d[\d.]*[\\/](?!site-packages[\\/]|dist-packages[\\/])(.+)$/,
+    /[\\/]python[^\\/]*[\\/]Lib[\\/](?!site-packages[\\/])(.+)$/i,
+    /[\\/]python\d+\.zip[\\/](.+)$/i,
+  ];
+  const short = (file, root) => {
+    for (const known of STDLIB) {
+      const inside = known.exec(file);
+      if (inside) return `stdlib:${inside[1].replace(/\\/g, '/')}`;
+    }
+    if (root && file.startsWith(root) && /[\\/]/.test(file[root.length])) return file.slice(root.length + 1).replace(/\\/g, '/');
+    return file;
+  };
+  const goto = (file, root, line, column) => {
+    const name = short(file, root);
+    const text = `${name}${column ? `:${line}:${column}` : ''}`;
+    if (name.startsWith('stdlib:')) return make('span', 'stdlib', text);
+    const link = make('a', '', text);
+    link.href = '#';
+    link.title = file;
+    link.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'goto', file, line, column: column || 1 }); };
+    return link;
+  };
+  const traced = (text, root) => {
+    const nodes = [];
+    let at = 0;
+    for (const frame of text.matchAll(/^([ |]*File ")([^"<\n]+)(?=", line (\d+))|^()([^\n]+?)(?=:(\d+): \w*Warning: )/gm)) {
+      const [lead, file, line] = frame[2] ? [frame[1], frame[2], frame[3]] : ['', frame[5], frame[6]];
+      nodes.push(text.slice(at, frame.index) + lead, goto(file, root, Number(line)));
+      at = frame.index + frame[0].length;
+    }
+    nodes.push(text.slice(at));
+    return nodes;
+  };
+  const compilerLog = (text, failed, root) => {
     const pre = make('pre', failed ? 'bad' : '');
     for (const line of text.split('\n')) {
       const place = /^(.+?):(\d+):(\d+)(?=: )/.exec(line);
-      if (place) {
-        const link = make('a', '', place[0]);
-        link.href = '#';
-        link.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'goto', file: place[1], line: Number(place[2]), column: Number(place[3]) }); };
-        pre.append(link, line.slice(place[0].length), '\n');
-      } else pre.append(`${line}\n`);
+      const from = /^(In file included from |\s+from )(.+?):(\d+)(?=[:,]$)/.exec(line);
+      const scope = /^(.+?)(?=: (?:In|At) )/.exec(line);
+      if (place) pre.append(goto(place[1], root, Number(place[2]), Number(place[3])), line.slice(place[0].length), '\n');
+      else if (from) pre.append(from[1], goto(from[2], root, Number(from[3])), line.slice(from[0].length - from[3].length - 1), '\n');
+      else if (scope) pre.append(short(scope[1], root), line.slice(scope[0].length), '\n');
+      else pre.append(`${line}\n`);
     }
     return pre;
   };
@@ -225,7 +264,7 @@
       const sign = failed ? mark('bad', T('Compilation failed')) : s.compileError ? mark('warn', T('Compiled with warnings')) : mark('ok', T('Compiled'));
       const head = [sign, compile ? command(compile) : make('span', 'title comment', T('# compile'))];
       if (s.compileError) head.push(stats(failed ? T('failed') : T('warnings')));
-      const body = s.compileError ? [compilerLog(s.compileError, failed)] : [];
+      const body = s.compileError ? [compilerLog(s.compileError, failed, s.root)] : [];
       if (s.setup) body.push(actions(button(T('Diagnostics'), { type: 'setup' })));
       cards.push({ sign: JSON.stringify([s.path, compile, s.compileError, failed, s.setup]), node: block('compile', Boolean(s.compileError), head, body) });
     }
@@ -241,7 +280,11 @@
       const body = [];
       if (x.parts.length || live) {
         const pre = make('pre');
-        for (const part of x.parts) pre.append(make('span', part.kind, part.text));
+        for (const part of x.parts) {
+          const span = make('span', part.kind, live || part.kind !== 'err' ? part.text : undefined);
+          if (!span.firstChild) span.append(...traced(part.text, s.root));
+          pre.append(span);
+        }
         body.push(pre);
       }
       if (x.trimmed) body.push(trimmed('run.out'));
@@ -311,9 +354,10 @@
         : r.verdict === 'match' ? mark('ok', T('The output matches the answer'))
         : mark('bad', r.verdict === 'differs' ? T('The output differs from the answer') : T(r.verdict));
       const head = [sign, run ? command(`${run} < ${t.id}.in`) : make('span', 'title comment', T('# test {0}', t.id))];
-      const text = (r.stdout || '') + (r.stderr ? (r.stdout && !r.stdout.endsWith('\n') ? '\n' : '') + r.stderr : '');
+      const text = (r.stdout || '') + (r.stderr && r.stdout && !r.stdout.endsWith('\n') ? '\n' : '');
       const bad = finished && r.verdict !== 'match' && r.verdict !== 'no answer';
-      const body = text ? [make('pre', bad ? 'bad' : '', text)] : [];
+      const body = text || r.stderr ? [make('pre', bad ? 'bad' : '', text)] : [];
+      if (r.stderr) body[0].append(...traced(r.stderr, s.root));
       if (r.trimmed) body.push(trimmed(`${t.id}.out`, t.id));
       if (finished && r.verdict === 'runtime error' && (r.signal || r.code)) body.push(make('div', 'exit', r.signal ? T('Crashed ({0})', r.signal) : T('Exit code {0}', r.code)));
       const failure = finished && r.verdict === 'runtime error' ? T(r.verdict) : '';
