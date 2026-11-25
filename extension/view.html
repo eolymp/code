@@ -54,6 +54,7 @@
   pre.bad, pre .err { color: var(--vscode-terminal-ansiRed); }
   pre .in { color: var(--vscode-terminal-ansiCyan); }
   pre a { color: var(--vscode-textLink-foreground); text-decoration: none; cursor: pointer; }
+  pre .stdlib { color: var(--vscode-descriptionForeground); }
   pre a:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; }
   .stdin { display: flex; color: var(--vscode-terminal-ansiCyan); }
   .stdin input { flex: 1; font: inherit; color: inherit; background: transparent; border: 0; outline: 0; padding: 0; caret-shape: block; caret-color: var(--vscode-terminalCursor-foreground, var(--vscode-foreground)); }
@@ -138,24 +139,39 @@
     details.append(summary, inside);
     return details;
   };
+  const STDLIB = [
+    /[\\/]include[\\/](?:[^\\/]+[\\/])?c\+\+[\\/](?:v?[\d.]+[\\/])?(.+)$/,
+    /[\\/]lib[\\/]gcc[\\/][^\\/]+[\\/][\d.]+[\\/]include(?:-fixed)?[\\/](.+)$/,
+    /[\\/]usr[\\/]include[\\/](.+)$/,
+    /[\\/]include[\\/](bits[\\/]stdc\+\+\.h)$/,
+    /[\\/]lib(?:64)?[\\/]python\d[\d.]*[\\/](?!site-packages[\\/]|dist-packages[\\/])(.+)$/,
+    /[\\/]python[^\\/]*[\\/]Lib[\\/](?!site-packages[\\/])(.+)$/i,
+    /[\\/]python\d+\.zip[\\/](.+)$/i,
+  ];
   const short = (file, root) => {
+    for (const known of STDLIB) {
+      const inside = known.exec(file);
+      if (inside) return `stdlib:${inside[1].replace(/\\/g, '/')}`;
+    }
     if (root && file.startsWith(root) && /[\\/]/.test(file[root.length])) return file.slice(root.length + 1).replace(/\\/g, '/');
-    const header = /^.*[\\/]include[\\/](?:(?:[^\\/]+[\\/])?c\+\+[\\/](?:v?[\d.]+[\\/])?)?(.+)$/.exec(file);
-    const module = /^.*[\\/]lib[\\/](?:python[\d.]+[\\/])?(.+\.py)$/i.exec(file);
-    return header || module ? `stdlib:${(header || module)[1].replace(/\\/g, '/')}` : file;
+    return file;
   };
-  const goto = (text, file, line, column) => {
+  const goto = (file, root, line, column) => {
+    const name = short(file, root);
+    const text = `${name}${column ? `:${line}:${column}` : ''}`;
+    if (name.startsWith('stdlib:')) return make('span', 'stdlib', text);
     const link = make('a', '', text);
     link.href = '#';
     link.title = file;
-    link.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'goto', file, line, column }); };
+    link.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'goto', file, line, column: column || 1 }); };
     return link;
   };
   const traced = (text, root) => {
     const nodes = [];
     let at = 0;
-    for (const frame of text.matchAll(/^( *File ")([^"<\n]+)(?=", line (\d+))/gm)) {
-      nodes.push(text.slice(at, frame.index) + frame[1], goto(short(frame[2], root), frame[2], Number(frame[3]), 1));
+    for (const frame of text.matchAll(/^([ |]*File ")([^"<\n]+)(?=", line (\d+))|^()([^\n]+?)(?=:(\d+): \w*Warning: )/gm)) {
+      const [lead, file, line] = frame[2] ? [frame[1], frame[2], frame[3]] : ['', frame[5], frame[6]];
+      nodes.push(text.slice(at, frame.index) + lead, goto(file, root, Number(line)));
       at = frame.index + frame[0].length;
     }
     nodes.push(text.slice(at));
@@ -163,13 +179,14 @@
   };
   const compilerLog = (text, failed, root) => {
     const pre = make('pre', failed ? 'bad' : '');
-    const own = root ? root + (root.includes('\\') ? '\\' : '/') : '';
     for (const line of text.split('\n')) {
       const place = /^(.+?):(\d+):(\d+)(?=: )/.exec(line);
-      const rest = (place ? line.slice(place[0].length) : line).replaceAll(own, '');
-      if (place) {
-        pre.append(goto(`${short(place[1], root)}:${place[2]}:${place[3]}`, place[1], Number(place[2]), Number(place[3])), rest, '\n');
-      } else pre.append(`${rest}\n`);
+      const from = /^(In file included from |\s+from )(.+?):(\d+)(?=[:,]$)/.exec(line);
+      const scope = /^(.+?)(?=: (?:In|At) )/.exec(line);
+      if (place) pre.append(goto(place[1], root, Number(place[2]), Number(place[3])), line.slice(place[0].length), '\n');
+      else if (from) pre.append(from[1], goto(from[2], root, Number(from[3])), line.slice(from[0].length - from[3].length - 1), '\n');
+      else if (scope) pre.append(short(scope[1], root), line.slice(scope[0].length), '\n');
+      else pre.append(`${line}\n`);
     }
     return pre;
   };

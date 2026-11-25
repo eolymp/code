@@ -54,7 +54,6 @@ test('A compilation error shows short paths that open the place', async ({ edito
   const log = editor.panel.locator('details[data-key="compile"] pre');
   await expect(log.getByRole('link').first()).toHaveText('sum/sum.cpp:7:5');
   await expect(log).not.toContainText(editor.workspace);
-  for (const text of await log.getByRole('link').allTextContents()) expect(text).toMatch(/^(sum\/sum\.cpp|stdlib:[^\/]+(\/[^\/]+)?):\d+:\d+$/);
 });
 
 test.describe('Python', () => {
@@ -65,7 +64,7 @@ test.describe('Python', () => {
 
     const log = editor.panel.locator('details[data-key="run"] pre');
     await expect(log.getByRole('link').first()).toHaveText('sum/sum.py');
-    await expect(log.getByRole('link').nth(1)).toHaveText('stdlib:json/__init__.py');
+    await expect(log).toContainText('File "stdlib:json/__init__.py", line');
     await expect(log).not.toContainText(editor.workspace);
   });
 });
