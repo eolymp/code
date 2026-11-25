@@ -1,0 +1,5 @@
+{
+  "description": "Installa il compilatore e Python per l'app Eolymp Code e controlla che funzionino.",
+  "command.checkSetup": "Diagnostica",
+  "command.welcome": "Benvenuto"
+}

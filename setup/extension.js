@@ -5,6 +5,7 @@ const path = require('path');
 const toolset = require('./tools');
 const diagnostics = require('./diagnostics');
 const update = require('./update');
+const welcomePage = require('./welcome');
 
 const standIn = process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
 let core;
@@ -55,11 +56,16 @@ function adopt() {
   return saved.then(undefined, () => {});
 }
 
-function openPractice(context) {
+const SAMPLES = {
+  cpp: "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << '\\n';\n    return 0;\n}\n",
+  py: 'a = int(input())\nb = int(input())\nprint(a + b)\n',
+};
+
+function openPractice(context, language) {
   const practice = path.join(os.homedir(), 'Eolymp', 'practice');
-  const sample = path.join(practice, 'sum', 'sum.cpp');
   if (root()) {
-    if (!path.relative(root(), practice) && !context.globalState.get('welcomed') && fs.existsSync(sample)) {
+    const sample = Object.keys(SAMPLES).map((lang) => path.join(practice, 'sum', `sum.${lang}`)).find((file) => fs.existsSync(file));
+    if (!path.relative(root(), practice) && !context.globalState.get('welcomed') && sample) {
       context.globalState.update('welcomed', true);
       vscode.window.showTextDocument(vscode.Uri.file(sample));
     }
@@ -69,8 +75,8 @@ function openPractice(context) {
   context.globalState.update('practice', true);
   try {
     if (!fs.existsSync(practice)) {
-      fs.mkdirSync(path.dirname(sample), { recursive: true });
-      fs.writeFileSync(sample, "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << '\\n';\n    return 0;\n}\n");
+      fs.mkdirSync(path.join(practice, 'sum'), { recursive: true });
+      fs.writeFileSync(path.join(practice, 'sum', `sum.${language}`), SAMPLES[language]);
       fs.writeFileSync(path.join(practice, 'sum', '1.in'), '12\n9\n');
       fs.writeFileSync(path.join(practice, 'sum', '1.answer'), '21\n');
     }
@@ -84,16 +90,21 @@ function openPractice(context) {
 
 function activate(context) {
   core = vscode.extensions.getExtension('eolymp.eolymp-code').exports;
-  if (!vscode.workspace.workspaceFile) openPractice(context);
+  const language = () => vscode.workspace.getConfiguration('eolympCode').get('language');
+  const first = !vscode.workspace.workspaceFile && !root() && !context.globalState.get('practice') && !context.globalState.get('onboarded') && !vscode.window.visibleTextEditors.length;
+  if (!vscode.workspace.workspaceFile && !first) openPractice(context, language());
   toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
   fs.mkdirSync(toolsRoot, { recursive: true });
   terminalEnv = context.environmentVariableCollection;
   adopt();
   setup = diagnostics.create(context, toolsRoot, adopt);
-  setup.start().catch(() => {});
+  const welcome = welcomePage.create(context, setup, (chosen) => openPractice(context, chosen));
+  if (first) welcome.show();
+  else setup.start().catch(() => {});
   update.check(context).catch(() => {});
   context.subscriptions.push(
     vscode.commands.registerCommand('eolympCode.checkSetup', () => setup.open()),
+    vscode.commands.registerCommand('eolympCode.welcome', () => welcome.show()),
     vscode.window.onDidChangeWindowState((window) => {
       const have = window.focused ? toolset.installed(toolsRoot) : undefined;
       if (have && (!managed || managed.dir !== have.dir)) adopt();
