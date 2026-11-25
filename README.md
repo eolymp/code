@@ -15,19 +15,19 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 ## Layout
 
 - `app/` builds the editor from source with [VSCodium](https://github.com/VSCodium/vscodium)'s build scripts.
-- `extension/` is the Eolymp Code extension: the problem list, tests and the console.
-- `setup/` is the extension built into the app that installs the compiler and Python.
-- `eolymp/` is the extension built into the app that signs in to Eolymp, opens its problems and submits solutions.
+- `ext/cp/` is the Competitive Programming extension: the problem list, tests and the console. It works in any VS Code.
+- `ext/eolymp/` is the Eolymp Judge extension: it signs in to Eolymp, opens its problems and submits solutions.
+- `ext/core/` is the Eolymp Core extension: what makes the app, such as installing the compiler and Python and the welcome page.
 - `editor/` holds the default settings and the list of pinned extensions.
 - `l10n/` holds the Ukrainian language pack for the editor.
 - `tests/` drives the installed app with Playwright.
 
 ## Judges
 
-An extension adds an online judge by calling `registerJudge` on the API the Eolymp Code extension exports:
+An extension adds an online judge by calling `registerJudge` on the API the Competitive Programming extension exports:
 
-    const core = await vscode.extensions.getExtension('eolymp.eolymp-code').activate();
-    core.registerJudge({
+    const cp = await vscode.extensions.getExtension('eolymp.cp').activate();
+    cp.registerJudge({
       id: 'example',
       label: 'Example',
       search: async (query) => [{ id, label, description }],
@@ -48,9 +48,9 @@ An extension adds an online judge by calling `registerJudge` on the API the Eoly
 
 By default the extension builds with the compiler and Python named in its settings. An extension can supply them instead by calling `registerToolchain`:
 
-    const registration = core.registerToolchain({ cxx, python, flags, env, include, diagnose });
+    const registration = cp.registerToolchain({ cxx, python, flags, env, include, diagnose });
 
-`cxx` and `python` are paths to the compiler and Python. `flags` are added to the compiler's flags and `env` to its environment, as long as the settings don't name another compiler. `include` sets `CPLUS_INCLUDE_PATH` when the compiler in use is not the supplied one, unless the `includePath` setting is set. `diagnose` is called when a tool is missing and the user asks to fix it. Every field is optional. A new call replaces the previous toolchain, and `registration.dispose()` removes it. An extension that supplies a toolchain declares `"eolympCode": { "toolchain": true }` in its `package.json` and registers it as soon as it activates: the extension starts every such extension before a build, so the first build already uses the toolchain.
+`cxx` and `python` are paths to the compiler and Python. `flags` are added to the compiler's flags and `env` to its environment, as long as the settings don't name another compiler. `include` sets `CPLUS_INCLUDE_PATH` when the compiler in use is not the supplied one, unless the `includePath` setting is set. `diagnose` is called when a tool is missing and the user asks to fix it. Every field is optional. A new call replaces the previous toolchain, and `registration.dispose()` removes it. An extension that supplies a toolchain declares `"cp": { "toolchain": true }` in its `package.json` and registers it as soon as it activates: the extension starts every such extension before a build, so the first build already uses the toolchain.
 
 ## Build
 
@@ -61,7 +61,7 @@ By default the extension builds with the compiler and Python named in its settin
     ./app/build.sh build
     cd tests && npm ci && npm test
 
-`tests/unit/` checks the file handling and the program runner with Node's test runner. The rest drives the editor built by `./app/build.sh build` with Playwright, and loads `extension/`, `setup/` and `eolymp/` from this checkout into it. Set `EOLYMP_CODE_APP` to run another build of the editor.
+`tests/unit/` checks the file handling and the program runner with Node's test runner. The rest drives the editor built by `./app/build.sh build` with Playwright, and loads the extensions in `ext/` from this checkout into it. Set `EOLYMP_CODE_APP` to run another build of the editor.
 
 The first-launch test installs the compiler and Python for the others, so it runs before any of them. Once they are installed it is skipped; set `EOLYMP_CODE_FRESH_TOOLS=1` to install them afresh. A report of the last run is in `tests/playwright-report/`.
 

@@ -1,5 +1,5 @@
 const { test, expect, TOOLS } = require('./app');
-const toolset = require('../setup/tools');
+const toolset = require('../ext/core/tools');
 
 test.skip(!process.env.EOLYMP_CODE_FRESH_TOOLS && Boolean(toolset.installed(TOOLS)?.current), 'The compiler and Python are installed already; set EOLYMP_CODE_FRESH_TOOLS=1 to install them afresh.');
 

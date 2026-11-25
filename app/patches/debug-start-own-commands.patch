@@ -7,8 +7,8 @@
 +		const commandService = accessor.get(ICommandService);
  		await saveAllBeforeDebugStart(accessor.get(IConfigurationService), accessor.get(IEditorService));
  		const { launch, name, getConfig } = debugService.getConfigurationManager().selectedConfiguration;
-+		if (!name && !debugStartOptions?.config && CommandsRegistry.getCommand('eolympCode.debug')) {
-+			await commandService.executeCommand(debugStartOptions?.noDebug ? 'eolympCode.run' : 'eolympCode.debug');
++		if (!name && !debugStartOptions?.config && CommandsRegistry.getCommand('cp.debug')) {
++			await commandService.executeCommand(debugStartOptions?.noDebug ? 'cp.run' : 'cp.debug');
 +			return;
 +		}
  		const config = await getConfig();

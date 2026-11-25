@@ -23,14 +23,14 @@ async function launch(files, tools, settings) {
   const data = path.join(sandbox, 'data');
   fs.mkdirSync(TOOLS, { recursive: true });
   if (!tools) for (const name of fs.readdirSync(TOOLS)) fs.rmSync(path.join(TOOLS, name), { recursive: true, force: true });
-  fs.mkdirSync(path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup'), { recursive: true });
-  fs.symlinkSync(TOOLS, path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup/tools'), 'junction');
+  fs.mkdirSync(path.join(data, 'user-data/User/globalStorage/eolymp.core'), { recursive: true });
+  fs.symlinkSync(TOOLS, path.join(data, 'user-data/User/globalStorage/eolymp.core/tools'), 'junction');
   const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '../editor/settings.json'), 'utf8'));
   fs.writeFileSync(path.join(data, 'user-data/User/settings.json'), JSON.stringify({ ...defaults, 'window.dialogStyle': 'custom', 'window.menuStyle': 'custom', ...settings }));
   const opened = Object.keys(files).slice(0, 1).map((file) => path.join(workspace, file));
   const app = await electron.launch({
     executablePath: PROGRAM,
-    args: [workspace, ...opened, '--use-mock-keychain', '--use-inmemory-secretstorage', ...['extension', 'setup', 'eolymp'].map((name) => `--extensionDevelopmentPath=${path.join(__dirname, '..', name)}`)],
+    args: [workspace, ...opened, '--use-mock-keychain', '--use-inmemory-secretstorage', ...['cp', 'core', 'eolymp'].map((name) => `--extensionDevelopmentPath=${path.join(__dirname, '..', 'ext', name)}`)],
     env: { ...process.env, VSCODE_PORTABLE: data },
   });
   await app.context().tracing.start({ screenshots: true, snapshots: true });

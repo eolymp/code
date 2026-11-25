@@ -1,7 +1,7 @@
 {
   "description": "Löse Wettbewerbsprogrammier-Aufgaben: mit Aufgabenliste, Tests mit gespeicherten Antworten sowie Ausführen und Debuggen auf einem Test.",
-  "view.eolympCode": "Konsole",
-  "view.eolympCodeSidebar": "Üben",
+  "view.cp": "Konsole",
+  "view.cpSidebar": "Üben",
   "view.tests": "Konsole",
   "view.problems": "Üben",
   "command.run": "Ausführen",
@@ -20,7 +20,7 @@
   "command.renameTest": "Umbenennen",
   "command.newFile": "Neue Datei",
   "command.stop": "Stoppen",
-  "welcome.0": "Hier werden noch keine Aufgaben gelöst.\n[Neuer Aufgaben-Arbeitsbereich](command:eolympCode.newProblem)",
+  "welcome.0": "Hier werden noch keine Aufgaben gelöst.\n[Neuer Aufgaben-Arbeitsbereich](command:cp.newProblem)",
   "welcome.1": "Öffne einen Ordner, um deine Lösungen darin zu speichern.\n[Ordner öffnen](command:vscode.openFolder)",
   "setting.cxx": "C++-Compiler.",
   "setting.cxxFlags": "Flags zum Ausführen von Tests.",

@@ -1,0 +1,666 @@
+{
+  "name": "cp",
+  "displayName": "Competitive Programming",
+  "description": "%description%",
+  "version": "0.1.0",
+  "publisher": "eolymp",
+  "license": "MIT",
+  "private": true,
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eolymp/code"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "enabledApiProposals": [
+    "treeViewActiveItem"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "cp",
+          "title": "%view.cp%",
+          "icon": "$(terminal)"
+        },
+        {
+          "id": "cpSubmission",
+          "title": "%view.submission%",
+          "icon": "$(cloud-upload)"
+        }
+      ],
+      "activitybar": [
+        {
+          "id": "cpSidebar",
+          "title": "%view.cpSidebar%",
+          "icon": "$(symbol-event)"
+        }
+      ]
+    },
+    "views": {
+      "cp": [
+        {
+          "type": "webview",
+          "id": "cp.tests",
+          "name": "%view.tests%"
+        }
+      ],
+      "cpSidebar": [
+        {
+          "id": "cp.problems",
+          "name": "%view.problems%"
+        }
+      ],
+      "cpSubmission": [
+        {
+          "type": "webview",
+          "id": "cp.submission",
+          "name": "%view.submission%",
+          "when": "cp.submitted"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "cp.run",
+        "title": "%command.run%",
+        "category": "Competitive Programming",
+        "icon": "$(play)"
+      },
+      {
+        "command": "cp.runTests",
+        "title": "%command.runTests%",
+        "category": "Competitive Programming",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "cp.debug",
+        "title": "%command.debug%",
+        "category": "Competitive Programming",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "cp.newProblem",
+        "title": "%command.newProblem%",
+        "category": "Competitive Programming",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cp.findProblem",
+        "title": "%command.findProblem%",
+        "category": "Competitive Programming",
+        "icon": "$(search)"
+      },
+      {
+        "command": "cp.newSolution",
+        "title": "%command.newSolution%",
+        "category": "Competitive Programming",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "cp.newTest",
+        "title": "%command.newTest%",
+        "category": "Competitive Programming",
+        "icon": {
+          "light": "new-test-light.svg",
+          "dark": "new-test-dark.svg"
+        }
+      },
+      {
+        "command": "cp.openInput",
+        "title": "%command.openInput%"
+      },
+      {
+        "command": "cp.openAnswer",
+        "title": "%command.openAnswer%"
+      },
+      {
+        "command": "cp.addAnswer",
+        "title": "%command.addAnswer%"
+      },
+      {
+        "command": "cp.showDiff",
+        "title": "%command.showDiff%"
+      },
+      {
+        "command": "cp.markCorrect",
+        "title": "%command.markCorrect%"
+      },
+      {
+        "command": "cp.deleteTest",
+        "title": "%command.deleteTest%"
+      },
+      {
+        "command": "cp.addAsTest",
+        "title": "%command.addAsTest%"
+      },
+      {
+        "command": "cp.renameTest",
+        "title": "%command.renameTest%"
+      },
+      {
+        "command": "cp.newFile",
+        "title": "%command.newFile%"
+      },
+      {
+        "command": "cp.stop",
+        "title": "%command.stop%",
+        "category": "Competitive Programming",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "cp.rename",
+        "title": "%command.rename%"
+      },
+      {
+        "command": "cp.delete",
+        "title": "%command.delete%"
+      },
+      {
+        "command": "cp.cut",
+        "title": "%command.cut%"
+      },
+      {
+        "command": "cp.copy",
+        "title": "%command.copy%"
+      },
+      {
+        "command": "cp.paste",
+        "title": "%command.paste%"
+      },
+      {
+        "command": "cp.runTest",
+        "title": "%command.runTest%",
+        "icon": "$(play)"
+      },
+      {
+        "command": "cp.submit",
+        "title": "%command.submit%",
+        "category": "Competitive Programming",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "cp.openSubmission",
+        "title": "%command.openSubmission%",
+        "category": "Competitive Programming",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "cp.consoleEndInput",
+        "title": "%command.consoleEndInput%",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "cp.consoleDebug",
+        "title": "%command.debug%",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "cp.consoleRerun",
+        "title": "%command.consoleRerun%",
+        "icon": "$(debug-rerun)"
+      },
+      {
+        "command": "cp.consoleStop",
+        "title": "%command.stop%",
+        "icon": "$(debug-stop)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "cp.run",
+          "group": "navigation@0",
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !cp.running"
+        },
+        {
+          "command": "cp.runTests",
+          "group": "navigation@2",
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !cp.running"
+        },
+        {
+          "command": "cp.stop",
+          "group": "navigation@0",
+          "when": "(resourceLangId == cpp || resourceLangId == python) && cp.running"
+        },
+        {
+          "command": "cp.runTest",
+          "group": "navigation@0",
+          "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !cp.running"
+        },
+        {
+          "command": "cp.debug",
+          "group": "navigation@1",
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !cp.running && !inDebugMode"
+        },
+        {
+          "command": "cp.debug",
+          "group": "navigation@1",
+          "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !cp.running && !inDebugMode"
+        },
+        {
+          "command": "cp.submit",
+          "group": "navigation@3",
+          "when": "cp.linked && (resourceLangId == cpp || resourceLangId == python)"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "cp.findProblem",
+          "group": "navigation@0",
+          "when": "view == cp.problems && cp.hasJudges"
+        },
+        {
+          "command": "cp.newProblem",
+          "group": "navigation",
+          "when": "view == cp.problems"
+        },
+        {
+          "command": "cp.openSubmission",
+          "group": "navigation",
+          "when": "view == cp.submission"
+        },
+        {
+          "command": "cp.consoleEndInput",
+          "group": "navigation@1",
+          "when": "view == cp.tests && cp.console.typing"
+        },
+        {
+          "command": "cp.consoleDebug",
+          "group": "navigation@2",
+          "when": "view == cp.tests && cp.console.debug"
+        },
+        {
+          "command": "cp.consoleRerun",
+          "group": "navigation@3",
+          "when": "view == cp.tests && cp.console.idle"
+        },
+        {
+          "command": "cp.consoleStop",
+          "group": "navigation@3",
+          "when": "view == cp.tests && cp.console.busy"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cp.newSolution",
+          "group": "inline@1",
+          "when": "view == cp.problems && viewItem == problem"
+        },
+        {
+          "command": "cp.newTest",
+          "group": "inline@2",
+          "when": "view == cp.problems && viewItem == problem"
+        },
+        {
+          "command": "cp.newSolution",
+          "group": "1@1",
+          "when": "view == cp.problems && viewItem == problem"
+        },
+        {
+          "command": "cp.newTest",
+          "group": "1@2",
+          "when": "view == cp.problems && viewItem == problem"
+        },
+        {
+          "command": "cp.runTests",
+          "group": "inline@1",
+          "when": "view == cp.problems && viewItem == solution"
+        },
+        {
+          "command": "cp.run",
+          "group": "1@1",
+          "when": "view == cp.problems && viewItem == solution"
+        },
+        {
+          "command": "cp.runTests",
+          "group": "1@2",
+          "when": "view == cp.problems && viewItem == solution"
+        },
+        {
+          "command": "cp.newFile",
+          "group": "1@3",
+          "when": "view == cp.problems && viewItem == problem"
+        },
+        {
+          "command": "cp.rename",
+          "group": "7_modification@1",
+          "when": "view == cp.problems"
+        },
+        {
+          "command": "cp.delete",
+          "group": "7_modification@2",
+          "when": "view == cp.problems"
+        },
+        {
+          "command": "cp.cut",
+          "group": "5_cutcopypaste@1",
+          "when": "view == cp.problems && viewItem != problem"
+        },
+        {
+          "command": "cp.copy",
+          "group": "5_cutcopypaste@2",
+          "when": "view == cp.problems"
+        },
+        {
+          "command": "cp.paste",
+          "group": "5_cutcopypaste@3",
+          "when": "view == cp.problems && cp.canPaste"
+        },
+        {
+          "command": "cp.runTest",
+          "group": "inline@1",
+          "when": "view == cp.problems && viewItem == test"
+        },
+        {
+          "command": "cp.runTest",
+          "group": "1@1",
+          "when": "view == cp.problems && viewItem == test"
+        },
+        {
+          "command": "cp.debug",
+          "group": "1@3",
+          "when": "view == cp.problems && viewItem == solution"
+        },
+        {
+          "command": "cp.debug",
+          "group": "1@2",
+          "when": "view == cp.problems && viewItem == test"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "cp.newSolution",
+          "when": "false"
+        },
+        {
+          "command": "cp.newTest",
+          "when": "false"
+        },
+        {
+          "command": "cp.openInput",
+          "when": "false"
+        },
+        {
+          "command": "cp.openAnswer",
+          "when": "false"
+        },
+        {
+          "command": "cp.addAnswer",
+          "when": "false"
+        },
+        {
+          "command": "cp.showDiff",
+          "when": "false"
+        },
+        {
+          "command": "cp.markCorrect",
+          "when": "false"
+        },
+        {
+          "command": "cp.deleteTest",
+          "when": "false"
+        },
+        {
+          "command": "cp.addAsTest",
+          "when": "false"
+        },
+        {
+          "command": "cp.renameTest",
+          "when": "false"
+        },
+        {
+          "command": "cp.newFile",
+          "when": "false"
+        },
+        {
+          "command": "cp.stop",
+          "when": "cp.running"
+        },
+        {
+          "command": "cp.rename",
+          "when": "false"
+        },
+        {
+          "command": "cp.delete",
+          "when": "false"
+        },
+        {
+          "command": "cp.cut",
+          "when": "false"
+        },
+        {
+          "command": "cp.copy",
+          "when": "false"
+        },
+        {
+          "command": "cp.paste",
+          "when": "false"
+        },
+        {
+          "command": "cp.runTest",
+          "when": "false"
+        },
+        {
+          "command": "cp.findProblem",
+          "when": "cp.hasJudges"
+        },
+        {
+          "command": "cp.submit",
+          "when": "cp.linked"
+        },
+        {
+          "command": "cp.openSubmission",
+          "when": "false"
+        },
+        {
+          "command": "cp.consoleEndInput",
+          "when": "false"
+        },
+        {
+          "command": "cp.consoleDebug",
+          "when": "false"
+        },
+        {
+          "command": "cp.consoleRerun",
+          "when": "false"
+        },
+        {
+          "command": "cp.consoleStop",
+          "when": "false"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "cp.openInput",
+          "group": "1@1",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test'"
+        },
+        {
+          "command": "cp.openAnswer",
+          "group": "1@2",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test' && hasAnswer"
+        },
+        {
+          "command": "cp.addAnswer",
+          "group": "1@2",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test' && !hasAnswer"
+        },
+        {
+          "command": "cp.showDiff",
+          "group": "1@4",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test' && canDiff"
+        },
+        {
+          "command": "cp.markCorrect",
+          "group": "1@3",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test' && canAccept"
+        },
+        {
+          "command": "cp.debug",
+          "group": "1@5",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test'"
+        },
+        {
+          "command": "cp.deleteTest",
+          "group": "2@1",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test'"
+        },
+        {
+          "command": "cp.addAsTest",
+          "group": "1@1",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'run'"
+        },
+        {
+          "command": "cp.renameTest",
+          "group": "1@6",
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test'"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "cp.debug",
+        "key": "f5",
+        "when": "!inDebugMode && (editorTextFocus || focusedView == cp.tests)"
+      },
+      {
+        "command": "cp.run",
+        "key": "ctrl+f5",
+        "when": "!inDebugMode && (editorTextFocus || focusedView == cp.tests)"
+      },
+      {
+        "command": "cp.debug",
+        "key": "f5",
+        "args": "focused",
+        "when": "!inDebugMode && focusedView == cp.problems && listFocus"
+      },
+      {
+        "command": "cp.run",
+        "key": "ctrl+f5",
+        "args": "focused",
+        "when": "!inDebugMode && focusedView == cp.problems && listFocus"
+      },
+      {
+        "command": "cp.runTest",
+        "key": "ctrl+f5",
+        "when": "!inDebugMode && editorTextFocus && (resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out)"
+      },
+      {
+        "command": "cp.runTests",
+        "key": "f6",
+        "when": "!inDebugMode && (editorTextFocus || focusedView == cp.tests)"
+      },
+      {
+        "command": "cp.runTests",
+        "key": "f6",
+        "args": "focused",
+        "when": "!inDebugMode && focusedView == cp.problems && listFocus"
+      },
+      {
+        "command": "cp.stop",
+        "key": "shift+f5",
+        "when": "!inDebugMode && cp.running"
+      },
+      {
+        "command": "cp.delete",
+        "key": "delete",
+        "mac": "cmd+backspace",
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
+      },
+      {
+        "command": "cp.rename",
+        "key": "f2",
+        "mac": "enter",
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
+      },
+      {
+        "command": "cp.cut",
+        "key": "ctrl+x",
+        "mac": "cmd+x",
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
+      },
+      {
+        "command": "cp.copy",
+        "key": "ctrl+c",
+        "mac": "cmd+c",
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
+      },
+      {
+        "command": "cp.paste",
+        "key": "ctrl+v",
+        "mac": "cmd+v",
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
+      },
+      {
+        "command": "cp.submit",
+        "key": "f7",
+        "when": "!inDebugMode && cp.linked && (editorTextFocus || focusedView == cp.tests || focusedView == cp.submission)"
+      }
+    ],
+    "configuration": {
+      "title": "Competitive Programming",
+      "properties": {
+        "cp.cxx": {
+          "type": "string",
+          "default": "g++",
+          "description": "%setting.cxx%",
+          "scope": "machine"
+        },
+        "cp.cxxFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "-std=c++17",
+            "-O2",
+            "-Wall"
+          ],
+          "description": "%setting.cxxFlags%",
+          "scope": "machine"
+        },
+        "cp.includePath": {
+          "type": "string",
+          "default": "",
+          "description": "%setting.includePath%",
+          "scope": "machine"
+        },
+        "cp.python": {
+          "type": "string",
+          "default": "",
+          "description": "%setting.python%",
+          "scope": "machine"
+        },
+        "cp.language": {
+          "type": "string",
+          "enum": [
+            "cpp",
+            "py"
+          ],
+          "default": "cpp",
+          "description": "%setting.language%"
+        }
+      }
+    },
+    "viewsWelcome": [
+      {
+        "view": "cp.problems",
+        "contents": "%welcome.0%",
+        "when": "workbenchState != empty"
+      },
+      {
+        "view": "cp.problems",
+        "contents": "%welcome.1%",
+        "when": "workbenchState == empty"
+      }
+    ]
+  },
+  "l10n": "./l10n"
+}

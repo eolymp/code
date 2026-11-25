@@ -72,7 +72,7 @@ function create(account) {
     const token = await account.token(true);
     const { items = [] } = await api.get(token, `/problems/${problem.id}/runtime`);
     const offered = items.filter((r) => r.lang === FAMILIES[language]);
-    const preferred = vscode.workspace.getConfiguration('eolymp').get('runtimes')[language] || [];
+    const preferred = vscode.workspace.getConfiguration('judge').get('runtimes')[language] || [];
     const runtime = preferred.map((id) => offered.find((r) => r.id === id)).find(Boolean) || offered[0];
     if (!runtime) throw new Error(t('This problem does not take solutions in this language.'));
     const created = await api.post(token, '/submissions', { problemId: problem.id, lang: runtime.id, source });

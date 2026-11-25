@@ -8,7 +8,7 @@ const update = require('./update');
 const welcomePage = require('./welcome');
 
 const standIn = process.platform === 'darwin' && !toolset.wanted() ? path.join(__dirname, 'include') : '';
-let core;
+let cp;
 let toolsRoot;
 let managed;
 let setup;
@@ -24,7 +24,7 @@ function adopt() {
   managed = toolset.installed(toolsRoot);
   const diagnose = () => setup.open();
   const previous = registration;
-  registration = core.registerToolchain(managed ? { cxx: managed.cxx, python: managed.python, flags: managed.flags, env: managed.env, diagnose } : { include: standIn, diagnose });
+  registration = cp.registerToolchain(managed ? { cxx: managed.cxx, python: managed.python, flags: managed.flags, env: managed.env, diagnose } : { include: standIn, diagnose });
   if (previous) previous.dispose();
   terminalEnv.clear();
   const lldb = vscode.workspace.getConfiguration('lldb');
@@ -95,8 +95,8 @@ function openPractice(context, language) {
 }
 
 function activate(context) {
-  core = vscode.extensions.getExtension('eolymp.eolymp-code').exports;
-  const language = () => vscode.workspace.getConfiguration('eolympCode').get('language');
+  cp = vscode.extensions.getExtension('eolymp.cp').exports;
+  const language = () => vscode.workspace.getConfiguration('cp').get('language');
   const first = !vscode.workspace.workspaceFile && !root() && !context.globalState.get('practice') && !context.globalState.get('onboarded') && !vscode.window.visibleTextEditors.length;
   if (!vscode.workspace.workspaceFile && !first) openPractice(context, language());
   toolsRoot = path.join(context.globalStorageUri.fsPath, 'tools');
@@ -110,14 +110,14 @@ function activate(context) {
   update.check(context).catch(() => {});
   context.subscriptions.push(
     new vscode.Disposable(() => registration.dispose()),
-    vscode.commands.registerCommand('eolympCode.checkSetup', () => setup.open()),
-    vscode.commands.registerCommand('eolympCode.welcome', () => welcome.show()),
+    vscode.commands.registerCommand('core.checkSetup', () => setup.open()),
+    vscode.commands.registerCommand('core.welcome', () => welcome.show()),
     vscode.window.onDidChangeWindowState((window) => {
       const have = window.focused ? toolset.installed(toolsRoot) : undefined;
       if (have && (!managed || managed.dir !== have.dir)) adopt();
     }),
   );
-  if (root()) vscode.commands.executeCommand('eolympCode.problems.focus');
+  if (root()) vscode.commands.executeCommand('cp.problems.focus');
 }
 
 module.exports = { activate };

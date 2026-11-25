@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const oauth = require('../../eolymp/oauth');
+const oauth = require('../../ext/eolymp/oauth');
 
 test('the sign-in callback takes the code only with its own state', async () => {
   const local = await oauth.listen('expected', { done: 'done', failed: 'failed' });

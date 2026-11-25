@@ -1,7 +1,7 @@
 {
   "description": "Rozwiązuj zadania z programowania sportowego: lista zadań, testy z zapisanymi odpowiedziami oraz Uruchom i Debuguj na teście.",
-  "view.eolympCode": "Konsola",
-  "view.eolympCodeSidebar": "Praktyka",
+  "view.cp": "Konsola",
+  "view.cpSidebar": "Praktyka",
   "view.tests": "Konsola",
   "view.problems": "Praktyka",
   "command.run": "Uruchom",
@@ -20,7 +20,7 @@
   "command.renameTest": "Zmień nazwę",
   "command.newFile": "Nowy plik",
   "command.stop": "Zatrzymaj",
-  "welcome.0": "W tym miejscu nie rozwiązuje się jeszcze żadnych zadań.\n[Nowe zadanie](command:eolympCode.newProblem)",
+  "welcome.0": "W tym miejscu nie rozwiązuje się jeszcze żadnych zadań.\n[Nowe zadanie](command:cp.newProblem)",
   "welcome.1": "Otwórz folder, w którym będziesz trzymać swoje rozwiązania.\n[Otwórz folder](command:vscode.openFolder)",
   "setting.cxx": "Kompilator C++.",
   "setting.cxxFlags": "Flagi używane przy uruchamianiu testów.",
