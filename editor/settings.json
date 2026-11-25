@@ -11,7 +11,7 @@
     "--fallback-style=Google"
   ],
   "clangd.fallbackFlags": [
-    "-std=c++17",
+    "-std=c++23",
     "-Wall"
   ],
   "lldb.suppressUpdateNotifications": true,

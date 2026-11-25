@@ -32,7 +32,7 @@ function adopt() {
   const configured = server && lldb.get('server') !== server ? lldb.update('server', server, vscode.ConfigurationTarget.Global) : undefined;
   if (!managed && !standIn) return Promise.resolve(configured).then(undefined, () => {});
   const updates = [];
-  const flags = ['-std=c++17'];
+  const flags = ['-std=c++23'];
   if (managed) {
     terminalEnv.prepend(process.platform === 'win32' ? 'Path' : 'PATH', [path.dirname(managed.cxx), path.dirname(managed.python)].join(path.delimiter) + path.delimiter);
     for (const [name, value] of Object.entries(managed.env)) terminalEnv.replace(name, value);
