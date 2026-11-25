@@ -52,9 +52,13 @@ function create(context, root, changed) {
   bar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
   context.subscriptions.push(bar);
 
-  const post = () => { if (panel) panel.webview.postMessage(state); };
-  const progress = (text) => {
-    state = { ...state, progress: text, stoppable: true };
+  const watchers = new Set();
+  const post = () => {
+    if (panel) panel.webview.postMessage(state);
+    for (const watcher of watchers) watcher(state.progress, state.fraction);
+  };
+  const progress = (text, fraction) => {
+    state = { ...state, progress: text, fraction, stoppable: true };
     post();
     if (notify) notify.report({ message: text });
   };
@@ -85,14 +89,20 @@ function create(context, root, changed) {
   const tools = async () => {
     const have = toolset.installed(root);
     if (!toolset.wanted() || (have && have.current)) return;
-    await toolset.install(root, (stage, value) => {
+    await toolset.install(root, (stage, value, part) => {
       const text = stage === 'download' ? t('{0} MB downloaded', Math.round(value / 1048576)) : stage === 'unpack' ? t('Unpacking…') : t('Preparing…');
-      if (text !== state.progress) progress(text);
+      const fraction = stage === 'download' ? Math.round(part * 80) / 100 : stage === 'unpack' ? Math.round(80 + value * 20) / 100 : undefined;
+      if (text !== state.progress || fraction !== state.fraction) progress(text, fraction);
     }, stopper.signal);
     await changed();
   };
 
+  let announce;
   const failed = (message) => {
+    if (announce) {
+      announce(message);
+      return;
+    }
     if (panel) vscode.window.showErrorMessage(message);
     else vscode.window.showErrorMessage(message, t('Show Details')).then((choice) => choice && open());
   };
@@ -111,14 +121,16 @@ function create(context, root, changed) {
     return ok;
   };
 
-  const fix = () => {
+  const fix = (announced) => {
     if (repairing) return running;
     repairing = true;
+    announce = announced;
     const mine = (running || Promise.resolve()).then(() => {
       stopper = new AbortController();
       return repair();
     }).finally(() => {
       repairing = false;
+      announce = undefined;
       if (running === mine) running = undefined;
     });
     running = mine;
@@ -192,7 +204,12 @@ function create(context, root, changed) {
     if (ok) vscode.window.showInformationMessage(t('Eolymp Code is ready.'));
   };
 
-  return { open, start };
+  const watch = (watcher) => {
+    watchers.add(watcher);
+    return { dispose: () => watchers.delete(watcher) };
+  };
+
+  return { open, start, fix, watch, ready: () => quick(root), stop: () => stopper.abort() };
 }
 
 module.exports = { create };

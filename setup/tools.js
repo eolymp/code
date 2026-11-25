@@ -64,7 +64,7 @@ async function download(item, file, onBytes, signal) {
       stalled = setTimeout(() => abort.abort(), 60000);
       if (failure) throw failure;
       hash.update(chunk);
-      onBytes(chunk.length);
+      onBytes(chunk.length, Number(response.headers.get('content-length')) || 0);
       if (!out.write(chunk)) {
         await new Promise((resolve) => {
           const done = () => { out.off('drain', done); out.off('error', done); resolve(); };
@@ -339,7 +339,12 @@ async function install(location, report, signal) {
     const beat = setInterval(() => fs.writeFileSync(lock, String(process.pid)), 10000);
     try {
       for (const [index, item] of set.items.entries()) {
-        await download(item, path.join(downloads, stored(set, index)), (count) => { bytes += count; report('download', bytes); }, signal);
+        let got = 0;
+        await download(item, path.join(downloads, stored(set, index)), (count, total) => {
+          bytes += count;
+          got += count;
+          report('download', bytes, (index + (total ? Math.min(1, got / total) : 0)) / set.items.length);
+        }, signal);
       }
     } finally {
       clearInterval(beat);

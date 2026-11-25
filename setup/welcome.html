@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-{{nonce}}'; script-src 'nonce-{{nonce}}';">
+<style nonce="{{nonce}}">
+  html, body { height: 100%; }
+  body { margin: 0; padding: 0; font-family: var(--vscode-font-family); font-size: 13px; color: var(--vscode-foreground); }
+  main { box-sizing: border-box; display: flex; flex-direction: column; height: 100%; max-width: 560px; margin: 0 auto; padding: 20px 32px 24px; }
+  h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; color: var(--vscode-settings-headerForeground, var(--vscode-foreground)); }
+  p { margin: 0; color: var(--vscode-descriptionForeground); line-height: 1.5; }
+  #body { flex: 1 1 auto; min-height: 0; }
+  .choices { display: flex; gap: 12px; margin-top: 18px; }
+  .picker { position: relative; margin-top: 18px; }
+  .picked { box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 6px 10px; font: inherit; text-align: left; color: var(--vscode-dropdown-foreground, var(--vscode-foreground)); background: var(--vscode-dropdown-background, var(--vscode-editorWidget-background)); border: 1px solid var(--vscode-dropdown-border, var(--vscode-widget-border, transparent)); border-radius: 2px; cursor: pointer; }
+  .picked:disabled { cursor: default; opacity: 0.6; }
+  .popup { position: absolute; z-index: 1; left: 0; right: 0; top: calc(100% + 2px); background: var(--vscode-dropdown-listBackground, var(--vscode-dropdown-background, var(--vscode-editorWidget-background))); border: 1px solid var(--vscode-focusBorder); border-radius: 2px; box-shadow: 0 4px 12px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.4)); }
+  .popup input { box-sizing: border-box; width: 100%; padding: 6px 10px; font: inherit; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 0; border-bottom: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.3)); outline: none; }
+  .options { max-height: 168px; overflow-y: auto; }
+  .option { display: block; width: 100%; padding: 5px 10px; font: inherit; text-align: left; color: var(--vscode-foreground); background: none; border: 0; cursor: pointer; }
+  .option:hover, .option:focus-visible { background: var(--vscode-list-hoverBackground); outline: none; }
+  .option[aria-selected="true"] { color: var(--vscode-list-activeSelectionForeground); background: var(--vscode-list-activeSelectionBackground); }
+  .none { padding: 6px 10px; color: var(--vscode-descriptionForeground); }
+  .choice { flex: 1 1 0; display: flex; gap: 12px; align-items: flex-start; text-align: left; padding: 12px 14px; font: inherit; color: var(--vscode-foreground); background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-widget-border, var(--vscode-editorWidget-border, transparent)); border-radius: 4px; cursor: pointer; }
+  .choice[aria-checked="true"] { border-color: var(--vscode-focusBorder); outline: 1px solid var(--vscode-focusBorder); }
+  .choice:disabled { cursor: default; opacity: 0.6; }
+  .choice svg { flex: 0 0 32px; }
+  .choice strong { display: block; margin-bottom: 4px; font-size: 15px; font-weight: 600; }
+  .choice span { color: var(--vscode-descriptionForeground); line-height: 1.4; }
+  .bar { height: 4px; margin-top: 22px; border-radius: 2px; background: var(--vscode-editorWidget-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.3))); overflow: hidden; }
+  .bar div { height: 100%; border-radius: 2px; background: var(--vscode-button-background); transition: width 0.3s; }
+  .bar.unknown div { width: 30%; animation: slide 1.4s ease-in-out infinite; }
+  @keyframes slide { from { margin-left: -30%; } to { margin-left: 100%; } }
+  .progress { min-height: 20px; margin-top: 8px; color: var(--vscode-descriptionForeground); }
+  .cheer { margin-top: 6px; font-size: 15px; color: var(--vscode-foreground); }
+  main.splash { align-items: center; justify-content: center; text-align: center; }
+  main.splash #body { flex: 0 0 auto; order: -1; margin-bottom: 20px; overflow: visible; }
+  main.splash h2 { font-size: 24px; }
+  main.splash .actions { justify-content: center; margin-top: 28px; }
+  main.splash button.action { padding: 6px 28px; }
+  .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; min-height: 28px; }
+  .actions .back { margin-right: auto; }
+  button.action { font: inherit; color: var(--vscode-button-foreground); background: var(--vscode-button-background); border: 1px solid var(--vscode-button-border, transparent); border-radius: 2px; padding: 4px 14px; cursor: pointer; }
+  button.action:hover { background: var(--vscode-button-hoverBackground); }
+  button.action.quiet { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
+  button.action.quiet:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+  @media (max-width: 420px) { .choices { flex-direction: column; } }
+</style>
+</head>
+<body>
+<main>
+<h2 id="title"></h2>
+<p id="text"></p>
+<p class="cheer" id="cheer"></p>
+<div id="body"></div>
+<div class="actions" id="actions"></div>
+</main>
+<script nonce="{{nonce}}">
+  const vscode = acquireVsCodeApi();
+  const el = (id) => document.getElementById(id);
+  const make = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  const shape = (tag, attributes, text) => {
+    const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [name, value] of Object.entries(attributes)) n.setAttribute(name, value);
+    if (text) n.textContent = text;
+    return n;
+  };
+  const LETTERS = { 'font-family': 'var(--vscode-font-family)', 'font-weight': '700', 'text-anchor': 'middle', fill: '#fff' };
+  const BADGES = {
+    cpp: () => [shape('path', { d: 'M16 2 28 9v14l-12 7-12-7V9z', fill: '#00599c' }), shape('text', { ...LETTERS, x: 16, y: 20, 'font-size': 10 }, 'C++')],
+    py: () => [shape('rect', { x: 3, y: 3, width: 26, height: 26, rx: 7, fill: '#3776ab' }), shape('path', { d: 'M29 16v6a7 7 0 0 1-7 7H10a7 7 0 0 1-7-7z', fill: '#e0b300' }), shape('text', { ...LETTERS, x: 16, y: 21, 'font-size': 13 }, 'Py')],
+  };
+  const LOGO = [
+    ['M31.9976 19.4938L9.50569 42.0322L0 32.4982L22.4872 9.95508L32.0023 19.4938H31.9976Z', '#0FAFA3'],
+    ['M19.0255 32.4982L9.51038 42.0369L22.4872 55.046L32.0023 45.5073L19.0255 32.4982Z', '#0E9F94'],
+    ['M63.9992 32.4991L41.5119 55.0422L31.9968 45.5082L54.4841 22.9604L63.9992 32.4991Z', '#FF9F3F'],
+    ['M41.5166 9.95605L32.0015 19.4948L44.9737 32.4991L54.4888 22.9604L41.5166 9.95605Z', '#F57F09'],
+  ];
+  const LANGUAGES = [['cpp', 'C++', 'The standard in competitive programming.'], ['py', 'Python', 'Good to get started, easier to learn.']];
+  const CHEERS = ['Time to learn some {0}!', "Let's build some algorithms.", 'Your first accepted solution is waiting.', 'Every expert started with one solved problem.', "Let's solve something.", "Small steps, big ideas. Let's go!", 'Time to turn ideas into code.', 'One problem at a time.', 'Ready, set, code!', "Let's see what you can do with {0}."];
+  let step = 'locale';
+  let waiting = false;
+  let listing = false;
+  document.addEventListener('mousedown', (event) => {
+    if (!listing || event.target.closest('.picker')) return;
+    listing = false;
+    draw();
+  });
+  const named = (id) => { const name = new Intl.DisplayNames([id], { type: 'language' }).of(id); return name.charAt(0).toLocaleUpperCase(id) + name.slice(1); };
+  const english = new Intl.DisplayNames(['en'], { type: 'language' });
+  let state;
+  const T = (text, ...args) => (state.strings[text] || text).replace(/\{(\d)\}/g, (all, i) => args[i]);
+  const button = (label, action, cls) => { const b = make('button', `action ${cls || ''}`, label); b.onclick = action; return b; };
+  const send = (type) => () => vscode.postMessage({ type });
+  const draw = () => {
+    const s = state;
+    const picked = s.locales.find((item) => item.id === s.locale);
+    if (waiting && picked.installed) { waiting = false; step = 'language'; }
+    if (waiting && s.failed === 'locale') waiting = false;
+    if (step === 'tools' && s.ready && !s.busy) step = 'done';
+    const go = (next) => () => { step = next; draw(); };
+    const body = el('body');
+    const actions = el('actions');
+    body.textContent = '';
+    actions.textContent = '';
+    el('cheer').textContent = '';
+    document.querySelector('main').className = step === 'done' ? 'splash' : '';
+    document.documentElement.lang = s.locale;
+    if (step === 'locale') {
+      el('title').textContent = T('Language');
+      el('text').textContent = s.failed === 'locale' ? T('The language could not be downloaded.') : T('Choose the language of Eolymp Code. You can change it later.');
+      const choose = (locale) => () => { listing = false; vscode.postMessage({ type: 'locale', locale }); };
+      const picker = make('div', 'picker');
+      const shown = make('button', 'picked');
+      shown.disabled = waiting;
+      shown.setAttribute('aria-haspopup', 'listbox');
+      shown.setAttribute('aria-expanded', String(listing));
+      shown.append(make('span', '', named(s.locale)), make('span', '', listing ? '\u25B4' : '\u25BE'));
+      shown.onclick = () => { listing = !listing; draw(); };
+      picker.append(shown);
+      if (listing && !waiting) {
+        const popup = make('div', 'popup');
+        const search = make('input');
+        search.placeholder = T('Search…');
+        search.setAttribute('aria-label', T('Search…'));
+        const options = make('div', 'options');
+        options.setAttribute('role', 'listbox');
+        const list = () => {
+          const query = search.value.trim().toLowerCase();
+          const rank = (id) => (id === 'en' ? 0 : id === s.system ? 1 : 2);
+          const found = [...s.locales].sort((a, b) => rank(a.id) - rank(b.id) || named(a.id).localeCompare(named(b.id))).filter((item) => [item.id, named(item.id), english.of(item.id)].some((word) => word.toLowerCase().includes(query)));
+          options.textContent = '';
+          for (const item of found) {
+            const option = make('button', 'option', named(item.id));
+            option.setAttribute('role', 'option');
+            option.setAttribute('aria-selected', String(item.id === s.locale));
+            option.onclick = choose(item.id);
+            options.append(option);
+          }
+          if (!found.length) options.append(make('div', 'none', T('Nothing found')));
+          return found;
+        };
+        search.oninput = list;
+        search.onkeydown = (event) => {
+          if (event.key === 'Escape') { event.stopPropagation(); listing = false; draw(); }
+          if (event.key === 'Enter' && list().length) choose(list()[0].id)();
+        };
+        list();
+        popup.append(search, options);
+        picker.append(popup);
+        setTimeout(() => search.focus());
+      }
+      body.append(picker);
+      if (waiting) {
+        const bar = make('div', 'bar unknown');
+        bar.append(make('div'));
+        body.append(bar, make('div', 'progress', T('Downloading the language…')));
+      }
+      else actions.append(button(T('Next'), () => {
+        if (picked.installed) go('language')();
+        else {
+          waiting = true;
+          vscode.postMessage({ type: 'pack' });
+        }
+      }));
+    }
+    if (step === 'language') {
+      el('title').textContent = T('Programming language');
+      el('text').textContent = T('Choose the language you will write solutions in. You can change it later.');
+      const choices = make('div', 'choices');
+      choices.setAttribute('role', 'radiogroup');
+      for (const [id, name, hint] of LANGUAGES) {
+        const choice = make('button', 'choice');
+        choice.setAttribute('role', 'radio');
+        choice.setAttribute('aria-checked', String(s.language === id));
+        const badge = shape('svg', { width: 32, height: 32, viewBox: '0 0 32 32', 'aria-hidden': 'true' });
+        badge.append(...BADGES[id]());
+        const words = make('div');
+        words.append(make('strong', '', name), make('span', '', T(hint)));
+        choice.append(badge, words);
+        choice.onclick = () => vscode.postMessage({ type: 'language', language: id });
+        choices.append(choice);
+      }
+      body.append(choices);
+      actions.append(button(T('Back'), go('locale'), 'quiet back'), button(T('Next'), go('tools')));
+    }
+    if (step === 'tools') {
+      el('title').textContent = T('Install Compiler');
+      el('text').textContent = s.failed === 'tools' ? T('C++ and Python could not be installed.') : T('Eolymp Code will download everything it needs to run your programs.');
+      if (s.busy) {
+        const bar = make('div', s.fraction === undefined ? 'bar unknown' : 'bar');
+        const fill = make('div');
+        if (s.fraction !== undefined) fill.style.width = `${Math.round(s.fraction * 100)}%`;
+        bar.append(fill);
+        body.append(bar, make('div', 'progress', s.progress));
+        actions.append(button(T('Cancel'), send('cancel'), 'quiet'));
+      } else {
+        if (s.reason) body.append(make('div', 'progress', s.reason));
+        actions.append(button(T('Back'), go('language'), 'quiet back'));
+        if (s.failed === 'tools') actions.append(button(T('Continue without them'), go('done'), 'quiet'));
+        actions.append(button(s.failed === 'tools' ? T('Try again') : T('Install'), send('install')));
+      }
+    }
+    if (step === 'done') {
+      el('title').textContent = T('Everything is ready');
+      el('text').textContent = '';
+      const logo = shape('svg', { width: 72, height: 72, viewBox: '0 0 64 64', 'aria-hidden': 'true' });
+      logo.append(...LOGO.map(([d, fill]) => shape('path', { d, fill })));
+      body.append(logo);
+      el('cheer').textContent = T(CHEERS[s.cheer % CHEERS.length], LANGUAGES.find(([id]) => id === s.language)[1]);
+      actions.append(button(T('Start'), send('finish')));
+    }
+  };
+  window.addEventListener('message', (event) => {
+    state = event.data;
+    draw();
+  });
+  vscode.postMessage({ type: 'ready' });
+</script>
+</body>
+</html>

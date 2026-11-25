@@ -1,0 +1,23 @@
+--- a/src/vs/workbench/services/localization/electron-browser/localeService.ts
++++ b/src/vs/workbench/services/localization/electron-browser/localeService.ts
+@@ -22,6 +22,8 @@ import { IHostService } from '../../host/browser/host.js';
+ import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+ import { IProductService } from '../../../../platform/product/common/productService.js';
+ import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
++import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
++import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
+ 
+ // duplicate of IExtensionsViewPaneContainer in contrib
+ interface IExtensionsViewPaneContainer extends IViewPaneContainer {
+@@ -177,3 +179,11 @@ class NativeActiveLanguagePackService implements IActiveLanguagePackService {
+ 
+ registerSingleton(ILocaleService, NativeLocaleService, InstantiationType.Delayed);
+ registerSingleton(IActiveLanguagePackService, NativeActiveLanguagePackService, InstantiationType.Delayed);
++
++CommandsRegistry.registerCommand('eolympCode.setLocale', async (accessor: ServicesAccessor, locale: string) => {
++	const jsonEditingService = accessor.get(IJSONEditingService);
++	const environmentService = accessor.get(IEnvironmentService);
++	const hostService = accessor.get(IHostService);
++	await jsonEditingService.write(environmentService.argvResource, [{ path: ['locale'], value: locale }], true);
++	await hostService.restart();
++});

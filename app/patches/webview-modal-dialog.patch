@@ -1,0 +1,157 @@
+--- a/src/vs/platform/editor/common/editor.ts
++++ b/src/vs/platform/editor/common/editor.ts
+@@ -411,6 +411,11 @@ export interface IModalEditorOptions {
+ 	 * Whether the modal editor can be moved into an editor area.
+ 	 */
+ 	readonly canMoveToEditorArea?: boolean;
++
++	/**
++	 * Whether the modal editor can be maximized.
++	 */
++	readonly canMaximize?: boolean;
+ }
+ 
+ /**
+--- a/src/vs/workbench/api/browser/mainThreadWebviewPanels.ts
++++ b/src/vs/workbench/api/browser/mainThreadWebviewPanels.ts
+@@ -18,7 +18,7 @@ import { WebviewIconPath, WebviewInput } from '../../contrib/webviewPanel/browse
+ import { IWebViewShowOptions, IWebviewWorkbenchService } from '../../contrib/webviewPanel/browser/webviewWorkbenchService.js';
+ import { editorGroupToColumn } from '../../services/editor/common/editorGroupColumn.js';
+ import { GroupLocation, GroupsOrder, IEditorGroup, IEditorGroupsService, preferredSideBySideGroupDirection } from '../../services/editor/common/editorGroupsService.js';
+-import { ACTIVE_GROUP, IEditorService, PreferredGroup, SIDE_GROUP } from '../../services/editor/common/editorService.js';
++import { ACTIVE_GROUP, IEditorService, MODAL_GROUP, PreferredGroup, SIDE_GROUP } from '../../services/editor/common/editorService.js';
+ import { IExtensionService } from '../../services/extensions/common/extensions.js';
+ import { IExtHostContext } from '../../services/extensions/common/extHostCustomers.js';
+ import * as extHostProtocol from '../common/extHost.protocol.js';
+@@ -208,6 +208,10 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
+ 	}
+ 
+ 	private getTargetGroupFromShowOptions(showOptions: extHostProtocol.WebviewPanelShowOptions): PreferredGroup {
++		if (showOptions.viewColumn === MODAL_GROUP) {
++			return MODAL_GROUP;
++		}
++
+ 		if (typeof showOptions.viewColumn === 'undefined'
+ 			|| showOptions.viewColumn === ACTIVE_GROUP
+ 			|| (this._editorGroupService.count === 1 && this._editorGroupService.activeGroup.isEmpty)
+--- a/src/vs/workbench/api/common/extHostTypeConverters.ts
++++ b/src/vs/workbench/api/common/extHostTypeConverters.ts
+@@ -65,7 +65,7 @@ import { TestId } from '../../contrib/testing/common/testId.js';
+ import { CoverageDetails, DetailType, ICoverageCount, IFileCoverage, ISerializedTestResults, ITestErrorMessage, ITestItem, ITestRunProfileReference, ITestTag, TestMessageType, TestResultItem, TestRunProfileBitset, denamespaceTestTag, namespaceTestTag } from '../../contrib/testing/common/testTypes.js';
+ import { AiSettingsSearchResult, AiSettingsSearchResultKind } from '../../services/aiSettingsSearch/common/aiSettingsSearch.js';
+ import { EditorGroupColumn } from '../../services/editor/common/editorGroupColumn.js';
+-import { ACTIVE_GROUP, SIDE_GROUP } from '../../services/editor/common/editorService.js';
++import { ACTIVE_GROUP, MODAL_GROUP, SIDE_GROUP } from '../../services/editor/common/editorService.js';
+ import { checkProposedApiEnabled, isProposedApiEnabled } from '../../services/extensions/common/extensions.js';
+ import { Dto, SerializableObjectWithBuffers } from '../../services/extensions/common/proxyIdentifier.js';
+ import * as extHostProtocol from './extHost.protocol.js';
+@@ -343,6 +343,10 @@ export namespace ViewColumn {
+ 			return SIDE_GROUP;
+ 		}
+ 
++		if ((column as number) === MODAL_GROUP) {
++			return MODAL_GROUP;
++		}
++
+ 		return ACTIVE_GROUP; // default is always the active group
+ 	}
+ 
+--- a/src/vs/workbench/browser/parts/editor/editorCommands.ts
++++ b/src/vs/workbench/browser/parts/editor/editorCommands.ts
+@@ -27,7 +27,7 @@ import { ITelemetryService } from '../../../../platform/telemetry/common/telemet
+ import { ActiveGroupEditorsByMostRecentlyUsedQuickAccess } from './editorQuickAccess.js';
+ import { SideBySideEditor } from './sideBySideEditor.js';
+ import { TextDiffEditor } from './textDiffEditor.js';
+-import { ActiveEditorCanSplitInGroupContext, ActiveEditorGroupEmptyContext, ActiveEditorGroupLockedContext, ActiveEditorStickyContext, EditorPartModalCanMoveToEditorAreaContext, EditorPartModalContext, EditorPartModalMaximizedContext, EditorPartModalNavigationContext, EditorPartModalSidebarContext, IsSessionsWindowContext, MultipleEditorGroupsContext, SideBySideEditorActiveContext, TextCompareEditorActiveContext } from '../../../common/contextkeys.js';
++import { ActiveEditorCanSplitInGroupContext, ActiveEditorGroupEmptyContext, ActiveEditorGroupLockedContext, ActiveEditorStickyContext, EditorPartModalCanMaximizeContext, EditorPartModalCanMoveToEditorAreaContext, EditorPartModalContext, EditorPartModalMaximizedContext, EditorPartModalNavigationContext, EditorPartModalSidebarContext, IsSessionsWindowContext, MultipleEditorGroupsContext, SideBySideEditorActiveContext, TextCompareEditorActiveContext } from '../../../common/contextkeys.js';
+ import { CloseDirection, EditorInputCapabilities, EditorsOrder, IResourceDiffEditorInput, IUntitledTextResourceEditorInput, isDiffEditorInput, isEditorInputWithOptionsAndGroup } from '../../../common/editor.js';
+ import { IMultiDiffEditorOptions } from '../../../../editor/common/multiDiffEditor.js';
+ import { EditorInput } from '../../../common/editor/editorInput.js';
+@@ -1573,7 +1573,8 @@ function registerModalEditorCommands(): void {
+ 				menu: {
+ 					id: MenuId.ModalEditorTitle,
+ 					group: 'navigation',
+-					order: 99
++					order: 99,
++					when: EditorPartModalCanMaximizeContext
+ 				}
+ 			});
+ 		}
+--- a/src/vs/workbench/browser/parts/editor/modalEditorPart.ts
++++ b/src/vs/workbench/browser/parts/editor/modalEditorPart.ts
+@@ -30,7 +30,7 @@ import { IEditorGroupView, IEditorPartsView } from './editor.js';
+ import { EditorPart } from './editorPart.js';
+ import { GroupDirection, GroupsOrder, IModalEditorPart, GroupActivationReason } from '../../../services/editor/common/editorGroupsService.js';
+ import { IEditorService, USE_MODAL_EDITOR_SETTING, UseModalEditorMode } from '../../../services/editor/common/editorService.js';
+-import { EditorPartModalCanMoveToEditorAreaContext, EditorPartModalContext, EditorPartModalMaximizedContext, EditorPartModalNavigationContext, EditorPartModalSidebarContext, EditorPartModalSidebarVisibleContext } from '../../../common/contextkeys.js';
++import { EditorPartModalCanMaximizeContext, EditorPartModalCanMoveToEditorAreaContext, EditorPartModalContext, EditorPartModalMaximizedContext, EditorPartModalNavigationContext, EditorPartModalSidebarContext, EditorPartModalSidebarVisibleContext } from '../../../common/contextkeys.js';
+ import { EditorResourceAccessor, IEditorCommandsContext, SideBySideEditor, Verbosity } from '../../../common/editor.js';
+ import { EditorInput } from '../../../common/editor/editorInput.js';
+ import { ResourceLabel } from '../../labels.js';
+@@ -167,6 +167,7 @@ export class ModalEditorPart {
+ 		// (e.g. the sidebar changes tree).
+ 		const modalContextKeyService = disposables.add(this.contextKeyService.createScoped(modalElement));
+ 		const canMoveToEditorAreaContext = EditorPartModalCanMoveToEditorAreaContext.bindTo(modalContextKeyService);
++		const canMaximizeContext = EditorPartModalCanMaximizeContext.bindTo(modalContextKeyService);
+ 
+ 		disposables.add(addDisposableListener(modalElement, EventType.MOUSE_DOWN, e => {
+ 			if (e.target === modalElement) {
+@@ -748,6 +749,7 @@ export class ModalEditorPart {
+ 			const editorModalOptions = isModalEditorOptionsProvider(activeEditor) ? activeEditor.getModalEditorOptions() : undefined;
+ 			modalElement.classList.toggle('compact-header', !!editorModalOptions?.compactHeader);
+ 			canMoveToEditorAreaContext.set(canMoveModalEditorToEditorArea(activeEditor));
++			canMaximizeContext.set(editorModalOptions?.canMaximize !== false);
+ 			layoutModal();
+ 		}));
+ 
+--- a/src/vs/workbench/common/contextkeys.ts
++++ b/src/vs/workbench/common/contextkeys.ts
+@@ -114,6 +114,7 @@ export const EditorPartMaximizedEditorGroupContext = new RawContextKey<boolean>(
+ export const EditorPartModalContext = new RawContextKey<boolean>('editorPartModal', false, localize('editorPartModal', "Whether focus is in a modal editor part"));
+ export const EditorPartModalVisibleContext = new RawContextKey<boolean>('editorPartModalVisible', false, localize('editorPartModalVisible', "Whether a modal editor part is visible"));
+ export const EditorPartModalCanMoveToEditorAreaContext = new RawContextKey<boolean>('editorPartModalCanMoveToEditorArea', true, localize('editorPartModalCanMoveToEditorArea', "Whether the modal editor can move into an editor area"));
++export const EditorPartModalCanMaximizeContext = new RawContextKey<boolean>('editorPartModalCanMaximize', true, localize('editorPartModalCanMaximize', "Whether the modal editor can be maximized"));
+ export const EditorPartModalMaximizedContext = new RawContextKey<boolean>('editorPartModalMaximized', false, localize('editorPartModalMaximized', "Whether the modal editor part is maximized"));
+ export const EditorPartModalNavigationContext = new RawContextKey<boolean>('editorPartModalNavigation', false, localize('editorPartModalNavigation', "Whether the modal editor part has navigation context"));
+ export const EditorPartModalSidebarContext = new RawContextKey<boolean>('editorPartModalSidebar', false, localize('editorPartModalSidebar', "Whether the modal editor part has a sidebar"));
+--- a/src/vs/workbench/contrib/webviewPanel/browser/webviewEditorInput.ts
++++ b/src/vs/workbench/contrib/webviewPanel/browser/webviewEditorInput.ts
+@@ -5,7 +5,7 @@
+ 
+ import { CodeWindow } from '../../../../base/browser/window.js';
+ import { CancellationToken } from '../../../../base/common/cancellation.js';
+-import { IEditorOptions } from '../../../../platform/editor/common/editor.js';
++import { IEditorOptions, IModalEditorOptions } from '../../../../platform/editor/common/editor.js';
+ import { Schemas } from '../../../../base/common/network.js';
+ import { ThemeIcon } from '../../../../base/common/themables.js';
+ import { URI } from '../../../../base/common/uri.js';
+@@ -34,6 +34,10 @@ export class WebviewInput extends EditorInput {
+ 
+ 	public static typeId = 'workbench.editors.webviewInput';
+ 
++	public getModalEditorOptions(): IModalEditorOptions {
++		return { compactHeader: true, canMoveToEditorArea: false, canMaximize: false };
++	}
++
+ 	public override get typeId(): string {
+ 		return WebviewInput.typeId;
+ 	}
+--- a/src/vs/workbench/contrib/webviewPanel/browser/webviewWorkbenchService.ts
++++ b/src/vs/workbench/contrib/webviewPanel/browser/webviewWorkbenchService.ts
+@@ -16,7 +16,7 @@ import { GroupIdentifier } from '../../../common/editor.js';
+ import { DiffEditorInput } from '../../../common/editor/diffEditorInput.js';
+ import { EditorInput } from '../../../common/editor/editorInput.js';
+ import { IEditorGroup, IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+-import { ACTIVE_GROUP_TYPE, IEditorService, SIDE_GROUP_TYPE } from '../../../services/editor/common/editorService.js';
++import { ACTIVE_GROUP_TYPE, IEditorService, MODAL_GROUP, SIDE_GROUP_TYPE } from '../../../services/editor/common/editorService.js';
+ import { IOverlayWebview, IWebviewService, WebviewInitInfo } from '../../webview/browser/webview.js';
+ import { CONTEXT_ACTIVE_WEBVIEW_PANEL_ID } from './webviewEditor.js';
+ import { WebviewIconPath, WebviewInput, WebviewInputInitInfo } from './webviewEditorInput.js';
+@@ -288,6 +288,7 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
+ 		const webviewInput = this._instantiationService.createInstance(WebviewInput, { viewType, name: title, providedId: webviewInitInfo.providedViewType, iconPath }, webview);
+ 		this._editorService.openEditor(webviewInput, {
+ 			pinned: true,
++			modal: showOptions.group === MODAL_GROUP ? { size: { width: 560, height: 460 } } : undefined,
+ 			preserveFocus: showOptions.preserveFocus,
+ 			// preserve pre 1.38 behaviour to not make group active when preserveFocus: true
+ 			// but make sure to restore the editor to fix https://github.com/microsoft/vscode/issues/79633
