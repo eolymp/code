@@ -13,6 +13,7 @@ const CURSOR = { cpp: new vscode.Position(4, 4), py: new vscode.Position(3, 0) }
 const t = vscode.l10n.t;
 
 const states = new Map();
+const used = new Map();
 const changed = new vscode.EventEmitter();
 let view;
 let problems;
@@ -128,13 +129,16 @@ function flush() {
   if (!view) return;
   const state = target && stateOf(target.file);
   const x = state && state.session;
+  const shown = (id) => !state || state.only === undefined || state.only === id;
   view.webview.postMessage({
     file: target ? path.basename(target.file) : '',
     path: target ? target.file : '',
-    tests: target ? ws.testIds(target.dir).map((id) => ({ id, answered: ws.answerOf(target.dir, id) !== undefined })) : [],
-    results: state ? Object.fromEntries(Object.entries(sync(state, target)).map(([id, r]) => [id, { verdict: r.verdict, ms: r.ms, memory: r.memory, code: r.code, signal: r.signal, changed: r.changed, stdout: r.stdout, stderr: r.stderr, trimmed: r.trimmed }])) : {},
+    tests: target ? ws.testIds(target.dir).filter(shown).map((id) => ({ id, answered: ws.answerOf(target.dir, id) !== undefined })) : [],
+    results: state ? Object.fromEntries(Object.entries(sync(state, target)).filter(([id]) => shown(id)).map(([id, r]) => [id, { verdict: r.verdict, ms: r.ms, memory: r.memory, code: r.code, signal: r.signal, changed: r.changed, stdout: r.stdout, stderr: r.stderr, trimmed: r.trimmed }])) : {},
     compileError: state ? state.compileError : '',
     steps: state ? state.steps : null,
+    last: state ? state.last : undefined,
+    testing: Boolean(testing && target && testing.file === target.file),
     setup: Boolean(provided.diagnose && state && state.steps && state.steps.missing),
     session: x ? { parts: x.parts, trimmed: x.size > x.shown, closed: x.closed, state: x.state, code: x.code, signal: x.signal, stopped: x.stopped, ms: x.ms, memory: x.memory, kept: x.kept, typed: x.input !== '' } : null,
   });
@@ -194,10 +198,11 @@ async function prepare(from, missing) {
   if (testing || starting) return undefined;
   starting = true;
   try {
-    if (picked) await vscode.window.showTextDocument(document);
+    if (picked && !node.quiet) await vscode.window.showTextDocument(document);
     await document.save();
     await stopActive();
     target = s;
+    used.set(s.dir, s.file);
     await vscode.commands.executeCommand('eolympCode.tests.focus');
   } finally {
     starting = false;
@@ -211,6 +216,7 @@ async function run(node) {
   const state = stateOf(s.file);
   const mine = { file: s.file, dir: s.dir, out: path.join(s.outDir, 'run.out'), parts: [], size: 0, shown: 0, state: 'compiling', input: '' };
   state.session = mine;
+  state.last = 'run';
   active = mine;
   setBusy();
   update();
@@ -264,33 +270,62 @@ function keepSession() {
   refresh();
 }
 
-async function runTests(node) {
+function runTests(node) {
+  return testWith(node);
+}
+
+async function runTest(from) {
+  const node = from instanceof vscode.Uri ? nodeOf(from.fsPath) : from || chosen()[0];
+  if (!node || (node.kind !== 'test' && node.kind !== 'testFile')) {
+    if (from instanceof vscode.Uri) vscode.window.showInformationMessage(t('This file is not a test of a problem.'));
+    return;
+  }
+  const last = target && target.dir === node.dir ? target.file : used.get(node.dir);
+  const file = last && fs.existsSync(last) ? last : ws.solutionsIn(node.dir)[0];
+  if (!file) {
+    vscode.window.showInformationMessage(t('This problem has no solution to run.'));
+    return;
+  }
+  await testWith({ kind: 'solution', file, quiet: true }, node.id);
+}
+
+async function testWith(node, only) {
   const s = await prepare(node, t('Open a .cpp or .py file to test it.'));
   if (!s) return;
+  for (const document of vscode.workspace.textDocuments) {
+    if (document.isDirty && document.uri.scheme === 'file' && path.dirname(document.fileName) === s.dir && /\.(in|answer)$/.test(document.fileName)) await document.save();
+  }
   const state = stateOf(s.file);
   const previous = { ...sync(state, s) };
-  const job = { cancelled: false };
-  state.results = {};
+  const job = { cancelled: false, file: s.file };
+  state.results = only === undefined ? {} : { ...previous };
+  delete state.results[only];
+  state.only = only;
+  state.steps = null;
+  state.compileError = '';
   state.session = null;
+  state.last = 'test';
   testing = job;
   setBusy();
   update();
   try {
-    await runAll(s, state, previous, job);
+    await runAll(s, state, previous, job, only);
   } catch (err) {
     state.compileError = t('Could not run the tests: {0}', err.message);
   } finally {
+    if (only !== undefined && job.cancelled && !state.results[only] && previous[only]) state.results[only] = previous[only];
     testing = undefined;
     setBusy();
     refresh();
   }
 }
 
-async function runAll(s, state, previous, job) {
+async function runAll(s, state, previous, job, only) {
   const built = await build(s, false);
   state.steps = { compile: built.compile, run: built.run, ok: built.ok, missing: built.missing };
   state.compileError = built.log;
-  for (const test of built.ok ? ws.loadTests(s.dir) : []) {
+  if (!built.ok) state.results = {};
+  for (const test of built.ok ? ws.loadTests(s.dir).filter((item) => only === undefined || item.id === only) : []) {
     if (job.cancelled) break;
     state.results[test.id] = { verdict: 'running' };
     update();
@@ -484,7 +519,7 @@ async function forget(file) {
 }
 
 function recall(file, state) {
-  if (state) states.set(file, { ...state, steps: null, session: null });
+  if (state) states.set(file, { ...state, steps: null, session: null, only: undefined });
 }
 
 async function renameProblem(node) {
@@ -671,7 +706,9 @@ function show(editor) {
 
 function moveResults(dir, id, name) {
   for (const [file, state] of states) {
-    if (path.dirname(file) !== dir || !state.results[id]) continue;
+    if (path.dirname(file) !== dir) continue;
+    if (state.only === id) state.only = name;
+    if (!state.results[id]) continue;
     if (name) state.results[name] = state.results[id];
     delete state.results[id];
   }
@@ -767,7 +804,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "Input for the program", "input ended", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "Not run yet", "The output matches the answer", "The output differs from the answer", "not run yet", "output changed", "Diagnostics", "More actions", "runtime error", "Output trimmed, open {0}", "{0} ms", "{0} MB", "# compile", "# test {0}"];
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "Input for the program", "input ended", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "The output matches the answer", "The output differs from the answer", "output changed", "Diagnostics", "More actions", "runtime error", "Output trimmed, open {0}", "{0} ms", "{0} MB", "# compile", "# test {0}", "Rerun", "{0}/{1} match"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -780,10 +817,12 @@ function receive(m) {
   if (m.type === 'ready') flush();
   const shown = target && { kind: 'solution', file: target.file };
   if (m.type === 'run') runTests(shown);
+  if (m.type === 'rerun' && target) testWith({ ...shown, quiet: true }, stateOf(target.file).only);
   if (m.type === 'single') run(shown);
   if (m.type === 'setup' && provided.diagnose) provided.diagnose();
   if (!target) return;
   if (m.type === 'output' && (m.test === undefined || ws.testIds(target.dir).includes(m.test))) vscode.window.showTextDocument(vscode.Uri.file(m.test === undefined ? path.join(target.outDir, 'run.out') : path.join(target.dir, `${m.test}.out`)));
+  if (m.type === 'open') vscode.window.showTextDocument(vscode.Uri.file(target.file));
   if (m.type === 'goto') reveal(String(m.file), Number(m.line) || 1, Number(m.column) || 1);
   const live = active && active.file === target.file && active.state === 'running' ? active : undefined;
   if (live && m.type === 'stdin' && !live.closed) {
@@ -797,7 +836,7 @@ function receive(m) {
     live.child.stdin.end();
     update();
   }
-  if (live && m.type === 'stop') stop();
+  if (m.type === 'stop' && ((active && active.file === target.file) || (testing && testing.file === target.file))) stop();
 }
 
 function activate(context) {
@@ -823,7 +862,7 @@ function activate(context) {
     renameTest: (id, dir) => renameTest(dir, id),
     deleteTest: (id, dir) => deleteTest(dir, id),
   };
-  const commands = { run, runTests, stop, newProblem, newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
+  const commands = { run, runTests, runTest, stop, newProblem, newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
   context.subscriptions.push(
     problems,
     watcher,
