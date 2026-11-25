@@ -53,7 +53,7 @@
     el('progress').textContent = s.progress || (s.checks ? '' : T('Checking…'));
     const fixable = s.checks ? s.checks.some((c) => c.fix) : false;
     const broken = s.checks ? s.checks.some((c) => !c.ok) : false;
-    el('lead').textContent = !s.checks ? '' : s.fresh && fixable ? T('Eolymp Code needs a compiler and Python. Install them to start solving problems.') : broken ? T('Some parts of Eolymp Code are not working.') : T('Everything works.');
+    el('lead').textContent = !s.checks ? '' : s.fresh && fixable ? T('Install the compiler to start solving problems.') : broken ? T('Some parts of Eolymp Code are not working.') : T('Everything works.');
     el('title').textContent = T('Diagnostics');
     let group;
     let list;

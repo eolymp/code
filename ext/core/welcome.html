@@ -163,6 +163,7 @@
         if (picked.installed) go('language')();
         else {
           waiting = true;
+          state = { ...state, packing: true };
           vscode.postMessage({ type: 'pack' });
           draw();
         }
@@ -190,7 +191,7 @@
     }
     if (step === 'tools') {
       el('title').textContent = T('Install Compiler');
-      el('text').textContent = s.failed === 'tools' ? T('C++ and Python could not be installed.') : T('Eolymp Code will download everything it needs to run your programs.');
+      el('text').textContent = s.failed === 'tools' ? T('The compiler could not be installed.') : T('Eolymp Code will download everything it needs to run your programs.');
       if (s.busy) {
         const bar = make('div', s.fraction === undefined ? 'bar unknown' : 'bar');
         const fill = make('div');

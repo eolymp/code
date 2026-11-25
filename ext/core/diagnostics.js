@@ -6,7 +6,7 @@ const path = require('path');
 const toolset = require('./tools');
 
 const t = vscode.l10n.t;
-const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Reinstall', 'Everything works.', 'Eolymp Code needs a compiler and Python. Install them to start solving problems.', 'Some parts of Eolymp Code are not working.', 'Cancel'];
+const STRINGS = ['Diagnostics', 'Checking…', 'Install', 'Fix', 'Check again', 'Reinstall', 'Everything works.', 'Install the compiler to start solving problems.', 'Some parts of Eolymp Code are not working.', 'Cancel'];
 
 function hasAppleTools() {
   return process.platform !== 'darwin' || (childProcess.spawnSync('xcode-select', ['-p']).status === 0 && toolset.sdk(true) !== '');
@@ -21,7 +21,7 @@ function examine(root) {
   let group = t('Tools');
   const add = (id, title, ok, detail, fix) => checks.push({ id, group, title, ok, detail: ok ? '' : detail || '', fix: ok ? '' : fix || '' });
   if (process.platform === 'darwin') add('apple', t("Apple's Command Line Tools"), hasAppleTools(), t('They are needed by every compiler on macOS.'), 'apple');
-  if (toolset.wanted()) add('tools', t('Compiler and Python'), Boolean(toolset.installed(root)), t('They are not installed yet.'), 'tools');
+  if (toolset.wanted()) add('tools', t('Compiler'), Boolean(toolset.installed(root)), t('It is not installed yet.'), 'tools');
   group = t('Extensions');
   const extensions = [
     ['llvm-vs-code-extensions.vscode-clangd', t('C++ completion and errors')],
@@ -183,7 +183,7 @@ function create(context, root, changed) {
     const details = t('Show Details');
     if (state.fresh && !quick(root)) {
       bar.show();
-      const choice = await vscode.window.showInformationMessage(t('Eolymp Code needs a compiler and Python. Install them to start solving problems.'), t('Install'), details);
+      const choice = await vscode.window.showInformationMessage(t('Install the compiler to start solving problems.'), t('Install'), details);
       if (choice === details) await open();
       else if (choice) await install();
       return;
@@ -199,7 +199,7 @@ function create(context, root, changed) {
   };
 
   const install = async () => {
-    const ok = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Setting up Eolymp Code'), cancellable: true }, (reporter, token) => {
+    const ok = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Installing Compiler'), cancellable: true }, (reporter, token) => {
       notify = reporter;
       token.onCancellationRequested(() => stopper.abort());
       return fix();
