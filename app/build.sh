@@ -32,6 +32,8 @@ if [ "$(git describe --tags --exact-match 2>/dev/null)" != "$version" ]; then
   git checkout -q "$version"
 fi
 git clean -qfd patches/user src
+fi
+cd "$work/vscodium"
 
 wanted="$(cat .nvmrc)"
 if [ "$(node --version 2>/dev/null)" != "v$wanted" ]; then
@@ -50,18 +52,6 @@ if [ "$(node --version 2>/dev/null)" != "v$wanted" ]; then
   fi
   export PATH="$work/$node/bin:$PATH"
 fi
-for candidate in python3.11 python3.12 python3.13; do
-  if command -v "$candidate" >/dev/null 2>&1; then
-    export npm_config_python="$(command -v "$candidate")"
-    break
-  fi
-done
-
-jq -s '.[0] * .[1]' product.json "$here/product.json" > product.json.merged
-mv product.json.merged product.json
-cp -R "$here/src/." src/stable/
-mkdir -p patches/user
-find "$here/patches" -name '*.patch' -exec cp {} patches/user/ \;
 
 export APP_NAME="Eolymp Code"
 export BINARY_NAME="eolymp-code"
@@ -80,6 +70,20 @@ export SHOULD_BUILD_REH_WEB="no"
 export SHOULD_BUILD_CLI="no"
 export DISABLE_UPDATE="yes"
 export VSCODE_SKIP_NODE_VERSION_CHECK="yes"
+
+if [ "$step" != package ]; then
+for candidate in python3.11 python3.12 python3.13; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    export npm_config_python="$(command -v "$candidate")"
+    break
+  fi
+done
+
+jq -s '.[0] * .[1]' product.json "$here/product.json" > product.json.merged
+mv product.json.merged product.json
+cp -R "$here/src/." src/stable/
+mkdir -p patches/user
+find "$here/patches" -name '*.patch' -exec cp {} patches/user/ \;
 
 rm -rf vscode "VSCode-$platform-$arch"
 if ! command -v git-lfs >/dev/null 2>&1; then
@@ -104,13 +108,27 @@ if [ "$step" != package ]; then
   node "$here/bundle.js" "$resources" "$platform-$arch" "$work/pins"
   [ "$platform" != win32 ] || (cd "$work/vscodium/vscode" && npm run gulp "vscode-win32-$arch-inno-updater")
   [ "$platform" != linux ] || (cd "$work/vscodium/vscode" && npm run gulp "vscode-linux-$arch-prepare-deb" && npm run gulp "vscode-linux-$arch-build-deb")
+  [ "$platform" != darwin ] || (cp "$here/dmg/package.json" "$here/dmg/package-lock.json" "$work/vscodium" && cd "$work/vscodium" && npm ci --no-audit --no-fund)
 fi
 
 [ "$step" != build ] || exit 0
 out="$repo/artifacts"
 mkdir -p "$out"
 if [ "$platform" = darwin ]; then
-  "$here/mac.sh" "$built/Eolymp Code.app" "$out/EolympCode-$platform-$arch-$version.dmg" "$work/vscodium/vscode/build/azure-pipelines/darwin"
+  for name in CERTIFICATE_OSX_P12_DATA CERTIFICATE_OSX_P12_PASSWORD CERTIFICATE_OSX_APPLE_ID CERTIFICATE_OSX_APP_PASSWORD CERTIFICATE_OSX_TEAM_ID; do
+    [ -n "${!name:-}" ] || { echo "$name is needed to sign the disk image"; exit 1; }
+  done
+  export SHOULD_BUILD_ZIP=no
+  rm -rf assets
+  mkdir assets
+  set +u
+  . build/osx/prepare_assets.sh
+  set -u
+  rm -f "$APP_NAME.p12"
+  dmg="assets/$APP_NAME.$arch.$version.dmg"
+  xcrun notarytool submit "$dmg" --apple-id "$CERTIFICATE_OSX_APPLE_ID" --team-id "$CERTIFICATE_OSX_TEAM_ID" --password "$CERTIFICATE_OSX_APP_PASSWORD" --wait
+  xcrun stapler staple "$dmg"
+  cp "$dmg" "$out/EolympCode-$platform-$arch-$version.dmg"
 elif [ "$platform" = linux ]; then
   cp "$work"/vscodium/vscode/.build/linux/deb/*/deb/*.deb "$out/EolympCode-$platform-$arch-$version.deb"
   tar -czf "$out/EolympCode-$platform-$arch-$version.tar.gz" -C "$built" .

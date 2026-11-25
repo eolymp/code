@@ -62,35 +62,14 @@ jobs:
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
-      - name: Import the Apple certificate (macOS)
-        if: runner.os == 'macOS' && vars.APPLE_SIGN_IDENTITY != '' && startsWith(github.ref, 'refs/tags/v')
-        env:
-          CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          keychain="$RUNNER_TEMP/signing.keychain-db"
-          echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
-          security create-keychain -p runner "$keychain"
-          security set-keychain-settings -lut 21600 "$keychain"
-          security unlock-keychain -p runner "$keychain"
-          security import "$RUNNER_TEMP/certificate.p12" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
-          security set-key-partition-list -S apple-tool:,apple: -k runner "$keychain"
-          security list-keychain -d user -s "$keychain"
       - name: Package the editor
         env:
-          EOLYMP_CODE_SIGN_IDENTITY: ${{ startsWith(github.ref, 'refs/tags/v') && vars.APPLE_SIGN_IDENTITY || '' }}
-          APPLE_API_KEY_ID: ${{ vars.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ vars.APPLE_API_ISSUER }}
-          APPLE_API_KEY_CONTENT: ${{ runner.os == 'macOS' && secrets.APPLE_API_KEY || '' }}
-        run: |
-          if [ "$RUNNER_OS" = macOS ]; then
-            case "$GITHUB_REF" in refs/tags/v*)
-              [ -n "$EOLYMP_CODE_SIGN_IDENTITY" ] && [ -n "$APPLE_API_KEY_CONTENT" ] && [ -n "$APPLE_API_KEY_ID" ] && [ -n "$APPLE_API_ISSUER" ] || { echo "the signing identity or the notarization key is missing"; exit 1; }
-              echo "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/notary.p8"
-              export APPLE_API_KEY="$RUNNER_TEMP/notary.p8"
-            ;; esac
-          fi
-          ./app/build.sh package
+          CERTIFICATE_OSX_P12_DATA: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE || '' }}
+          CERTIFICATE_OSX_P12_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
+          CERTIFICATE_OSX_APPLE_ID: ${{ runner.os == 'macOS' && secrets.APPLE_ID || '' }}
+          CERTIFICATE_OSX_APP_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_APP_PASSWORD || '' }}
+          CERTIFICATE_OSX_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: ./app/build.sh package
       - name: Sign the setup program (Windows)
         if: runner.os == 'Windows' && vars.AZURE_SIGNING_CLIENT_ID != '' && startsWith(github.ref, 'refs/tags/v')
         uses: azure/trusted-signing-action@1d365fec12862c4aa68fcac418143d73f0cea293 # v0
