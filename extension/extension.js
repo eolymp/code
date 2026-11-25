@@ -219,6 +219,11 @@ async function prepare(from, missing) {
 }
 
 async function run(node) {
+  const picked = node === 'focused' ? chosen()[0] : node;
+  if (picked && (picked.kind === 'test' || picked.kind === 'testFile')) {
+    await runTest(picked);
+    return;
+  }
   const s = await prepare(node, t('Open a .cpp or .py file to run it.'));
   if (!s) return;
   const state = stateOf(s.file);
@@ -289,7 +294,9 @@ function solutionFor(dir) {
 }
 
 async function runTest(from) {
-  const node = from instanceof vscode.Uri ? nodeOf(from.fsPath) : from || chosen()[0];
+  const editor = vscode.window.activeTextEditor;
+  const open = editor && editor.document.uri.scheme === 'file' ? nodeOf(editor.document.fileName) : undefined;
+  const node = from instanceof vscode.Uri ? nodeOf(from.fsPath) : from || (open && open.kind === 'testFile' ? open : chosen()[0]);
   if (!node || (node.kind !== 'test' && node.kind !== 'testFile')) {
     if (from instanceof vscode.Uri) vscode.window.showInformationMessage(t('This file is not a test of a problem.'));
     return;

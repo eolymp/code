@@ -28,21 +28,16 @@ test('Run compiles the solution, takes typed input and shows the output', async 
   expect(fs.existsSync(path.join(editor.workspace, 'sum/.build/sum', process.platform === 'win32' ? 'run.exe' : 'run'))).toBe(true);
 });
 
-test('Ctrl+F5 runs the solution from a test file and from the Practice view', async ({ editor }) => {
-  const title = editor.panel.locator('details[data-key="compile"] .title');
+test('Ctrl+F5 on a test runs that test and F6 runs them all', async ({ editor }) => {
   await editor.window.getByRole('treeitem', { name: 'Test 1' }).click();
   await expect(editor.window.getByRole('tab', { name: /^1\.in/ })).toBeVisible();
   await editor.window.keyboard.press('Control+F5');
-  await expect(title).toContainText('sum.cpp');
-  const input = editor.panel.getByRole('textbox', { name: 'Input for the program' });
-  await expect(input).toBeFocused();
-  await editor.window.keyboard.type('12 9');
-  await editor.window.keyboard.press('Enter');
-  await expect(editor.panel.locator('details[data-key="run"] pre')).toHaveText('12 9\n21\n');
-  await editor.window.waitForTimeout(500);
-  await expect(editor.window.locator('.quick-input-widget')).toBeHidden();
+  await expect(editor.panel.locator('details[data-key="compile"] .title')).toContainText('sum.cpp');
+  await expect(editor.panel.locator('details[data-key="test-1"] pre')).toHaveText('3\n');
 
   await editor.window.locator('.monaco-editor .view-lines').first().click();
+  await editor.window.keyboard.press('Control+F5');
+  await expect(editor.panel.locator('details[data-key="test-1"] pre')).toHaveText('3\n');
   await editor.window.keyboard.press('F6');
   await expect(editor.panel.locator('details[data-key="test-1"]')).toBeVisible();
 });

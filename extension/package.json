@@ -433,6 +433,11 @@
         "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus"
       },
       {
+        "command": "eolympCode.runTest",
+        "key": "ctrl+f5",
+        "when": "!inDebugMode && editorTextFocus && (resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out)"
+      },
+      {
         "command": "eolympCode.runTests",
         "key": "f6",
         "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
