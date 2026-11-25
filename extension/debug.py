@@ -1,3 +1,4 @@
+import io
 import os
 import runpy
 import sys
@@ -17,8 +18,8 @@ os.dup2(os.open(tests, os.O_RDONLY | binary), 0)
 os.dup2(os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | binary), 1)
 os.dup2(os.open(err, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | binary), 2)
 sys.stdin = open(0, encoding="utf-8", closefd=False)
-sys.stdout = open(1, "w", encoding="utf-8", buffering=1, closefd=False)
-sys.stderr = open(2, "w", encoding="utf-8", buffering=1, closefd=False)
+sys.stdout = io.TextIOWrapper(open(1, "wb", buffering=0, closefd=False), encoding="utf-8", write_through=True)
+sys.stderr = io.TextIOWrapper(open(2, "wb", buffering=0, closefd=False), encoding="utf-8", write_through=True)
 sys.excepthook = report
 sys.argv = [solution]
 runpy.run_path(solution, run_name="__main__")

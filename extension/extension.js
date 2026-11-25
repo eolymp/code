@@ -219,7 +219,9 @@ async function prepare(from, missing) {
 }
 
 async function run(node) {
-  const picked = node === 'focused' ? chosen()[0] : node;
+  const editor = vscode.window.activeTextEditor;
+  const open = editor && editor.document.uri.scheme === 'file' ? nodeOf(editor.document.fileName) : undefined;
+  const picked = node === 'focused' ? chosen()[0] : node || open;
   if (picked && (picked.kind === 'test' || picked.kind === 'testFile')) {
     await runTest(picked);
     return;
@@ -407,7 +409,7 @@ async function debugWith(node, input) {
   const state = stateOf(s.file);
   const token = ++launched;
   const typing = input.test === undefined && input.typed === undefined;
-  const pipe = process.platform === 'win32' ? `\\\\.\\pipe\\eolymp-code-${process.pid}-${token}` : path.join(s.outDir, 'debug.in');
+  const pipe = process.platform === 'win32' ? `\\\\.\\pipe\\eolymp-code-${process.pid}-${token}` : path.join(s.outDir, `debug-${token}.in`);
   const stdin = typing ? pipe : input.test === undefined ? path.join(s.outDir, 'run.in') : path.join(s.dir, `${input.test}.in`);
   const uri = vscode.Uri.file(s.file);
   let ended;
@@ -419,8 +421,9 @@ async function debugWith(node, input) {
   mine.finish = () => {
     if (mine.state === 'finished') return;
     clearInterval(timer);
-    pumps.forEach((pump) => pump());
+    pumps.forEach((pump) => { pump(); pump(); });
     if (server) server.close();
+    else if (typing) fs.rm(pipe, { force: true }, () => {});
     else if (mine.stdin) fs.open(pipe, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK, (err, fd) => { if (!err) fs.close(fd, () => {}); });
     if (mine.stdin) mine.stdin.destroy();
     vscode.debug.removeBreakpoints(entry);
@@ -467,15 +470,19 @@ async function debugWith(node, input) {
       const decoder = new StringDecoder('utf8');
       let at = 0;
       return () => {
-        while (fs.existsSync(file) && fs.statSync(file).size > at) {
-          const chunk = Buffer.alloc(Math.min(fs.statSync(file).size - at, 1 << 20));
-          const fd = fs.openSync(file, 'r');
-          const read = fs.readSync(fd, chunk, 0, chunk.length, at);
-          fs.closeSync(fd);
-          if (!read) return;
-          at += read;
-          say(mine, kind, decoder.write(chunk.subarray(0, read)));
+        const size = fs.existsSync(file) ? fs.statSync(file).size : 0;
+        if (size <= at) return;
+        if (mine.shown >= runner.SHOWN) {
+          mine.size += size - at;
+          at = size;
+          return;
         }
+        const chunk = Buffer.alloc(Math.min(size - at, runner.SHOWN));
+        const fd = fs.openSync(file, 'r');
+        const read = fs.readSync(fd, chunk, 0, chunk.length, at);
+        fs.closeSync(fd);
+        at += read;
+        say(mine, kind, decoder.write(chunk.subarray(0, read)));
       };
     });
     timer = setInterval(() => pumps.forEach((pump) => pump()), 100);
@@ -512,7 +519,7 @@ async function debugWith(node, input) {
       rules: [{ path: path.join(__dirname, '**'), include: false }],
     });
   };
-  if (!await launch().catch(() => false)) mine.finish();
+  if (!await launch().catch((err) => say(mine, 'err', `${err.message}\n`))) mine.finish();
 }
 
 function acceptOutput(id) {
@@ -915,7 +922,7 @@ function receive(m) {
   if (m.type === 'rerun' && target) testWith({ ...shown, quiet: true }, stateOf(target.file).only);
   const state = target && stateOf(target.file);
   const x = state && state.session;
-  const last = state && state.last === 'test' ? state.only : x ? x.test : undefined;
+  const last = !state ? undefined : x ? x.test : m.type === 'debug' ? state.only : undefined;
   const test = last !== undefined && ws.testIds(target.dir).includes(last) ? last : undefined;
   if (m.type === 'single' && test !== undefined) testWith({ ...shown, quiet: true }, test);
   else if (m.type === 'single') run(shown);
@@ -970,14 +977,16 @@ function activate(context) {
         const mine = launches.get(session.configuration.eolympCode);
         if (!mine || session.parentSession) return undefined;
         return {
+          onWillReceiveMessage: (m) => { if ((m.command === 'disconnect' || m.command === 'terminate') && mine.code === undefined) mine.stopped = true; },
           onDidSendMessage: (m) => {
             if (m.type !== 'event') return;
             if (m.event === 'exited') mine.code = m.body.exitCode;
             if (m.event !== 'stopped' || m.body.reason !== 'step') return;
             session.customRequest('stackTrace', { threadId: m.body.threadId, startFrame: 0, levels: 1 }).then((trace) => {
               const frame = trace.stackFrames[0];
-              if (!frame || !frame.source || !frame.source.path || frame.source.sourceReference || path.dirname(frame.source.path) === __dirname) session.customRequest('continue', { threadId: m.body.threadId });
-            }, () => {});
+              if (!frame || !frame.source || !frame.source.path || frame.source.sourceReference || path.dirname(frame.source.path) === __dirname) return session.customRequest('continue', { threadId: m.body.threadId });
+              return undefined;
+            }).then(undefined, () => {});
           },
         };
       },
