@@ -1,0 +1,21 @@
+--- a/src/vs/editor/contrib/quickAccess/browser/commandsQuickAccess.ts
++++ b/src/vs/editor/contrib/quickAccess/browser/commandsQuickAccess.ts
+@@ -14,6 +14,8 @@ import { IKeybindingService } from '../../../../platform/keybinding/common/keybi
+ import { AbstractCommandsQuickAccessProvider, ICommandQuickPick, ICommandsQuickAccessOptions } from '../../../../platform/quickinput/browser/commandsQuickAccess.js';
+ import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+ 
++const HIDDEN = new Set(['editor.action.formatSelection', 'editor.action.formatDocument.multiple', 'editor.action.formatSelection.multiple', 'editor.action.formatChanges']);
++
+ export abstract class AbstractEditorCommandsQuickAccessProvider extends AbstractCommandsQuickAccessProvider {
+ 
+ 	constructor(
+@@ -40,6 +42,9 @@ export abstract class AbstractEditorCommandsQuickAccessProvider extends Abstract
+ 
+ 		const editorCommandPicks: ICommandQuickPick[] = [];
+ 		for (const editorAction of activeTextEditorControl.getSupportedActions()) {
++			if (HIDDEN.has(editorAction.id)) {
++				continue;
++			}
+ 			let commandDescription: undefined | ILocalizedString;
+ 			if (editorAction.metadata?.description) {
+ 				if (isLocalizedString(editorAction.metadata.description)) {

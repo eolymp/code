@@ -375,6 +375,290 @@
         {
           "command": "eolympCode.findProblem",
           "when": "eolympCode.hasJudges"
+        },
+        {
+          "command": "ruff.executeAutofix",
+          "when": "false"
+        },
+        {
+          "command": "ruff.executeFormat",
+          "when": "false"
+        },
+        {
+          "command": "ruff.executeOrganizeImports",
+          "when": "false"
+        },
+        {
+          "command": "ruff.debugInformation",
+          "when": "false"
+        },
+        {
+          "command": "ruff.restart",
+          "when": "false"
+        },
+        {
+          "command": "ruff.showLogs",
+          "when": "false"
+        },
+        {
+          "command": "ruff.showServerLogs",
+          "when": "false"
+        },
+        {
+          "command": "basedpyright.organizeimports",
+          "when": "false"
+        },
+        {
+          "command": "basedpyright.restartserver",
+          "when": "false"
+        },
+        {
+          "command": "basedpyright.dumpTokens",
+          "when": "false"
+        },
+        {
+          "command": "basedpyright.dumpNodes",
+          "when": "false"
+        },
+        {
+          "command": "basedpyright.dumpTypes",
+          "when": "false"
+        },
+        {
+          "command": "basedpyright.dumpCachedTypes",
+          "when": "false"
+        },
+        {
+          "command": "basedpyright.dumpCodeFlowGraph",
+          "when": "false"
+        },
+        {
+          "command": "basedpyright.writeBaseline",
+          "when": "false"
+        },
+        {
+          "command": "clangd.switchheadersource",
+          "when": "false"
+        },
+        {
+          "command": "clangd.install",
+          "when": "false"
+        },
+        {
+          "command": "clangd.update",
+          "when": "false"
+        },
+        {
+          "command": "clangd.activate",
+          "when": "false"
+        },
+        {
+          "command": "clangd.restart",
+          "when": "false"
+        },
+        {
+          "command": "clangd.shutdown",
+          "when": "false"
+        },
+        {
+          "command": "clangd.typeHierarchy",
+          "when": "false"
+        },
+        {
+          "command": "clangd.typeHierarchy.viewParents",
+          "when": "false"
+        },
+        {
+          "command": "clangd.typeHierarchy.viewChildren",
+          "when": "false"
+        },
+        {
+          "command": "clangd.typeHierarchy.close",
+          "when": "false"
+        },
+        {
+          "command": "clangd.memoryUsage",
+          "when": "false"
+        },
+        {
+          "command": "clangd.memoryUsage.close",
+          "when": "false"
+        },
+        {
+          "command": "clangd.ast",
+          "when": "false"
+        },
+        {
+          "command": "clangd.ast.close",
+          "when": "false"
+        },
+        {
+          "command": "clangd.projectConfig",
+          "when": "false"
+        },
+        {
+          "command": "clangd.userConfig",
+          "when": "false"
+        },
+        {
+          "command": "clangd.inlayHints.toggle",
+          "when": "false"
+        },
+        {
+          "command": "python.createNewFile",
+          "when": "false"
+        },
+        {
+          "command": "python.analysis.restartLanguageServer",
+          "when": "false"
+        },
+        {
+          "command": "python.clearCacheAndReload",
+          "when": "false"
+        },
+        {
+          "command": "python.clearWorkspaceInterpreter",
+          "when": "false"
+        },
+        {
+          "command": "python.configureTests",
+          "when": "false"
+        },
+        {
+          "command": "python.createTerminal",
+          "when": "false"
+        },
+        {
+          "command": "python.createEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "python.execInTerminal",
+          "when": "false"
+        },
+        {
+          "command": "python.execSelectionInDjangoShell",
+          "when": "false"
+        },
+        {
+          "command": "python.execSelectionInTerminal",
+          "when": "false"
+        },
+        {
+          "command": "python.reportIssue",
+          "when": "false"
+        },
+        {
+          "command": "testing.reRunFailTests",
+          "when": "false"
+        },
+        {
+          "command": "python.setInterpreter",
+          "when": "false"
+        },
+        {
+          "command": "python.startREPL",
+          "when": "false"
+        },
+        {
+          "command": "python.startNativeREPL",
+          "when": "false"
+        },
+        {
+          "command": "python.viewLanguageServerOutput",
+          "when": "false"
+        },
+        {
+          "command": "python.viewOutput",
+          "when": "false"
+        },
+        {
+          "command": "python.installJupyter",
+          "when": "false"
+        },
+        {
+          "command": "debugpy.debugInTerminal",
+          "when": "false"
+        },
+        {
+          "command": "debugpy.debugUsingLaunchConfig",
+          "when": "false"
+        },
+        {
+          "command": "debugpy.clearCacheAndReload",
+          "when": "false"
+        },
+        {
+          "command": "debugpy.viewOutput",
+          "when": "false"
+        },
+        {
+          "command": "debugpy.reportIssue",
+          "when": "false"
+        },
+        {
+          "command": "lldb.displayFormat",
+          "when": "false"
+        },
+        {
+          "command": "lldb.showDisassembly",
+          "when": "false"
+        },
+        {
+          "command": "lldb.toggleDisassembly",
+          "when": "false"
+        },
+        {
+          "command": "lldb.toggleDerefPointers",
+          "when": "false"
+        },
+        {
+          "command": "lldb.toggleConsoleMode",
+          "when": "false"
+        },
+        {
+          "command": "lldb.selfTest",
+          "when": "false"
+        },
+        {
+          "command": "lldb.getCargoLaunchConfigs",
+          "when": "false"
+        },
+        {
+          "command": "lldb.modules.copyValue",
+          "when": "false"
+        },
+        {
+          "command": "lldb.alternateBackend",
+          "when": "false"
+        },
+        {
+          "command": "lldb.attach",
+          "when": "false"
+        },
+        {
+          "command": "lldb.commandPrompt",
+          "when": "false"
+        },
+        {
+          "command": "lldb.symbols",
+          "when": "false"
+        },
+        {
+          "command": "lldb.viewMemory",
+          "when": "false"
+        },
+        {
+          "command": "lldb.excludedCallers.add",
+          "when": "false"
+        },
+        {
+          "command": "lldb.excludedCallers.remove",
+          "when": "false"
+        },
+        {
+          "command": "lldb.excludedCallers.removeAll",
+          "when": "false"
         }
       ],
       "webview/context": [
