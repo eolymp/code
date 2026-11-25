@@ -52,7 +52,7 @@
 +if (!userLocale) {
 +	try {
 +		const bundled = Object.keys(JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'defaults', 'languagepacks.json'), 'utf8')));
-+		userLocale = bundled.find(language => osLocale === language || osLocale.startsWith(`${language}-`));
++		userLocale = bundled.find(language => `${osLocale.replace(/^ru(?=-|$)/, 'uk')}-`.startsWith(`${language}-`));
 +	} catch {
 +		// start in English
 +	}
