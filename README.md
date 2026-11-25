@@ -50,16 +50,12 @@ An extension adds an online judge by calling `registerJudge` on the API the Eoly
 
 ## Test
 
+    ./app/build.sh build
     cd tests && npm ci && npm test
 
-`tests/unit/` checks the file handling and the program runner with Node's test runner. The rest drives the installed app with Playwright; with `EOLYMP_CODE_SOURCE=1` it loads `extension/`, `setup/` and `eolymp/` from this checkout into it.
+`tests/unit/` checks the file handling and the program runner with Node's test runner. The rest drives the editor built by `./app/build.sh build` with Playwright, and loads `extension/`, `setup/` and `eolymp/` from this checkout into it. Set `EOLYMP_CODE_APP` to run another build of the editor.
 
-To run them against the released Linux package without a window on your screen:
-
-    docker build -t eolymp-code-tests tests
-    docker run --rm --cap-add=SYS_ADMIN -e EOLYMP_CODE_SOURCE=1 -v "$PWD":/code eolymp-code-tests
-
-The first-launch test installs the compiler for the others, so it runs before any of them. Pass `--no-deps` to Playwright to skip it when the tools are already installed.
+The first-launch test installs the compiler and Python for the others, so it runs before any of them. Once they are installed it is skipped; set `EOLYMP_CODE_FRESH_TOOLS=1` to install them afresh. A report of the last run is in `tests/playwright-report/`.
 
 ## Licences
 

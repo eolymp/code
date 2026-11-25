@@ -33,6 +33,7 @@
   "Tools": "Інструменти",
   "Unpacking…": "Розпакування…",
   "clangd was not found": "clangd не знайдено",
+  "debugserver was not found": "debugserver не знайдено",
   "the extension is not installed": "розширення не встановлено",
   "{0} MB downloaded": "Завантажено {0} МБ",
   "Programming language": "Мова програмування",

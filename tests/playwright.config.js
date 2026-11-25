@@ -6,7 +6,7 @@ module.exports = defineConfig({
   expect: { timeout: 20000 },
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
-  reporter: 'list',
+  reporter: [['list'], ['html', { open: 'never' }]],
   projects: [
     { name: 'first launch', testMatch: 'first-launch.spec.js' },
     { name: 'app', testMatch: '*.spec.js', testIgnore: 'first-launch.spec.js', dependencies: ['first launch'] },

@@ -33,6 +33,7 @@
   "Tools": "Werkzeuge",
   "Unpacking…": "Wird entpackt…",
   "clangd was not found": "clangd wurde nicht gefunden",
+  "debugserver was not found": "debugserver wurde nicht gefunden",
   "the extension is not installed": "die Erweiterung ist nicht installiert",
   "{0} MB downloaded": "{0} MB heruntergeladen",
   "Programming language": "Programmiersprache",

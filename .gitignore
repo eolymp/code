@@ -3,3 +3,4 @@ test-results/
 .build/
 artifacts/
 __pycache__/
+playwright-report/

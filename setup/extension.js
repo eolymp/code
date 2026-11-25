@@ -24,7 +24,10 @@ function adopt() {
   const diagnose = () => setup.open();
   core.provide(managed ? { cxx: managed.cxx, python: managed.python, flags: managed.flags, env: managed.env, diagnose } : { include: standIn, diagnose });
   terminalEnv.clear();
-  if (!managed && !standIn) return undefined;
+  const lldb = vscode.workspace.getConfiguration('lldb');
+  const server = process.platform === 'darwin' ? toolset.debugserver() : '';
+  const configured = server && lldb.get('server') !== server ? lldb.update('server', server, vscode.ConfigurationTarget.Global) : undefined;
+  if (!managed && !standIn) return Promise.resolve(configured).then(undefined, () => {});
   const updates = [];
   const flags = ['-std=c++17'];
   if (managed) {
@@ -53,7 +56,7 @@ function adopt() {
   }
   const saved = Promise.all(updates);
   if (updates.length) saved.then(() => vscode.commands.executeCommand('clangd.restart')).then(undefined, () => {});
-  return saved.then(undefined, () => {});
+  return Promise.all([saved, configured]).then(undefined, () => {});
 }
 
 const SAMPLES = {

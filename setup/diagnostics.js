@@ -36,6 +36,9 @@ function examine(root) {
   const served = clangd.includes('${') || dirs.some((dir) => fs.existsSync(path.join(dir, clangd)) || fs.existsSync(path.join(dir, `${clangd}.exe`)));
   const completion = checks.find((c) => c.id === 'llvm-vs-code-extensions.vscode-clangd');
   if (completion.ok && !served) Object.assign(completion, { ok: false, detail: t('clangd was not found') });
+  const debugging = checks.find((c) => c.id === 'vadimcn.vscode-lldb');
+  const server = vscode.workspace.getConfiguration('lldb').get('server');
+  if (process.platform === 'darwin' && debugging.ok && !(server && fs.existsSync(server))) Object.assign(debugging, { ok: false, detail: t('debugserver was not found'), fix: 'debugger' });
   return checks;
 }
 
@@ -111,6 +114,7 @@ function create(context, root, changed) {
   const repair = async () => {
     try {
       await apple();
+      await changed();
       await tools();
     } catch (err) {
       if (!stopper.signal.aborted) failed(t('Could not finish the setup: {0}', err.message));

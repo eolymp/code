@@ -33,6 +33,7 @@
   "Tools": "Outils",
   "Unpacking…": "Décompression…",
   "clangd was not found": "clangd est introuvable",
+  "debugserver was not found": "debugserver est introuvable",
   "the extension is not installed": "l'extension n'est pas installée",
   "{0} MB downloaded": "{0} Mo téléchargés",
   "Programming language": "Langage de programmation",

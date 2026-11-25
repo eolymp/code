@@ -27,6 +27,13 @@ function sdk(again) {
   return sdkPath;
 }
 
+function debugserver() {
+  const found = childProcess.spawnSync('xcode-select', ['-p'], { encoding: 'utf8' });
+  if (found.status !== 0) return '';
+  const dir = found.stdout.trim();
+  return [path.join(dir, '../SharedFrameworks/LLDB.framework/Resources/debugserver'), path.join(dir, 'Library/PrivateFrameworks/LLDB.framework/Resources/debugserver')].find((file) => fs.existsSync(file)) || '';
+}
+
 function installed(root) {
   const set = wanted();
   if (!set || !fs.existsSync(root)) return undefined;
@@ -361,4 +368,4 @@ if (require.main === module && process.send) {
     .then(() => process.disconnect(), (err) => process.send({ error: err.message }, () => process.exit(1)));
 }
 
-module.exports = { wanted, installed, install, sdk };
+module.exports = { wanted, installed, install, sdk, debugserver };
