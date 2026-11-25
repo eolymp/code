@@ -75,6 +75,7 @@ function toolEnv() {
   if (provided.cxx && cxxPath() === provided.cxx) Object.assign(env, provided.env);
   else if (config().get('includePath') || provided.include) env.CPLUS_INCLUDE_PATH = config().get('includePath') || provided.include;
   env.PYTHONUTF8 = '1';
+  env.PYTHON_COLORS = '0';
   return env;
 }
 

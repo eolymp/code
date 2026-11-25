@@ -29,7 +29,7 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 
     cd tests && npm ci && npm test
 
-The tests drive the installed app. With `EOLYMP_CODE_SOURCE=1` they load `extension/` and `setup/` from this checkout into it.
+`tests/unit/` checks the file handling and the program runner with Node's test runner. The rest drives the installed app with Playwright; with `EOLYMP_CODE_SOURCE=1` it loads `extension/` and `setup/` from this checkout into it.
 
 ## Licences
 

@@ -2,7 +2,8 @@
   "name": "eolymp-code-tests",
   "private": true,
   "scripts": {
-    "test": "playwright test"
+    "test": "node --test unit/*.test.js && playwright test",
+    "unit": "node --test unit/*.test.js"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1"

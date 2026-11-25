@@ -66,7 +66,10 @@ async function collect(command, args, options, input) {
     let size = 0;
     let stderr = '';
     const result = (more) => ({ stdout: Buffer.concat(head).toString('utf8'), stderr, size, trimmed: kept < size, hash: hash.digest('hex'), ms: Date.now() - started, ...more });
+    let settled = false;
     const settle = (more) => {
+      if (settled) return;
+      settled = true;
       if (!file) resolve(result(more));
       else file.end(() => resolve(result(more)));
     };
