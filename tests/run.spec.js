@@ -43,8 +43,7 @@ test('Ctrl+F5 runs the solution from a test file and from the Practice view', as
   await expect(editor.window.locator('.quick-input-widget')).toBeHidden();
 
   await editor.window.locator('.monaco-editor .view-lines').first().click();
-  await editor.window.keyboard.press('ControlOrMeta+;');
-  await editor.window.keyboard.press('a');
+  await editor.window.keyboard.press('F6');
   await expect(editor.panel.locator('details[data-key="test-1"]')).toBeVisible();
 });
 

@@ -434,16 +434,14 @@
       },
       {
         "command": "eolympCode.runTests",
-        "key": "ctrl+; a",
-        "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)",
-        "mac": "cmd+; a"
+        "key": "f6",
+        "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
       },
       {
         "command": "eolympCode.runTests",
-        "key": "ctrl+; a",
+        "key": "f6",
         "args": "focused",
-        "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus",
-        "mac": "cmd+; a"
+        "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus"
       },
       {
         "command": "eolympCode.stop",
