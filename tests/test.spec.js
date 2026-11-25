@@ -30,7 +30,7 @@ test('Test compares each output with its answer and keeps long output in a file'
   await expect(head).toContainText('lines.cpp');
   await expect(head).toContainText('1/1 match');
   fs.writeFileSync(path.join(editor.workspace, 'lines/1.answer'), 'line\n');
-  await head.getByRole('button', { name: 'Rerun' }).click();
+  await editor.tools.getByRole('button', { name: 'Rerun' }).click();
   await expect(first.getByRole('img', { name: 'The output differs from the answer' })).toBeVisible();
   await expect(head).toContainText('0/1 match');
 

@@ -41,6 +41,7 @@ async function launch(files, tools, settings) {
     panel: window.frameLocator('iframe.webview[src*="purpose=webviewView"]').frameLocator('iframe#active-frame'),
     page: window.frameLocator('iframe.webview:not([src*="purpose=webviewView"])').frameLocator('iframe#active-frame'),
     toolbar: window.getByRole('toolbar', { name: 'Editor actions' }),
+    tools: window.locator('.part.panel .title'),
     tree: window.getByRole('tree', { name: 'Practice' }),
     box: window.locator('.quick-input-widget').getByRole('textbox'),
     pick: async (name) => {

@@ -5,6 +5,7 @@ const path = require('path');
 const ws = require('./workspace');
 const runner = require('./runner');
 const judging = require('./judges');
+const submission = require('./submission');
 const { StringDecoder } = require('string_decoder');
 const { PassThrough } = require('stream');
 const net = require('net');
@@ -23,6 +24,7 @@ const changed = new vscode.EventEmitter();
 let view;
 let problems;
 let drawn;
+let tools = {};
 let opening;
 let clip;
 let target;
@@ -940,7 +942,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Debug", "Open a .cpp or .py file to run it here.", "Run", "Test", "{0} has not been run yet.", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Crashed", "Finished with an error", "End input (Ctrl+D)", "Stop (Ctrl+C)", "stopped", "Input for the program", "input ended", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "The output matches the answer", "The output differs from the answer", "output changed", "Diagnostics", "More actions", "runtime error", "Output trimmed, open {0}", "{0} ms", "{0} MB", "# compile", "# test {0}", "Rerun", "{0}/{1} match"];
+const VIEW_STRINGS = ["Debug", "Open a .cpp or .py file to run it here.", "Run", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Crashed", "Finished with an error", "stopped", "Input for the program", "input ended", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "The output matches the answer", "The output differs from the answer", "output changed", "Diagnostics", "More actions", "runtime error", "Output trimmed, open {0}", "{0} ms", "{0} MB", "# compile", "# test {0}", "{0}/{1} match", "Testing {0} on your computer", "Running {0} on your computer"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -951,6 +953,13 @@ function html(webview) {
 
 function receive(m) {
   if (m.type === 'ready') flush();
+  if (m.type === 'tools') {
+    tools = m;
+    vscode.commands.executeCommand('setContext', 'eolympCode.console.idle', !m.hidden && !m.busy);
+    vscode.commands.executeCommand('setContext', 'eolympCode.console.busy', !m.hidden && m.busy);
+    vscode.commands.executeCommand('setContext', 'eolympCode.console.typing', !m.hidden && m.typing);
+    vscode.commands.executeCommand('setContext', 'eolympCode.console.debug', !m.hidden && m.debug);
+  }
   const shown = target && { kind: 'solution', file: target.file };
   if (m.type === 'run') runTests(shown);
   if (m.type === 'rerun' && target) testWith({ ...shown, quiet: true }, stateOf(target.file).only);
@@ -1005,7 +1014,7 @@ function activate(context) {
     deleteTest: (id, dir) => deleteTest(dir, id),
   };
   const judges = judging.create(createProblem, refresh);
-  const commands = { run, runTests, runTest, debug, openTest, stop, newProblem, findProblem: judges.find, newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
+  const commands = { run, runTests, runTest, debug, openTest, stop, newProblem, findProblem: judges.find, submit: judges.submit, consoleRerun: () => receive({ type: tools.tested ? 'rerun' : 'single' }), consoleDebug: () => receive({ type: 'debug', only: tools.tested }), consoleEndInput: () => receive({ type: 'eof' }), consoleStop: () => receive({ type: 'stop' }), newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterTrackerFactory('*', {
       createDebugAdapterTracker(session) {
@@ -1054,6 +1063,7 @@ function activate(context) {
     ...Object.entries(commands).map(([name, action]) => vscode.commands.registerCommand(`eolympCode.${name}`, action)),
     problems.onDidChangeVisibility(() => show(vscode.window.activeTextEditor)),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
+      judges.mark();
       show(editor);
       const s = solutionIn(editor && editor.document);
       if (!s || (target && s.file === target.file)) return;
@@ -1061,6 +1071,7 @@ function activate(context) {
       update();
     }),
   );
+  submission.register(context);
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
   show(vscode.window.activeTextEditor);
   return {

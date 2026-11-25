@@ -66,7 +66,7 @@ test.describe('a run', () => {
     await input.press('Enter');
     await input.fill('7');
     await input.press('Enter');
-    await head.getByRole('button', { name: /^End input/ }).click();
+    await editor.tools.getByRole('button', { name: 'End Input' }).click();
     await expect(run.locator('pre')).toHaveText('5\n7\n12\n');
     await expect(run.getByRole('img', { name: 'Finished' })).toBeVisible();
 
@@ -75,11 +75,11 @@ test.describe('a run', () => {
     await expect.poll(() => editor.there('sums/2.in') && editor.read('sums/2.in')).toBe('5\n7\n');
     expect(editor.read('sums/2.out')).toBe('12\n');
 
-    await head.getByRole('button', { name: 'Rerun' }).click();
+    await editor.tools.getByRole('button', { name: 'Rerun' }).click();
     await expect(input).toBeVisible();
-    await head.getByRole('button', { name: /^Stop/ }).click();
+    await editor.tools.getByRole('button', { name: /^Stop/ }).click();
     await expect(run.getByRole('img', { name: 'Stopped' })).toBeVisible();
-    await expect(head.getByRole('button', { name: 'Rerun' })).toBeVisible();
+    await expect(editor.tools.getByRole('button', { name: 'Rerun' })).toBeVisible();
   });
 
   test('An output becomes the answer, an edited answer is judged again, and the difference opens', async ({ editor }) => {

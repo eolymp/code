@@ -33,5 +33,10 @@
   "command.copy": "Kopieren",
   "command.paste": "Einfügen",
   "command.runTest": "Test ausführen",
-  "command.findProblem": "Aufgabe suchen"
+  "command.findProblem": "Aufgabe suchen",
+  "view.submission": "Einreichung",
+  "command.submit": "Einreichen",
+  "command.openSubmission": "Im Browser öffnen",
+  "command.consoleRerun": "Erneut ausführen",
+  "command.consoleEndInput": "Eingabe beenden"
 }
