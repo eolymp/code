@@ -1,0 +1,5 @@
+{
+  "description": "Eolymp Code tətbiqi üçün kompilyatoru və Python-u quraşdırır və onların işlədiyini yoxlayır.",
+  "command.checkSetup": "Diaqnostika",
+  "command.welcome": "Xoş gəlmisiniz"
+}
