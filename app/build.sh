@@ -108,6 +108,7 @@ if [ "$step" != package ]; then
   node "$here/bundle.js" "$resources" "$platform-$arch" "$work/pins"
   [ "$platform" != win32 ] || (cd "$work/vscodium/vscode" && npm run gulp "vscode-win32-$arch-inno-updater")
   [ "$platform" != linux ] || (cd "$work/vscodium/vscode" && npm run gulp "vscode-linux-$arch-prepare-deb" && npm run gulp "vscode-linux-$arch-build-deb")
+  [ "$platform" != darwin ] || (cp "$here/dmg/package.json" "$here/dmg/package-lock.json" "$work/vscodium" && cd "$work/vscodium" && npm ci --no-audit --no-fund)
 fi
 
 [ "$step" != build ] || exit 0
@@ -118,8 +119,6 @@ if [ "$platform" = darwin ]; then
     [ -n "${!name:-}" ] || { echo "$name is needed to sign the disk image"; exit 1; }
   done
   export SHOULD_BUILD_ZIP=no
-  cp "$here/dmg/package.json" "$here/dmg/package-lock.json" .
-  npm ci --no-audit --no-fund
   rm -rf assets
   mkdir assets
   set +u
