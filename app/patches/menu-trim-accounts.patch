@@ -1,0 +1,24 @@
+--- a/src/vs/workbench/contrib/chat/browser/actions/chatLanguageModelActions.ts
++++ b/src/vs/workbench/contrib/chat/browser/actions/chatLanguageModelActions.ts
+@@ -32,6 +32,7 @@ class ManageLanguageModelAuthenticationAction extends Action2 {
+ 			menu: [{
+ 				id: MenuId.AccountsContext,
+ 				order: 100,
++				when: ChatContextKeys.enabled,
+ 			}],
+ 			f1: true
+ 		});
+--- a/src/vs/workbench/contrib/remoteTunnel/electron-browser/remoteTunnel.contribution.ts
++++ b/src/vs/workbench/contrib/remoteTunnel/electron-browser/remoteTunnel.contribution.ts
+@@ -561,11 +561,6 @@ export class RemoteTunnelWorkbenchContribution extends Disposable implements IWo
+ 					precondition: ContextKeyExpr.equals(REMOTE_TUNNEL_CONNECTION_STATE_KEY, 'disconnected'),
+ 					menu: [{
+ 						id: MenuId.CommandPalette,
+-					},
+-					{
+-						id: MenuId.AccountsContext,
+-						group: '2_remoteTunnel',
+-						when: ContextKeyExpr.equals(REMOTE_TUNNEL_CONNECTION_STATE_KEY, 'disconnected'),
+ 					}]
+ 				});
+ 			}
