@@ -3,5 +3,7 @@
   "You are signed in": "Has iniciado sesión",
   "You can close this page and return to Eolymp Code.": "Puedes cerrar esta página y volver a Eolymp Code.",
   "{0}% accepted": "{0}% aceptados",
-  "Could not end the session on Eolymp: {0}": "No se pudo cerrar la sesión en Eolymp: {0}"
+  "Could not end the session on Eolymp: {0}": "No se pudo cerrar la sesión en Eolymp: {0}",
+  "You are not signed in": "No has iniciado sesión",
+  "You can close this page and try again in Eolymp Code.": "Puedes cerrar esta página e intentarlo de nuevo en Eolymp Code."
 }

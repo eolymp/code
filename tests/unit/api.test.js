@@ -12,4 +12,5 @@ test('other text is searched as it is', () => {
   assert.equal(api.numberIn('1'), undefined);
   assert.equal(api.numberIn('https://example.com/problems/1'), undefined);
   assert.equal(api.numberIn('https://eolymp.com/contests/1'), undefined);
+  assert.equal(api.numberIn('https://eolymp.com/problems/12abc'), undefined);
 });

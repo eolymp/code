@@ -4,7 +4,7 @@ const BASE = 'https://api.eolymp.com/spaces/00000000-0000-0000-0000-000000000000
 function numberIn(query) {
   if (!URL.canParse(query)) return undefined;
   const url = new URL(query);
-  const found = url.pathname.match(/^(?:\/[a-z]{2})?\/problems\/(\d+)/);
+  const found = url.pathname.match(/^(?:\/[a-z]{2})?\/problems\/(\d+)(?:\/|$)/);
   return HOSTS.includes(url.hostname) && found ? Number(found[1]) : undefined;
 }
 

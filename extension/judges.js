@@ -36,6 +36,10 @@ function create(createProblem, refresh) {
   };
 
   const find = async () => {
+    if (!vscode.workspace.workspaceFolders) {
+      vscode.window.showErrorMessage(t('Open a folder first: problems are created in it.'));
+      return;
+    }
     const all = [...judges.values()];
     const chosen = all.length > 1 ? await vscode.window.showQuickPick(all.map((judge) => ({ label: judge.label, judge })), { placeHolder: t('Where to look for a problem') }) : { judge: all[0] };
     const judge = chosen && chosen.judge;
@@ -59,12 +63,13 @@ function create(createProblem, refresh) {
     };
     box.placeholder = t('Search problems on {0}', judge.label);
     box.onDidChangeValue(() => {
+      box.busy = true;
       clearTimeout(timer);
       timer = setTimeout(look, 250);
     });
     box.onDidAccept(() => {
       const picked = box.selectedItems[0];
-      if (!picked) return;
+      if (!picked || box.busy) return;
       box.hide();
       open(judge, picked.problem);
     });

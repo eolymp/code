@@ -9,9 +9,7 @@ function sessionOf(profile) {
   return { id: ID, accessToken: profile.session.access, account: { id: profile.user.id, label: profile.user.nickname || profile.user.name }, scopes: [] };
 }
 
-function page() {
-  const title = t('You are signed in');
-  const text = t('You can close this page and return to Eolymp Code.');
+function page(title, text) {
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title>`
     + '<body style="font: 16px system-ui, sans-serif; text-align: center; padding-top: 20vh; color-scheme: light dark">'
     + `<h1 style="font-size: 24px">${title}</h1><p>${text}</p>`;
@@ -33,6 +31,8 @@ async function create(context) {
       return renewed;
     } catch (err) {
       if (!(err instanceof oauth.Rejected)) throw err;
+      const latest = await read();
+      if (latest && latest.session.refresh !== profile.session.refresh) return latest;
       await context.secrets.delete(KEY);
       return undefined;
     }
@@ -70,7 +70,10 @@ async function create(context) {
       return vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Continue signing in in your browser.'), cancellable: true }, async (_, cancel) => {
         const session = await oauth.signIn({
           open: (url) => vscode.env.openExternal(vscode.Uri.parse(url)),
-          page: page(),
+          pages: {
+            done: page(t('You are signed in'), t('You can close this page and return to Eolymp Code.')),
+            failed: page(t('You are not signed in'), t('You can close this page and try again in Eolymp Code.')),
+          },
           lang: vscode.env.language.slice(0, 2),
           cancelled: new Promise((resolve) => { cancel.onCancellationRequested(() => resolve(undefined)); }),
         });

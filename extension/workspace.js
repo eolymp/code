@@ -3,7 +3,7 @@ const path = require('path');
 
 const LANGS = { '.cpp': 'cpp', '.cc': 'cpp', '.cxx': 'cpp', '.py': 'py' };
 const TEST_FILES = ['in', 'out', 'answer'];
-const LINK = 'problem.json';
+const LINK = '.problem.json';
 
 function natural(a, b) {
   return a.localeCompare(b, undefined, { numeric: true });
@@ -56,7 +56,7 @@ function testIds(dir) {
 function othersIn(dir) {
   const tests = new Set(testIds(dir));
   return fs.readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && !entry.name.startsWith('.') && entry.name !== LINK && !langOf(entry.name))
+    .filter((entry) => entry.isFile() && !entry.name.startsWith('.') && !langOf(entry.name))
     .map((entry) => entry.name)
     .filter((name) => !(/\.(in|out|answer)$/.test(name) && tests.has(name.replace(/\.[^.]+$/, ''))))
     .sort(natural)

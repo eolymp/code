@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const oauth = require('../../eolymp/oauth');
 
 test('the sign-in callback takes the code only with its own state', async () => {
-  const local = await oauth.listen('expected', 'done');
+  const local = await oauth.listen('expected', { done: 'done', failed: 'failed' });
   try {
     assert.equal((await fetch(`${local.redirect}?code=stolen&state=other`)).status, 404);
     const res = await fetch(`${local.redirect}?code=granted&state=expected`);
@@ -15,9 +15,9 @@ test('the sign-in callback takes the code only with its own state', async () => 
 });
 
 test('a refused sign-in is reported', async () => {
-  const local = await oauth.listen('expected', 'done');
+  const local = await oauth.listen('expected', { done: 'done', failed: 'failed' });
   try {
-    await fetch(`${local.redirect}?error=access_denied&state=expected`);
+    assert.equal(await (await fetch(`${local.redirect}?error=access_denied&state=expected`)).text(), 'failed');
     await assert.rejects(local.code, oauth.Rejected);
   } finally {
     local.close();

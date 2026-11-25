@@ -12,7 +12,7 @@ function random() {
   return crypto.randomBytes(32).toString('base64url');
 }
 
-function listen(state, page) {
+function listen(state, pages) {
   let server;
   const code = new Promise((resolve, reject) => {
     server = http.createServer((req, res) => {
@@ -21,8 +21,9 @@ function listen(state, page) {
         res.writeHead(404).end();
         return;
       }
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', Connection: 'close' }).end(page);
-      if (url.searchParams.get('code')) resolve(url.searchParams.get('code'));
+      const granted = url.searchParams.get('code');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', Connection: 'close' }).end(granted ? pages.done : pages.failed);
+      if (granted) resolve(granted);
       else reject(new Rejected(url.searchParams.get('error_description') || url.searchParams.get('error') || 'no code'));
     });
     server.on('error', reject);
@@ -42,7 +43,7 @@ async function post(path, fields) {
   const res = await fetch(`${API}/${path}`, { method: 'POST', body: new URLSearchParams(fields) });
   const body = await res.json().catch(() => ({}));
   if (res.ok) return body;
-  if (res.status >= 400 && res.status < 500) throw new Rejected(body.message || `HTTP ${res.status}`);
+  if ([400, 401, 403].includes(res.status)) throw new Rejected(body.message || `HTTP ${res.status}`);
   throw new Error(body.message || `HTTP ${res.status}`);
 }
 
@@ -50,10 +51,10 @@ function session(body, refresh) {
   return { access: body.access_token, refresh: body.refresh_token || refresh, expires: Date.now() + (body.expires_in || 0) * 1000 };
 }
 
-async function signIn({ open, page, lang, cancelled }) {
+async function signIn({ open, pages, lang, cancelled }) {
   const state = random();
   const verifier = random();
-  const local = await listen(state, page);
+  const local = await listen(state, pages);
   try {
     const query = {
       response_type: 'code',
@@ -65,7 +66,7 @@ async function signIn({ open, page, lang, cancelled }) {
       code_challenge_method: 'S256',
       lang,
     };
-    await open(`${AUTHORIZE}?${Object.entries(query).map(([name, value]) => `${name}=${encodeURIComponent(value)}`).join('&')}`);
+    if (!await open(`${AUTHORIZE}?${Object.entries(query).map(([name, value]) => `${name}=${encodeURIComponent(value)}`).join('&')}`)) return undefined;
     const code = await Promise.race([local.code, cancelled]);
     if (!code) return undefined;
     return session(await post('token', { grant_type: 'authorization_code', client_id: CLIENT, code, code_verifier: verifier, redirect_uri: local.redirect }));
