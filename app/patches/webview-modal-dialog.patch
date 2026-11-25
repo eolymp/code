@@ -125,12 +125,14 @@
  import { Schemas } from '../../../../base/common/network.js';
  import { ThemeIcon } from '../../../../base/common/themables.js';
  import { URI } from '../../../../base/common/uri.js';
-@@ -34,6 +34,10 @@ export class WebviewInput extends EditorInput {
+@@ -34,6 +34,12 @@ export class WebviewInput extends EditorInput {
  
  	public static typeId = 'workbench.editors.webviewInput';
  
-+	public getModalEditorOptions(): IModalEditorOptions {
-+		return { compactHeader: true, canMoveToEditorArea: false, canMaximize: false };
++	public dialog = false;
++
++	public getModalEditorOptions(): IModalEditorOptions | undefined {
++		return this.dialog ? { compactHeader: true, canMoveToEditorArea: false, canMaximize: false } : undefined;
 +	}
 +
  	public override get typeId(): string {
@@ -147,8 +149,11 @@
  import { IOverlayWebview, IWebviewService, WebviewInitInfo } from '../../webview/browser/webview.js';
  import { CONTEXT_ACTIVE_WEBVIEW_PANEL_ID } from './webviewEditor.js';
  import { WebviewIconPath, WebviewInput, WebviewInputInitInfo } from './webviewEditorInput.js';
-@@ -288,6 +288,7 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
+@@ -286,8 +286,10 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
+ 	): WebviewInput {
+ 		const webview = this._webviewService.createWebviewOverlay(webviewInitInfo);
  		const webviewInput = this._instantiationService.createInstance(WebviewInput, { viewType, name: title, providedId: webviewInitInfo.providedViewType, iconPath }, webview);
++		webviewInput.dialog = showOptions.group === MODAL_GROUP;
  		this._editorService.openEditor(webviewInput, {
  			pinned: true,
 +			modal: showOptions.group === MODAL_GROUP ? { size: { width: 560, height: 460 } } : undefined,

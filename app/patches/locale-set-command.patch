@@ -9,7 +9,7 @@
  
  // duplicate of IExtensionsViewPaneContainer in contrib
  interface IExtensionsViewPaneContainer extends IViewPaneContainer {
-@@ -177,3 +179,11 @@ class NativeActiveLanguagePackService implements IActiveLanguagePackService {
+@@ -177,3 +179,15 @@ class NativeActiveLanguagePackService implements IActiveLanguagePackService {
  
  registerSingleton(ILocaleService, NativeLocaleService, InstantiationType.Delayed);
  registerSingleton(IActiveLanguagePackService, NativeActiveLanguagePackService, InstantiationType.Delayed);
@@ -18,6 +18,10 @@
 +	const jsonEditingService = accessor.get(IJSONEditingService);
 +	const environmentService = accessor.get(IEnvironmentService);
 +	const hostService = accessor.get(IHostService);
++	const installed = await accessor.get(ILanguagePackService).getInstalledLanguages();
++	if (!installed.some(language => language.id === locale)) {
++		throw new Error(`the language ${locale} is not installed`);
++	}
 +	await jsonEditingService.write(environmentService.argvResource, [{ path: ['locale'], value: locale }], true);
 +	await hostService.restart();
 +});
