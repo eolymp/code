@@ -6614,7 +6614,7 @@
    "debugAnyway": "Ігнорувати помилки завдань і почати налагодження.",
    "debugCategory": "Налагодження",
    "debugConfigurationTitle": "Налагодження",
-   "debugPanel": "Консоль налагодження",
+   "debugPanel": "Налагоджувач",
    "debugToolBar.commandCenter": "`(Experimental)` Показувати панель інструментів налагодження в командному центрі.",
    "debugToolBar.docked": "Показувати панель інструментів налагодження лише в поданнях налагодження.",
    "debugToolBar.floating": "Показувати панель інструментів налагодження в усіх поданнях.",
@@ -6947,7 +6947,7 @@
    "stepBackDebug": "Крок назад"
   },
   "vs/workbench/contrib/debug/browser/debugViewlet": {
-   "debugPanel": "Консоль налагодження",
+   "debugPanel": "Налагоджувач",
    "miOpenConfigurations": "Від&&крити конфігурації",
    "openLaunchConfigDescription": "Відкриває файл, у якому налаштовується, як налагоджується ваша програма",
    "selectWorkspaceFolder": "Виберіть папку робочої області, у якій слід створити файл launch.json, або додайте його до файлу конфігурації робочої області",
@@ -7033,14 +7033,14 @@
    "repl.syntaxText": "- Введіть текст: показуються лише повідомлення, що містять цей текст."
   },
   "vs/workbench/contrib/debug/browser/replViewer": {
-   "debugConsole": "Консоль налагодження",
+   "debugConsole": "Налагоджувач",
    "occurred": ", кількість повторень: {0}",
    "replGroup": "Група консолі налагодження {0}",
    "replRawObjectAriaLabel": "Змінна консолі налагодження {0}, значення {1}",
    "replVariableAriaLabel": "Змінна {0}, значення {1}"
   },
   "vs/workbench/contrib/debug/browser/repl": {
-   "actions.repl.acceptInput": "Консоль налагодження: прийняти введене",
+   "actions.repl.acceptInput": "Налагоджувач: прийняти введене",
    "actions.repl.copyAll": "Налагодження: копіювати весь вміст консолі",
    "clearRepl": "Очистити консоль",
    "clearRepl.descriotion": "Очищає весь вивід програми з REPL налагодження",
@@ -7049,11 +7049,11 @@
    "commentLabelWithKeybindingNoKeybinding": "{0}, виконайте команду Відкрити довідку зі спеціальних можливостей, яку зараз неможливо викликати сполученням клавіш.",
    "copy": "Копіювати",
    "copyAll": "Копіювати все",
-   "debugConsole": "Консоль налагодження",
+   "debugConsole": "Налагоджувач",
    "debugFocusConsole": "Перевести фокус на подання консолі налагодження",
    "paste": "Вставити",
-   "repl.action.filter": "Консоль налагодження: перевести фокус на фільтр",
-   "repl.action.find": "Консоль налагодження: перевести фокус на пошук",
+   "repl.action.filter": "Налагоджувач: перевести фокус на фільтр",
+   "repl.action.find": "Налагоджувач: перевести фокус на пошук",
    "selectRepl": "Вибрати консоль налагодження",
    "showing filtered repl lines": "Показано {0} з {1}",
    "startDebugFirst": "Будь ласка, почніть сеанс налагодження, щоб обчислювати вирази",
@@ -8908,7 +8908,7 @@
   },
   "vs/workbench/contrib/quickaccess/browser/viewQuickAccess": {
    "channels": "Вивід",
-   "debugConsoles": "Консоль налагодження",
+   "debugConsoles": "Налагоджувач",
    "noViewResults": "Немає відповідних подань",
    "openView": "Відкрити подання",
    "panels": "Панель",

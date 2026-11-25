@@ -14,7 +14,7 @@
   "command.addAnswer": "Додати відповідь",
   "command.showDiff": "Показати відмінності",
   "command.markCorrect": "Зберегти вивід як відповідь",
-  "command.debugTest": "Налагодити",
+  "command.debug": "Налагодити",
   "command.deleteTest": "Видалити",
   "command.addAsTest": "Додати як тест",
   "command.renameTest": "Перейменувати",

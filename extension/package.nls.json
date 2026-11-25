@@ -14,7 +14,7 @@
   "command.addAnswer": "Add Answer",
   "command.showDiff": "Show Diff",
   "command.markCorrect": "Use Output as Answer",
-  "command.debugTest": "Debug",
+  "command.debug": "Debug",
   "command.deleteTest": "Delete",
   "command.addAsTest": "Add as Test",
   "command.renameTest": "Rename",

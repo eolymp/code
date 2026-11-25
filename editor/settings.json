@@ -15,6 +15,7 @@
     "-Wall"
   ],
   "lldb.suppressUpdateNotifications": true,
+  "lldb.showDisassembly": "never",
   "[cpp]": {
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
   },

@@ -61,5 +61,7 @@
   "Test \"{0}\"": "Prueba \"{0}\"",
   "Rerun": "Volver a ejecutar",
   "This problem has no solution to run.": "Este problema no tiene una solución para ejecutar.",
-  "This file is not a test of a problem.": "Este archivo no es una prueba de un problema."
+  "This file is not a test of a problem.": "Este archivo no es una prueba de un problema.",
+  "Open a .cpp or .py file to debug it.": "Abre un archivo .cpp o .py para depurarlo.",
+  "Debug": "Depurar"
 }

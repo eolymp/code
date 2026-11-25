@@ -61,5 +61,7 @@
   "Test \"{0}\"": "Тест \"{0}\"",
   "Rerun": "Запустити знову",
   "This problem has no solution to run.": "У цій задачі немає розв'язку для запуску.",
-  "This file is not a test of a problem.": "Цей файл не є тестом задачі."
+  "This file is not a test of a problem.": "Цей файл не є тестом задачі.",
+  "Open a .cpp or .py file to debug it.": "Відкрийте файл .cpp або .py, щоб налагодити його.",
+  "Debug": "Налагодити"
 }
