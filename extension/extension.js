@@ -133,6 +133,7 @@ function flush() {
   view.webview.postMessage({
     file: target ? path.basename(target.file) : '',
     path: target ? target.file : '',
+    root: root() || '',
     tests: target ? ws.testIds(target.dir).filter(shown).map((id) => ({ id, answered: ws.answerOf(target.dir, id) !== undefined })) : [],
     results: state ? Object.fromEntries(Object.entries(sync(state, target)).filter(([id]) => shown(id)).map(([id, r]) => [id, { verdict: r.verdict, ms: r.ms, memory: r.memory, code: r.code, signal: r.signal, changed: r.changed, stdout: r.stdout, stderr: r.stderr, trimmed: r.trimmed }])) : {},
     compileError: state ? state.compileError : '',

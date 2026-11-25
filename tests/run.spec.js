@@ -46,3 +46,13 @@ test('F5 runs the solution from a test file and from the Practice view', async (
   await editor.window.keyboard.press('Shift+F5');
   await expect(editor.panel.locator('details[data-key="test-1"]')).toBeVisible();
 });
+
+test('A compilation error shows short paths that open the place', async ({ editor }) => {
+  fs.writeFileSync(path.join(editor.workspace, 'sum/sum.cpp'), SUM.replace('cout <<', 'cfout <<'));
+  await editor.toolbar.getByRole('button', { name: /^Run/ }).click();
+
+  const log = editor.panel.locator('details[data-key="compile"] pre');
+  await expect(log.getByRole('link').first()).toHaveText('sum/sum.cpp:7:5');
+  await expect(log).not.toContainText(editor.workspace);
+  for (const text of await log.getByRole('link').allTextContents()) expect(text).toMatch(/^(sum\/sum\.cpp|stdlib:[^\/]+(\/[^\/]+)?):\d+:\d+$/);
+});
