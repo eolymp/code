@@ -66,6 +66,12 @@
         "icon": "$(run-all)"
       },
       {
+        "command": "eolympCode.debug",
+        "title": "%command.debug%",
+        "category": "Eolymp Code",
+        "icon": "$(debug-alt)"
+      },
+      {
         "command": "eolympCode.newProblem",
         "title": "%command.newProblem%",
         "category": "Eolymp Code",
@@ -105,10 +111,6 @@
       {
         "command": "eolympCode.markCorrect",
         "title": "%command.markCorrect%"
-      },
-      {
-        "command": "eolympCode.debugTest",
-        "title": "%command.debugTest%"
       },
       {
         "command": "eolympCode.deleteTest",
@@ -167,7 +169,7 @@
         },
         {
           "command": "eolympCode.runTests",
-          "group": "navigation@1",
+          "group": "navigation@2",
           "when": "(resourceLangId == cpp || resourceLangId == python) && !eolympCode.running"
         },
         {
@@ -179,6 +181,16 @@
           "command": "eolympCode.runTest",
           "group": "navigation@0",
           "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !eolympCode.running"
+        },
+        {
+          "command": "eolympCode.debug",
+          "group": "navigation@1",
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !eolympCode.running && !inDebugMode"
+        },
+        {
+          "command": "eolympCode.debug",
+          "group": "navigation@1",
+          "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !eolympCode.running && !inDebugMode"
         }
       ],
       "view/title": [
@@ -210,13 +222,8 @@
           "when": "view == eolympCode.problems && viewItem == problem"
         },
         {
-          "command": "eolympCode.run",
-          "group": "inline@1",
-          "when": "view == eolympCode.problems && viewItem == solution"
-        },
-        {
           "command": "eolympCode.runTests",
-          "group": "inline@2",
+          "group": "inline@1",
           "when": "view == eolympCode.problems && viewItem == solution"
         },
         {
@@ -268,6 +275,16 @@
           "command": "eolympCode.runTest",
           "group": "1@1",
           "when": "view == eolympCode.problems && viewItem == test"
+        },
+        {
+          "command": "eolympCode.debug",
+          "group": "1@3",
+          "when": "view == eolympCode.problems && viewItem == solution"
+        },
+        {
+          "command": "eolympCode.debug",
+          "group": "1@2",
+          "when": "view == eolympCode.problems && viewItem == test"
         }
       ],
       "commandPalette": [
@@ -297,10 +314,6 @@
         },
         {
           "command": "eolympCode.markCorrect",
-          "when": "false"
-        },
-        {
-          "command": "eolympCode.debugTest",
           "when": "false"
         },
         {
@@ -375,7 +388,7 @@
           "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && canAccept"
         },
         {
-          "command": "eolympCode.debugTest",
+          "command": "eolympCode.debug",
           "group": "1@5",
           "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
         },
@@ -398,26 +411,47 @@
     },
     "keybindings": [
       {
-        "command": "eolympCode.run",
+        "command": "eolympCode.debug",
         "key": "f5",
         "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
       },
       {
         "command": "eolympCode.run",
+        "key": "ctrl+f5",
+        "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
+      },
+      {
+        "command": "eolympCode.debug",
         "key": "f5",
         "args": "focused",
         "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus"
       },
       {
+        "command": "eolympCode.run",
+        "key": "ctrl+f5",
+        "args": "focused",
+        "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus"
+      },
+      {
+        "command": "eolympCode.runTest",
+        "key": "ctrl+f5",
+        "when": "!inDebugMode && editorTextFocus && (resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out)"
+      },
+      {
         "command": "eolympCode.runTests",
-        "key": "shift+f5",
+        "key": "f6",
         "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
       },
       {
         "command": "eolympCode.runTests",
-        "key": "shift+f5",
+        "key": "f6",
         "args": "focused",
         "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus"
+      },
+      {
+        "command": "eolympCode.stop",
+        "key": "shift+f5",
+        "when": "!inDebugMode && eolympCode.running"
       },
       {
         "command": "eolympCode.delete",

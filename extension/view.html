@@ -68,7 +68,7 @@
   const vscode = acquireVsCodeApi();
   const STRINGS = {{strings}};
   const T = (text, ...args) => (STRINGS[text] || text).replace(/\{(\d)\}/g, (all, i) => args[i]);
-  const ICONS = { check: 0xeba4, close: 0xea87, warning: 0xea6c, loading: 0xeb19, dot: 0xeb8a, stop: 0xead7, disconnect: 0xead0, rerun: 0xebc0 };
+  const ICONS = { check: 0xeba4, close: 0xea87, warning: 0xea6c, loading: 0xeb19, dot: 0xeb8a, stop: 0xead7, disconnect: 0xead0, rerun: 0xebc0, debug: 0xeb91 };
   const MARKS = { ok: 'check', bad: 'close', warn: 'warning', none: 'dot', busy: 'loading' };
   const trimmed = (name, test) => {
     const link = make('a', 'note', T('Output trimmed, open {0}', name));
@@ -250,6 +250,7 @@
       if (typing) tools.append(icon('disconnect', T('End input (Ctrl+D)'), send({ type: 'eof' })));
       const stop = icon('stop', T('Stop (Ctrl+C)'), send({ type: 'stop' }));
       stop.classList.add('halt');
+      if (!busy && (tested ? s.only : s.session)) tools.append(icon('debug', T('Debug'), send({ type: 'debug', only: tested })));
       tools.append(busy ? stop : icon('rerun', T('Rerun'), send({ type: tested ? 'rerun' : 'single' })));
       head.append(tools);
     }
@@ -274,7 +275,7 @@
       const sign = live ? mark('busy', T('Running')) : x.code === 0 ? mark('ok', T('Finished')) : mark('bad', x.stopped ? T('Stopped') : x.signal ? T('Crashed') : T('Finished with an error'));
       const head = [sign, command(s.steps.run)];
       if (!live) {
-        head.push(stats(x.stopped ? T('stopped') : '', T('{0} ms', x.ms), size(x.memory)));
+        head.push(stats(x.stopped ? T('stopped') : '', x.ms === undefined ? '' : T('{0} ms', x.ms), size(x.memory)));
         if (!x.kept && x.typed && x.code === 0) head.push(more());
       }
       const body = [];
@@ -315,7 +316,7 @@
         body.push(line);
       } else if (live) {
         typing = '';
-        body.push(make('div', 'note', T('input ended')));
+        if (!x.debug) body.push(make('div', 'note', T('input ended')));
       } else {
         typing = '';
         if (!x.stopped && x.signal) body.push(make('div', 'exit', T('Crashed ({0})', x.signal)));
