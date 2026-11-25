@@ -44,6 +44,14 @@ An extension adds an online judge by calling `registerJudge` on the API the Eoly
 
 `children` are results of the same shape with `kind` (`testset` or `test`) and `index`, and may have `children` of their own. `time` is in milliseconds, `memory` in bytes. `verdict` is one of `waiting`, `testing`, `accepted`, `partial`, `skipped`, `wrong-answer`, `time-limit`, `memory-limit`, `idleness-limit`, `runtime-error`, `compilation-error`, `failed`; any other text is shown as it is.
 
+## Toolchains
+
+By default the extension builds with the compiler and Python named in its settings. An extension can supply them instead by calling `registerToolchain`:
+
+    const registration = core.registerToolchain({ cxx, python, flags, env, include, diagnose });
+
+`cxx` and `python` are paths to the compiler and Python. `flags` are added to the compiler's flags and `env` to its environment, as long as the settings don't name another compiler. `include` sets `CPLUS_INCLUDE_PATH` when the compiler in use is not the supplied one, unless the `includePath` setting is set. `diagnose` is called when a tool is missing and the user asks to fix it. Every field is optional. A new call replaces the previous toolchain, and `registration.dispose()` removes it. Before each build the extension starts every extension that depends on it, so a toolchain registered on activation is in place for the first build.
+
 ## Build
 
     ./app/build.sh    # the editor for this machine, packaged in artifacts/

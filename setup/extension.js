@@ -13,6 +13,7 @@ let toolsRoot;
 let managed;
 let setup;
 let terminalEnv;
+let registration;
 
 function root() {
   const folders = vscode.workspace.workspaceFolders;
@@ -22,7 +23,9 @@ function root() {
 function adopt() {
   managed = toolset.installed(toolsRoot);
   const diagnose = () => setup.open();
-  core.provide(managed ? { cxx: managed.cxx, python: managed.python, flags: managed.flags, env: managed.env, diagnose } : { include: standIn, diagnose });
+  const previous = registration;
+  registration = core.registerToolchain(managed ? { cxx: managed.cxx, python: managed.python, flags: managed.flags, env: managed.env, diagnose } : { include: standIn, diagnose });
+  if (previous) previous.dispose();
   terminalEnv.clear();
   const lldb = vscode.workspace.getConfiguration('lldb');
   const server = process.platform === 'darwin' ? toolset.debugserver() : '';
@@ -106,6 +109,7 @@ function activate(context) {
   else setup.start().catch(() => {});
   update.check(context).catch(() => {});
   context.subscriptions.push(
+    new vscode.Disposable(() => registration.dispose()),
     vscode.commands.registerCommand('eolympCode.checkSetup', () => setup.open()),
     vscode.commands.registerCommand('eolympCode.welcome', () => welcome.show()),
     vscode.window.onDidChangeWindowState((window) => {
