@@ -398,63 +398,23 @@ async function debugWith(node, input) {
   const s = await prepare(node, t('Open a .cpp or .py file to debug it.'));
   if (!s) return;
   const state = stateOf(s.file);
-  const built = await build(s, true);
-  state.compileError = built.log;
-  state.steps = { compile: built.compile, run: input.test === undefined ? built.run : `${built.run} < ${input.test}.in`, ok: built.ok, missing: built.missing };
-  state.last = 'run';
-  state.session = null;
-  if (!built.ok) {
-    update();
-    return;
-  }
-  fs.mkdirSync(s.outDir, { recursive: true });
-  const typing = input.test === undefined && input.typed === undefined;
-  const pipe = process.platform === 'win32' ? `\\\\.\\pipe\\eolymp-code-${process.pid}-${Date.now()}` : path.join(s.outDir, 'debug.in');
-  const stdin = typing ? pipe : input.test === undefined ? path.join(s.outDir, 'run.in') : path.join(s.dir, `${input.test}.in`);
-  if (input.typed !== undefined) fs.writeFileSync(stdin, input.typed);
   const token = ++launched;
-  let ended;
-  const mine = { file: s.file, dir: s.dir, out: path.join(s.outDir, 'run.out'), err: path.join(s.outDir, 'run.err'), parts: [], size: 0, shown: 0, state: 'running', input: input.typed || '', test: input.test, closed: !typing, debug: true, halt: () => vscode.debug.stopDebugging(), ended: new Promise((resolve) => { ended = resolve; }) };
-  let server;
-  if (typing && process.platform === 'win32') {
-    mine.stdin = new PassThrough();
-    server = net.createServer((socket) => { socket.on('error', () => {}); mine.stdin.pipe(socket); });
-    await new Promise((resolve) => server.listen(pipe, resolve));
-  } else if (typing) {
-    fs.rmSync(pipe, { force: true });
-    childProcess.execFileSync('mkfifo', [pipe]);
-    mine.stdin = fs.createWriteStream(pipe, { flags: 'r+' });
-    mine.stdin.on('error', () => {});
-  }
-  fs.writeFileSync(mine.out, '');
-  fs.writeFileSync(mine.err, '');
-  if (input.typed) say(mine, 'in', input.typed.endsWith('\n') ? input.typed : `${input.typed}\n`);
-  const tail = (file, kind) => {
-    const decoder = new StringDecoder('utf8');
-    let at = 0;
-    return () => {
-      const size = fs.existsSync(file) ? fs.statSync(file).size : 0;
-      if (size <= at) return;
-      const chunk = Buffer.alloc(Math.min(size - at, 1 << 20));
-      const fd = fs.openSync(file, 'r');
-      const read = fs.readSync(fd, chunk, 0, chunk.length, at);
-      fs.closeSync(fd);
-      at += read;
-      say(mine, kind, decoder.write(chunk.subarray(0, read)));
-    };
-  };
-  const pumps = [tail(mine.out, 'out'), tail(mine.err, 'err')];
-  const timer = setInterval(() => pumps.forEach((pump) => pump()), 100);
+  const typing = input.test === undefined && input.typed === undefined;
+  const pipe = process.platform === 'win32' ? `\\\\.\\pipe\\eolymp-code-${process.pid}-${token}` : path.join(s.outDir, 'debug.in');
+  const stdin = typing ? pipe : input.test === undefined ? path.join(s.outDir, 'run.in') : path.join(s.dir, `${input.test}.in`);
   const uri = vscode.Uri.file(s.file);
-  const document = await vscode.workspace.openTextDocument(uri);
-  const hasBreakpoint = vscode.debug.breakpoints.some((b) => b instanceof vscode.SourceBreakpoint && b.location.uri.fsPath === s.file);
-  const first = document.getText().split('\n').findIndex((line) => line.trim() && !line.trim().startsWith('#'));
-  const entry = s.lang === 'cpp' || hasBreakpoint || first < 0 ? [] : [new vscode.SourceBreakpoint(new vscode.Location(uri, new vscode.Position(first, 0)))];
+  let ended;
+  let server;
+  let timer;
+  let pumps = [];
+  let entry = [];
+  const mine = { file: s.file, dir: s.dir, out: path.join(s.outDir, 'run.out'), err: path.join(s.outDir, 'run.err'), parts: [], size: 0, shown: 0, state: 'compiling', input: input.typed || '', test: input.test, closed: !typing, debug: true, ended: new Promise((resolve) => { ended = resolve; }) };
   mine.finish = () => {
     if (mine.state === 'finished') return;
     clearInterval(timer);
     pumps.forEach((pump) => pump());
     if (server) server.close();
+    else if (mine.stdin) fs.open(pipe, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK, (err, fd) => { if (!err) fs.close(fd, () => {}); });
     if (mine.stdin) mine.stdin.destroy();
     vscode.debug.removeBreakpoints(entry);
     launches.delete(token);
@@ -464,34 +424,88 @@ async function debugWith(node, input) {
     update();
     ended();
   };
-  launches.set(token, mine);
   state.session = mine;
+  state.last = 'run';
   active = mine;
   setBusy();
   update();
-  vscode.debug.addBreakpoints(entry);
-  const quoted = (text) => `"${text.replace(/[\\"]/g, '\\$&')}"`;
-  const env = toolEnv();
-  const added = Object.keys(env).filter((key) => env[key] !== process.env[key]);
-  const common = { request: 'launch', name: input.test === undefined ? t('Run') : t('Test {0}', input.test), cwd: s.dir, internalConsoleOptions: 'neverOpen', eolympCode: token };
-  const started = await vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(uri), s.lang === 'cpp' ? {
-    ...common,
-    type: 'lldb',
-    program: built.command,
-    terminal: 'console',
-    processCreateCommands: [`process launch -i ${quoted(stdin)} -o ${quoted(mine.out)} -e ${quoted(mine.err)} -w ${quoted(s.dir)} ${added.map((key) => `-E ${quoted(`${key}=${env[key]}`)}`).join(' ')}`],
-    preRunCommands: hasBreakpoint ? [] : ['breakpoint set --name main --one-shot true'],
-  } : {
-    ...common,
-    type: 'debugpy',
-    python: built.command,
-    program: path.join(__dirname, 'debug.py'),
-    args: [s.file, stdin, mine.out, mine.err],
-    env: { ...Object.fromEntries(added.map((key) => [key, env[key]])), PYDEVD_DISABLE_FILE_VALIDATION: '1' },
-    console: 'internalConsole',
-    rules: [{ path: path.join(__dirname, '**'), include: false }],
-  });
-  if (!started) mine.finish();
+  const document = await vscode.workspace.openTextDocument(uri);
+  const built = await build(s, true);
+  if (active !== mine) return;
+  state.steps = { compile: built.compile, run: input.test === undefined ? built.run : `${built.run} < ${input.test}.in`, ok: built.ok, missing: built.missing };
+  state.compileError = built.log;
+  if (!built.ok) {
+    await stopActive();
+    update();
+    return;
+  }
+  const launch = async () => {
+    fs.mkdirSync(s.outDir, { recursive: true });
+    if (input.typed !== undefined) fs.writeFileSync(stdin, input.typed);
+    fs.writeFileSync(mine.out, '');
+    fs.writeFileSync(mine.err, '');
+    if (typing && process.platform === 'win32') {
+      mine.stdin = new PassThrough();
+      server = net.createServer((socket) => { socket.on('error', () => {}); mine.stdin.pipe(socket); });
+      await new Promise((resolve, reject) => { server.once('error', reject); server.listen(pipe, resolve); });
+    } else if (typing) {
+      fs.rmSync(pipe, { force: true });
+      childProcess.execFileSync('mkfifo', [pipe]);
+      mine.stdin = fs.createWriteStream(pipe);
+      mine.stdin.on('error', () => {});
+    }
+    if (active !== mine) return false;
+    if (input.typed) say(mine, 'in', input.typed.endsWith('\n') ? input.typed : `${input.typed}\n`);
+    pumps = [[mine.out, 'out'], [mine.err, 'err']].map(([file, kind]) => {
+      const decoder = new StringDecoder('utf8');
+      let at = 0;
+      return () => {
+        while (fs.existsSync(file) && fs.statSync(file).size > at) {
+          const chunk = Buffer.alloc(Math.min(fs.statSync(file).size - at, 1 << 20));
+          const fd = fs.openSync(file, 'r');
+          const read = fs.readSync(fd, chunk, 0, chunk.length, at);
+          fs.closeSync(fd);
+          if (!read) return;
+          at += read;
+          say(mine, kind, decoder.write(chunk.subarray(0, read)));
+        }
+      };
+    });
+    timer = setInterval(() => pumps.forEach((pump) => pump()), 100);
+    const hasBreakpoint = vscode.debug.breakpoints.some((b) => b instanceof vscode.SourceBreakpoint && b.location.uri.fsPath === s.file);
+    const first = document.getText().split('\n').findIndex((line) => line.trim() && !line.trim().startsWith('#'));
+    entry = s.lang === 'cpp' || hasBreakpoint || first < 0 ? [] : [new vscode.SourceBreakpoint(new vscode.Location(uri, new vscode.Position(first, 0)))];
+    vscode.debug.addBreakpoints(entry);
+    const quoted = (text) => `"${text.replace(/[\\"]/g, '\\$&')}"`;
+    const env = toolEnv();
+    const added = Object.keys(env).filter((key) => env[key] !== process.env[key]);
+    const common = { request: 'launch', name: input.test === undefined ? t('Run') : t('Test {0}', input.test), cwd: s.dir, internalConsoleOptions: 'neverOpen', eolympCode: token };
+    mine.halt = () => {
+      mine.stopped = true;
+      if (mine.session) vscode.debug.stopDebugging(mine.session);
+    };
+    mine.state = 'running';
+    launches.set(token, mine);
+    update();
+    return vscode.debug.startDebugging(vscode.workspace.getWorkspaceFolder(uri), s.lang === 'cpp' ? {
+      ...common,
+      type: 'lldb',
+      program: built.command,
+      terminal: 'console',
+      processCreateCommands: [`process launch -i ${quoted(stdin)} -o ${quoted(mine.out)} -e ${quoted(mine.err)} -w ${quoted(s.dir)} ${added.map((key) => `-E ${quoted(`${key}=${env[key]}`)}`).join(' ')}`],
+      preRunCommands: hasBreakpoint ? [] : ['breakpoint set --name main --one-shot true'],
+    } : {
+      ...common,
+      type: 'debugpy',
+      python: built.command,
+      program: path.join(__dirname, 'debug.py'),
+      args: [s.file, stdin, mine.out, mine.err],
+      env: { ...Object.fromEntries(added.map((key) => [key, env[key]])), PYDEVD_DISABLE_FILE_VALIDATION: '1' },
+      console: 'internalConsole',
+      rules: [{ path: path.join(__dirname, '**'), include: false }],
+    });
+  };
+  if (!await launch().catch(() => false)) mine.finish();
 }
 
 function acceptOutput(id) {
@@ -894,11 +908,12 @@ function receive(m) {
   if (m.type === 'rerun' && target) testWith({ ...shown, quiet: true }, stateOf(target.file).only);
   const state = target && stateOf(target.file);
   const x = state && state.session;
-  const test = state && state.last === 'test' ? state.only : x ? x.test : undefined;
+  const last = state && state.last === 'test' ? state.only : x ? x.test : undefined;
+  const test = last !== undefined && ws.testIds(target.dir).includes(last) ? last : undefined;
   if (m.type === 'single' && test !== undefined) testWith({ ...shown, quiet: true }, test);
   else if (m.type === 'single') run(shown);
   if (m.type === 'debug' && test !== undefined) debugWith({ ...shown, quiet: true }, { test });
-  else if (m.type === 'debug' && x && x.state === 'finished') debugWith({ ...shown, quiet: true }, { typed: x.input });
+  else if (m.type === 'debug' && x && x.state === 'finished') debugWith({ ...shown, quiet: true }, x.input ? { typed: x.input } : {});
   if (m.type === 'setup' && provided.diagnose) provided.diagnose();
   if (!target) return;
   if (m.type === 'output' && (m.test === undefined || ws.testIds(target.dir).includes(m.test))) vscode.window.showTextDocument(vscode.Uri.file(m.test === undefined ? path.join(target.outDir, 'run.out') : path.join(target.dir, `${m.test}.out`)));
@@ -946,7 +961,7 @@ function activate(context) {
     vscode.debug.registerDebugAdapterTrackerFactory('*', {
       createDebugAdapterTracker(session) {
         const mine = launches.get(session.configuration.eolympCode);
-        if (!mine) return undefined;
+        if (!mine || session.parentSession) return undefined;
         return {
           onDidSendMessage: (m) => {
             if (m.type !== 'event') return;
@@ -968,7 +983,16 @@ function activate(context) {
         return undefined;
       },
     })),
-    vscode.debug.onDidTerminateDebugSession((ended) => { if (launches.has(ended.configuration.eolympCode)) launches.get(ended.configuration.eolympCode).finish(); }),
+    vscode.debug.onDidStartDebugSession((session) => {
+      const mine = launches.get(session.configuration.eolympCode);
+      if (!mine || session.parentSession) return;
+      mine.session = session;
+      if (mine.stopped) vscode.debug.stopDebugging(session);
+    }),
+    vscode.debug.onDidTerminateDebugSession((session) => {
+      const mine = launches.get(session.configuration.eolympCode);
+      if (mine && !session.parentSession) mine.finish();
+    }),
     problems,
     watcher,
     vscode.window.registerWebviewViewProvider('eolympCode.tests', {

@@ -4,6 +4,7 @@ import sys
 import traceback
 
 solution, tests, out, err = sys.argv[1:5]
+binary = getattr(os, "O_BINARY", 0)
 
 
 def report(kind, error, trace):
@@ -12,9 +13,12 @@ def report(kind, error, trace):
     traceback.print_exception(kind, error, trace)
 
 
-sys.stdin = open(tests, encoding="utf-8")
-sys.stdout = open(out, "w", encoding="utf-8", buffering=1)
-sys.stderr = open(err, "w", encoding="utf-8", buffering=1)
+os.dup2(os.open(tests, os.O_RDONLY | binary), 0)
+os.dup2(os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | binary), 1)
+os.dup2(os.open(err, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | binary), 2)
+sys.stdin = open(0, encoding="utf-8", closefd=False)
+sys.stdout = open(1, "w", encoding="utf-8", buffering=1, closefd=False)
+sys.stderr = open(2, "w", encoding="utf-8", buffering=1, closefd=False)
 sys.excepthook = report
 sys.argv = [solution]
 runpy.run_path(solution, run_name="__main__")
