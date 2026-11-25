@@ -48,8 +48,6 @@ An extension adds an online judge by calling `registerJudge` on the API the Eoly
 
     ./app/build.sh    # the editor for this machine, packaged in artifacts/
 
-On macOS the disk image is signed and notarized, so packaging needs a Developer ID certificate in `CERTIFICATE_OSX_P12_DATA` and `CERTIFICATE_OSX_P12_PASSWORD`, and an Apple ID in `CERTIFICATE_OSX_APPLE_ID`, `CERTIFICATE_OSX_APP_PASSWORD` and `CERTIFICATE_OSX_TEAM_ID`. `./app/build.sh build` builds the app without them.
-
 ## Test
 
     cd tests && npm ci && npm test
