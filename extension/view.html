@@ -141,7 +141,25 @@
   const short = (file, root) => {
     if (root && file.startsWith(root) && /[\\/]/.test(file[root.length])) return file.slice(root.length + 1).replace(/\\/g, '/');
     const header = /^.*[\\/]include[\\/](?:(?:[^\\/]+[\\/])?c\+\+[\\/](?:v?[\d.]+[\\/])?)?(.+)$/.exec(file);
-    return header ? `stdlib:${header[1].replace(/\\/g, '/')}` : file;
+    const module = /^.*[\\/]lib[\\/](?:python[\d.]+[\\/])?(.+\.py)$/i.exec(file);
+    return header || module ? `stdlib:${(header || module)[1].replace(/\\/g, '/')}` : file;
+  };
+  const goto = (text, file, line, column) => {
+    const link = make('a', '', text);
+    link.href = '#';
+    link.title = file;
+    link.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'goto', file, line, column }); };
+    return link;
+  };
+  const traced = (text, root) => {
+    const nodes = [];
+    let at = 0;
+    for (const frame of text.matchAll(/^( *File ")([^"<\n]+)(?=", line (\d+))/gm)) {
+      nodes.push(text.slice(at, frame.index) + frame[1], goto(short(frame[2], root), frame[2], Number(frame[3]), 1));
+      at = frame.index + frame[0].length;
+    }
+    nodes.push(text.slice(at));
+    return nodes;
   };
   const compilerLog = (text, failed, root) => {
     const pre = make('pre', failed ? 'bad' : '');
@@ -150,11 +168,7 @@
       const place = /^(.+?):(\d+):(\d+)(?=: )/.exec(line);
       const rest = (place ? line.slice(place[0].length) : line).replaceAll(own, '');
       if (place) {
-        const link = make('a', '', `${short(place[1], root)}:${place[2]}:${place[3]}`);
-        link.href = '#';
-        link.title = place[1];
-        link.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'goto', file: place[1], line: Number(place[2]), column: Number(place[3]) }); };
-        pre.append(link, rest, '\n');
+        pre.append(goto(`${short(place[1], root)}:${place[2]}:${place[3]}`, place[1], Number(place[2]), Number(place[3])), rest, '\n');
       } else pre.append(`${rest}\n`);
     }
     return pre;
@@ -249,7 +263,11 @@
       const body = [];
       if (x.parts.length || live) {
         const pre = make('pre');
-        for (const part of x.parts) pre.append(make('span', part.kind, part.text));
+        for (const part of x.parts) {
+          const span = make('span', part.kind, live || part.kind !== 'err' ? part.text : undefined);
+          if (!span.firstChild) span.append(...traced(part.text, s.root));
+          pre.append(span);
+        }
         body.push(pre);
       }
       if (x.trimmed) body.push(trimmed('run.out'));
@@ -319,9 +337,10 @@
         : r.verdict === 'match' ? mark('ok', T('The output matches the answer'))
         : mark('bad', r.verdict === 'differs' ? T('The output differs from the answer') : T(r.verdict));
       const head = [sign, run ? command(`${run} < ${t.id}.in`) : make('span', 'title comment', T('# test {0}', t.id))];
-      const text = (r.stdout || '') + (r.stderr ? (r.stdout && !r.stdout.endsWith('\n') ? '\n' : '') + r.stderr : '');
+      const text = (r.stdout || '') + (r.stderr && r.stdout && !r.stdout.endsWith('\n') ? '\n' : '');
       const bad = finished && r.verdict !== 'match' && r.verdict !== 'no answer';
-      const body = text ? [make('pre', bad ? 'bad' : '', text)] : [];
+      const body = text || r.stderr ? [make('pre', bad ? 'bad' : '', text)] : [];
+      if (r.stderr) body[0].append(...traced(r.stderr, s.root));
       if (r.trimmed) body.push(trimmed(`${t.id}.out`, t.id));
       if (finished && r.verdict === 'runtime error' && (r.signal || r.code)) body.push(make('div', 'exit', r.signal ? T('Crashed ({0})', r.signal) : T('Exit code {0}', r.code)));
       const failure = finished && r.verdict === 'runtime error' ? T(r.verdict) : '';

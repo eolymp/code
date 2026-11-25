@@ -56,3 +56,16 @@ test('A compilation error shows short paths that open the place', async ({ edito
   await expect(log).not.toContainText(editor.workspace);
   for (const text of await log.getByRole('link').allTextContents()) expect(text).toMatch(/^(sum\/sum\.cpp|stdlib:[^\/]+(\/[^\/]+)?):\d+:\d+$/);
 });
+
+test.describe('Python', () => {
+  test.use({ files: { 'sum/sum.py': 'import json\njson.loads("x")\n' } });
+
+  test('A traceback shows short paths that open the place', async ({ editor }) => {
+    await editor.toolbar.getByRole('button', { name: /^Run/ }).click();
+
+    const log = editor.panel.locator('details[data-key="run"] pre');
+    await expect(log.getByRole('link').first()).toHaveText('sum/sum.py');
+    await expect(log.getByRole('link').nth(1)).toHaveText('stdlib:json/__init__.py');
+    await expect(log).not.toContainText(editor.workspace);
+  });
+});
