@@ -53,5 +53,17 @@
   "trustedExtensionPublishers": [
     "eolymp",
     "ms-ceintl"
-  ]
+  ],
+  "releaseNotesUrl": null,
+  "documentationUrl": null,
+  "introductoryVideosUrl": null,
+  "keyboardShortcutsUrlLinux": null,
+  "keyboardShortcutsUrlMac": null,
+  "keyboardShortcutsUrlWin": null,
+  "requestFeatureUrl": null,
+  "tipsAndTricksUrl": null,
+  "twitterUrl": null,
+  "checksumFailMoreInfoUrl": null,
+  "serverLicenseUrl": null,
+  "voiceWsUrl": null
 }

@@ -1,0 +1,13 @@
+Package: @@NAME@@
+Version: @@VERSION@@
+Section: devel
+Depends: @@DEPENDS@@
+Recommends: @@RECOMMENDS@@
+Priority: optional
+Architecture: @@ARCHITECTURE@@
+Maintainer: Eolymp <support@eolymp.com>
+Homepage: https://eolymp.com/code
+Installed-Size: @@INSTALLEDSIZE@@
+Description: Editor for competitive programming
+ C++ and Python with completion, a debugger, and a console to run a solution
+ and check it against tests.

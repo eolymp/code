@@ -1,0 +1,155 @@
+--- a/build/lib/date.ts
++++ b/build/lib/date.ts
+@@ -15,6 +15,9 @@
+  * timestamp (required for deterministic builds, e.g. macOS Universal).
+  */
+ export function getGitCommitDate(): string {
++	if (process.env['SOURCE_DATE_EPOCH']) {
++		return new Date(Number(process.env['SOURCE_DATE_EPOCH']) * 1000).toISOString();
++	}
+ 	try {
+ 		return execSync('git log -1 --format=%cI HEAD', { cwd: root, encoding: 'utf8' }).trim();
+ 	} catch {
+--- a/build/gulpfile.vscode.ts
++++ b/build/gulpfile.vscode.ts
+@@ -158,7 +158,7 @@
+ 		}
+ 
+ 		const name = product.nameShort;
+-		const packageJsonUpdates: Record<string, unknown> = { name, version };
++		const packageJsonUpdates: Record<string, unknown> = { name, version: (product as typeof product & { releaseVersion?: string }).releaseVersion ?? version, author: { name: 'Eolymp' } };
+ 
+ 		if (platform === 'linux') {
+ 			packageJsonUpdates.desktopName = `${product.applicationName}.desktop`;
+--- a/build/gulpfile.vscode.linux.ts
++++ b/build/gulpfile.vscode.linux.ts
+@@ -22,6 +22,7 @@
+ const exec = promisify(cp.exec);
+ const root = path.dirname(import.meta.dirname);
+ const commit = getVersion(root);
++const releaseVersion = (product as typeof product & { releaseVersion?: string }).releaseVersion ?? packageJson.version;
+ const linuxDesktopName = product.linuxDesktopName;
+ const copilotLinkHelper = readFileSync(path.join(root, 'resources/linux/copilot-link.sh'), 'utf8');
+ const rpmCopilotLinkHelper = copilotLinkHelper.replace(/%/g, '%%');
+@@ -92,7 +93,7 @@
+ 				const that = this;
+ 				gulp.src('resources/linux/debian/control.template', { base: '.' })
+ 					.pipe(replace('@@NAME@@', product.applicationName))
+-					.pipe(replace('@@VERSION@@', packageJson.version))
++					.pipe(replace('@@VERSION@@', releaseVersion))
+ 					.pipe(replace('@@ARCHITECTURE@@', debArch))
+ 					.pipe(replace('@@DEPENDS@@', dependencies.join(', ')))
+ 					.pipe(replace('@@RECOMMENDS@@', debianRecommendedDependencies.join(', ')))
+@@ -204,7 +205,7 @@
+ 			.pipe(replace('@@NAME_LONG@@', product.nameLong))
+ 			.pipe(replace('@@DESKTOP_NAME@@', linuxDesktopName))
+ 			.pipe(replace('@@ICON@@', product.linuxIconName))
+-			.pipe(replace('@@VERSION@@', packageJson.version))
++			.pipe(replace('@@VERSION@@', releaseVersion))
+ 			.pipe(replace('@@ARCHITECTURE@@', rpmArch))
+ 			.pipe(replace('@@LICENSE@@', product.licenseName))
+ 			.pipe(replace('@@QUALITY@@', (product as typeof product & { quality?: string }).quality || '@@QUALITY@@'))
+@@ -271,7 +272,7 @@
+ 
+ 		const snapcraft = gulp.src('resources/linux/snap/snapcraft.yaml', { base: '.' })
+ 			.pipe(replace('@@NAME@@', product.applicationName))
+-			.pipe(replace('@@VERSION@@', packageJson.version))
++			.pipe(replace('@@VERSION@@', releaseVersion))
+ 			// Possible run-on values https://snapcraft.io/docs/architectures
+ 			.pipe(replace('@@ARCHITECTURE@@', arch === 'x64' ? 'amd64' : arch))
+ 			.pipe(rename('snap/snapcraft.yaml'));
+--- a/build/gulpfile.vscode.win32.ts
++++ b/build/gulpfile.vscode.win32.ts
+@@ -85,8 +85,8 @@
+ 			NameLong: product.nameLong,
+ 			NameShort: product.nameShort,
+ 			DirName: product.win32DirName,
+-			Version: pkg.version,
+-			RawVersion: pkg.version.replace(/-\w+$/, ''),
++			Version: (product as typeof product & { releaseVersion?: string }).releaseVersion ?? pkg.version,
++			RawVersion: ((product as typeof product & { releaseVersion?: string }).releaseVersion ?? pkg.version).replace(/-\w+$/, ''),
+ 			Commit: commit,
+ 			NameVersion: product.win32NameVersion + (target === 'user' ? ' (User)' : ''),
+ 			ExeBasename: product.nameShort,
+--- a/build/lib/electron.ts
++++ b/build/lib/electron.ts
+@@ -143,8 +143,8 @@
+ export const config = {
+ 	version: electronVersion,
+ 	productAppName: product.nameLong,
+-	companyName: 'Microsoft Corporation',
+-	copyright: 'Copyright (C) 2026 Microsoft. All rights reserved',
++	companyName: 'Eolymp',
++	copyright: 'Copyright (C) Eolymp',
+ 	darwinExecutable: product.nameShort,
+ 	darwinIcon: 'resources/darwin/code.icns',
+ 	darwinBundleIdentifier: product.darwinBundleIdentifier,
+--- a/build/win32/code.iss
++++ b/build/win32/code.iss
+@@ -8,10 +8,10 @@
+ AppId={#AppId}
+ AppName={#NameLong}
+ AppVerName={#NameVersion}
+-AppPublisher=Microsoft Corporation
+-AppPublisherURL=https://code.visualstudio.com/
+-AppSupportURL=https://code.visualstudio.com/
+-AppUpdatesURL=https://code.visualstudio.com/
++AppPublisher=Eolymp
++AppPublisherURL=https://eolymp.com/code
++AppSupportURL=https://github.com/eolymp/code/issues
++AppUpdatesURL=https://eolymp.com/code
+ DefaultGroupName={#NameLong}
+ AllowNoIcons=yes
+ OutputDir={#OutputDir}
+@@ -1390,7 +1390,7 @@
+ 
+   #if "user" == InstallTarget
+     if not WizardSilent() and IsAdmin() then begin
+-      if MsgBox('This User Installer is not meant to be run as an Administrator. If you would like to install VS Code for all users in this system, download the System Installer instead from https://code.visualstudio.com. Are you sure you want to continue?', mbError, MB_OKCANCEL) = IDCANCEL then begin
++      if MsgBox('This setup program installs {#NameLong} for your user only, and is meant to be run without administrator rights. Are you sure you want to continue?', mbError, MB_OKCANCEL) = IDCANCEL then begin
+         Result := False;
+       end;
+     end;
+--- a/resources/linux/debian/postinst.template
++++ b/resources/linux/debian/postinst.template
+@@ -39,7 +39,7 @@
+ 	update-mime-database /usr/share/mime
+ fi
+ 
+-if [ "@@NAME@@" != "code-oss" ]; then
++if [ "@@NAME@@" = "code" ] || [ "@@NAME@@" = "code-insiders" ]; then
+ 	# Remove the legacy bin command if this is the stable build
+ 	if [ "@@NAME@@" = "code" ]; then
+ 		rm -f /usr/local/bin/code
+--- a/src/vs/base/common/product.ts
++++ b/src/vs/base/common/product.ts
+@@ -98,6 +98,7 @@
+ 
+ export interface IProductConfiguration {
+ 	readonly version: string;
++	readonly releaseVersion?: string;
+ 	readonly date?: string;
+ 	readonly quality?: string;
+ 	readonly commit?: string;
+--- a/src/vs/platform/dialogs/electron-browser/dialog.ts
++++ b/src/vs/platform/dialogs/electron-browser/dialog.ts
+@@ -11,7 +11,7 @@
+ import { process } from '../../../base/parts/sandbox/electron-browser/globals.js';
+ 
+ export function createNativeAboutDialogDetails(productService: IProductService, osProps: IOSProperties): { title: string; details: string; detailsToCopy: string } {
+-	let version = productService.version;
++	let version = productService.releaseVersion ?? productService.version;
+ 	if (productService.target) {
+ 		version = `${version} (${productService.target} setup)`;
+ 	} else if (productService.darwinUniversalAssetId) {
+--- a/src/vs/code/node/cli.ts
++++ b/src/vs/code/node/cli.ts
+@@ -103,7 +103,7 @@
+ 
+ 	// Version Info
+ 	else if (args.version) {
+-		console.log(buildVersionMessage(product.version, product.commit));
++		console.log(buildVersionMessage(product.releaseVersion ?? product.version, product.commit));
+ 	}
+ 
+ 	// Shell integration
