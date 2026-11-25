@@ -619,7 +619,7 @@
             "type": "string"
           },
           "default": [
-            "-std=c++17",
+            "-std=c++23",
             "-O2",
             "-Wall"
           ],

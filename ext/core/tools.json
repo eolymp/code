@@ -1,382 +1,58 @@
 {
- "linux-x64": {
-  "items": [
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/gcc_impl_linux-64-16.2.0-h9891192_7.conda",
-    "sha256": "14acaa661e4c4ef6c65606612b8b08f8f079c6a9e6da3ffcb77056685c675651",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/gxx_impl_linux-64-16.2.0-h0d273dc_7.conda",
-    "sha256": "f873532a86ce9073a7255dec909472c2a271a57db938f383b630a3caa0b47709",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/binutils_impl_linux-64-2.46.1-default_hfdba357_103.conda",
-    "sha256": "98f9ddc6dc5d56a824b7eaea5bab6ad4bb47642288fc70d6b1b4024ac39d5595",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.46.1-default_hbd61a6d_103.conda",
-    "sha256": "901649b1edbe841fd4ee7e2d491a05184ed540eb01cdae506872f344babc1d28",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/noarch/libstdcxx-devel_linux-64-16.2.0-hfb2894b_7.conda",
-    "sha256": "e251999cb026945cf2187ca9c2fb20c0efdb1682eaa4889e82f61e6f0a00d76e",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/noarch/libgcc-devel_linux-64-16.2.0-hf12e319_7.conda",
-    "sha256": "335d1d2cb3372f1f4cf743482e981127bbe4d17e7249a8a9137bf0c6b2f4634c",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/noarch/sysroot_linux-64-2.17-h0157908_18.conda",
-    "sha256": "69ab5804bdd2e8e493d5709eebff382a72fab3e9af6adf93a237ccf8f7dbd624",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/noarch/kernel-headers_linux-64-6.12.0-he073ed8_6.conda",
-    "sha256": "73b11f31db6c9ebe63d900334fa4f46859aa1ddd8f37cfa5f25a043e0a59253c",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/libgcc-16.2.0-ha9f2e26_7.conda",
-    "sha256": "e031634c3a928f9594eba868bc46ef5230d6571a364a0c63215b06c4563bfcea",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-16.2.0-h934c35e_7.conda",
-    "sha256": "fa7018298629fc429971fffd6ecba3d27a7b02e4e890d6a93ea01ffebe8cb745",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/libgomp-16.2.0-he0feb66_7.conda",
-    "sha256": "92a0bb350c7be6a4eedcb4e111c60aefd176018e6b1c009a6e025dbe9bbcd758",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.3.2-h25fd6f3_3.conda",
-    "sha256": "eb8a0db0aa570124f7d2a93d7c7f596e3390df5e047818d873baad32985fc736",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_7.conda",
-    "sha256": "47d682b9f6d6ec9eb1a6e6c3e75ea6273e899e78fb7fc59f81d39745009fbc60",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-64/libsanitizer-16.2.0-h3048135_7.conda",
-    "sha256": "e383569c331239308a8663facb76208fc0e141131ff3d17c1c2e50f34716a5a9",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261110/cpython-3.13.18%2B20261110-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
-    "sha256": "f2d2199eb25880e07863b391cf7124e7ffa1338b0d65600dfcec117c4223a7fb",
-    "type": "tar.gz",
-    "into": "."
-   },
-   {
-    "url": "https://github.com/clangd/clangd/releases/download/23.1.0/clangd-linux-23.1.0.zip",
-    "sha256": "e53b1a96196095faedb7642cf64964f7fb9ad4a0c1f00dd2c172a3d9dcbafdfd",
-    "type": "zip",
-    "into": "clangd"
-   }
-  ],
-  "cxx": "gcc/bin/x86_64-conda-linux-gnu-g++",
-  "python": "python/bin/python3",
-  "flags": [
-   "-static-libstdc++",
-   "-static-libgcc"
-  ],
-  "clangd": "clangd/clangd_23.1.0/bin/clangd",
-  "id": "a7b94f8792ee"
- },
- "linux-arm64": {
-  "items": [
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/gcc_impl_linux-aarch64-16.2.0-h5425ead_7.conda",
-    "sha256": "eaf481958a862ed63c66baa572753f3c3e2cd6e690fd5abd1cc3088fdde4a323",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/gxx_impl_linux-aarch64-16.2.0-h1e3c31f_7.conda",
-    "sha256": "0a865dc69ecb1f4ac092878840723d8208ce4b8837f79d53b8b2f0e737cf057d",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/binutils_impl_linux-aarch64-2.46.1-default_h5f4c503_103.conda",
-    "sha256": "1827893f9d6aa13794196b1820b8003bfff0105774a323a61026a16cec6dc66d",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/ld_impl_linux-aarch64-2.46.1-default_h1979696_103.conda",
-    "sha256": "516808982ad26ebdc4a9d8f71ee86ea55d0bc95382b7bca80620e0ac220971f3",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/noarch/libstdcxx-devel_linux-aarch64-16.2.0-h103eff1_7.conda",
-    "sha256": "762ef0c7e6372bb0b925d74f88f5856aa3427755c079425228de4b31af5fdadd",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/noarch/libgcc-devel_linux-aarch64-16.2.0-h0f9fd99_7.conda",
-    "sha256": "b2d2cac6e7b951eea74918bba089974d7265ef1040359d74e8699ec58b6f978a",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/noarch/sysroot_linux-aarch64-2.17-h68829e0_18.conda",
-    "sha256": "1e478bfd87c296829e62f0cae37e591568c2dcfc90ee6228c285bb1c7130b915",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/noarch/kernel-headers_linux-aarch64-6.12.0-h05a177a_6.conda",
-    "sha256": "2251f81ccc1d3bb38873cbcdcf43c15f424a057714a7c7a4756e3c68440ad0e9",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/libgcc-16.2.0-h205dda4_7.conda",
-    "sha256": "eae7a3449d5a3b5351c5427137c076cc3fc826645c7bfc42dc10772b783826f1",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/libstdcxx-16.2.0-hef695bb_7.conda",
-    "sha256": "b241a3acfa9cdb1359112864a1241225533c92642de3000d52ae65ef5d3a9786",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/libgomp-16.2.0-h8acb6b2_7.conda",
-    "sha256": "4406fd67c5beeb99b9372f9bf07aa3e40ca141e337eceebac3ff64aa72799494",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/libzlib-1.3.2-hdc9db2a_3.conda",
-    "sha256": "76efa6cc9d7e6f5ee3bbca0939f64054af2bdfb3c3632531f8e633cf6c2ea41e",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/zstd-1.5.7-h9d15635_7.conda",
-    "sha256": "427fd14bcb3b8659796fecc682716617409350fb5a98e5b7b47558a10d1a2fc7",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/libsanitizer-16.2.0-h73cac2c_7.conda",
-    "sha256": "915f80d14bd9daf2357a5261443fd06e222f829aeef56fb6865ec7fcb1de9bdf",
-    "type": "conda",
-    "into": "gcc"
-   },
-   {
-    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261110/cpython-3.13.18%2B20261110-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz",
-    "sha256": "55c00325f7c1fddf325dfc621aabdfbbac4dc54adda224af88ec411dc12db239",
-    "type": "tar.gz",
-    "into": "."
-   }
-  ],
-  "cxx": "gcc/bin/aarch64-conda-linux-gnu-g++",
-  "python": "python/bin/python3",
-  "flags": [
-   "-static-libstdc++",
-   "-static-libgcc"
-  ],
-  "id": "46f9501da7b1"
- },
- "darwin-arm64-25": {
-  "items": [
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/gcc/blobs/sha256:add0ca0614da1d0047af8a71be683be40957096851f4c98ccd89e95b0c4f4fde",
-    "sha256": "add0ca0614da1d0047af8a71be683be40957096851f4c98ccd89e95b0c4f4fde",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/gmp/blobs/sha256:fa46330de5d003bd9294ae042c8f4ae0a51bcb8c57de2c94c073ff4a7ffa10c3",
-    "sha256": "fa46330de5d003bd9294ae042c8f4ae0a51bcb8c57de2c94c073ff4a7ffa10c3",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/isl/blobs/sha256:9adc3d36bfaa7652e75d63fa7a61942ef9a9d1c5e857e8e38a578a78636bf4c2",
-    "sha256": "9adc3d36bfaa7652e75d63fa7a61942ef9a9d1c5e857e8e38a578a78636bf4c2",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/libmpc/blobs/sha256:5be7168564102d2666af5a9cc06622e4f9abe8f585b63cfe79d5043bff6a7f50",
-    "sha256": "5be7168564102d2666af5a9cc06622e4f9abe8f585b63cfe79d5043bff6a7f50",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/mpfr/blobs/sha256:495b04c82ef8638368a5cc62141e7ac195377d292503f5b30e5915b1ff478dda",
-    "sha256": "495b04c82ef8638368a5cc62141e7ac195377d292503f5b30e5915b1ff478dda",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/zstd/blobs/sha256:628a4ef53428d0078e3d76d297171ce8d0294f5ec1de3f20305e08c4dd333565",
-    "sha256": "628a4ef53428d0078e3d76d297171ce8d0294f5ec1de3f20305e08c4dd333565",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/lz4/blobs/sha256:9ab0175d769ca830f573defafb22b020f3e9b4e0862ee6ee9f47e0b46a29468d",
-    "sha256": "9ab0175d769ca830f573defafb22b020f3e9b4e0862ee6ee9f47e0b46a29468d",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/xz/blobs/sha256:d291ad2277682238329b0e4d249e5e2c948c4b10cd64dba1963d897330ad88dd",
-    "sha256": "d291ad2277682238329b0e4d249e5e2c948c4b10cd64dba1963d897330ad88dd",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261110/cpython-3.13.18%2B20261110-aarch64-apple-darwin-install_only_stripped.tar.gz",
-    "sha256": "7a2384641584ab9984221fcb0fc9265df465922af71be71410529e2a9c3f0540",
-    "type": "tar.gz",
-    "into": "."
-   }
-  ],
-  "relocate": "brew",
-  "cxx": "brew/gcc/16.2.0/bin/g++-16",
-  "python": "python/bin/python3",
-  "flags": [
-   "-static-libstdc++",
-   "-static-libgcc"
-  ],
-  "sdk": true,
-  "id": "60c6dcedf1f7"
- },
- "darwin-arm64-24": {
-  "items": [
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/gcc/blobs/sha256:8c57a4e5c65c93b90b280e3e761833f946b5a7d186f2067d239af44b71c5a577",
-    "sha256": "8c57a4e5c65c93b90b280e3e761833f946b5a7d186f2067d239af44b71c5a577",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/gmp/blobs/sha256:b30bf31c50c294e0981d2a7cb4c149e9c43f50f3cf4f7f552c3dcf9da66b95b5",
-    "sha256": "b30bf31c50c294e0981d2a7cb4c149e9c43f50f3cf4f7f552c3dcf9da66b95b5",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/isl/blobs/sha256:a0b9da629db115bc15e5762887c455fdb13ac0a8028f20ee2639eae1f578c762",
-    "sha256": "a0b9da629db115bc15e5762887c455fdb13ac0a8028f20ee2639eae1f578c762",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/libmpc/blobs/sha256:e7723a06cf55d69322ada010ad25c6b34627674729e41d89f2526edfa7ba6995",
-    "sha256": "e7723a06cf55d69322ada010ad25c6b34627674729e41d89f2526edfa7ba6995",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/mpfr/blobs/sha256:ed822b7e77645d7c17abb3ee9cc2b2a82a4d0f003acc7615b5df6226031479b2",
-    "sha256": "ed822b7e77645d7c17abb3ee9cc2b2a82a4d0f003acc7615b5df6226031479b2",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/zstd/blobs/sha256:d72adf48460a8384b256f88061cd7b9df4977df7fa2e0794051d427db754a565",
-    "sha256": "d72adf48460a8384b256f88061cd7b9df4977df7fa2e0794051d427db754a565",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/lz4/blobs/sha256:69c0c38e660f81b36bbd165a77d7619d2b8b6b175bf670a4840aaaaddd86a520",
-    "sha256": "69c0c38e660f81b36bbd165a77d7619d2b8b6b175bf670a4840aaaaddd86a520",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://ghcr.io/v2/homebrew/core/xz/blobs/sha256:c2724c0db0398134694b8366d30d14f4de376115fb54c559c331d5fd0474af76",
-    "sha256": "c2724c0db0398134694b8366d30d14f4de376115fb54c559c331d5fd0474af76",
-    "type": "tar.gz",
-    "into": "brew",
-    "bearer": "QQ=="
-   },
-   {
-    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261110/cpython-3.13.18%2B20261110-aarch64-apple-darwin-install_only_stripped.tar.gz",
-    "sha256": "7a2384641584ab9984221fcb0fc9265df465922af71be71410529e2a9c3f0540",
-    "type": "tar.gz",
-    "into": "."
-   }
-  ],
-  "relocate": "brew",
-  "cxx": "brew/gcc/16.2.0/bin/g++-16",
-  "python": "python/bin/python3",
-  "flags": [
-   "-static-libstdc++",
-   "-static-libgcc"
-  ],
-  "sdk": true,
-  "id": "c98b3744c549"
- },
- "win32-x64": {
-  "items": [
-   {
-    "url": "https://github.com/brechtsanders/winlibs_mingw/releases/download/16.2.0posix-23.1.3-14.0.0-ucrt-r3/winlibs-x86_64-posix-seh-gcc-16.2.0-llvm-23.1.3-mingw-w64ucrt-14.0.0-r3.zip",
-    "sha256": "1f04e482797dc5f71fe2875cf2b743bfb9f5fd1de0955fdd3118438c0432ba5f",
-    "type": "zip",
-    "into": "gcc"
-   },
-   {
-    "url": "https://www.python.org/ftp/python/3.13.1/python-3.13.1-embed-amd64.zip",
-    "sha256": "7b7923ff0183a8b8fca90f6047184b419b108cb437f75fc1c002f9d2f8bcec16",
-    "type": "zip",
-    "into": "python"
-   }
-  ],
-  "cxx": "gcc/mingw64/bin/g++.exe",
-  "python": "python/python.exe",
-  "clangd": "gcc/mingw64/bin/clangd.exe",
-  "flags": [],
-  "id": "0495b883731c"
- }
+  "darwin-arm64-24": {
+    "url": "https://downloads.eolymp.com/code/toolchains/darwin-arm64-24-0f9c53ead4fe.tar.gz",
+    "sha256": "0f9c53ead4fea972229e27a2027400d00055d060e13f9f7410771526f1b25c70",
+    "cxx": "brew/gcc@14/bin/g++-14",
+    "python": "python/bin/python3",
+    "clangd": "",
+    "flags": [
+      "-static-libstdc++",
+      "-static-libgcc"
+    ],
+    "sdk": true
+  },
+  "darwin-arm64-25": {
+    "url": "https://downloads.eolymp.com/code/toolchains/darwin-arm64-25-2d439b3388ff.tar.gz",
+    "sha256": "2d439b3388ff54b10a8b4512283c8ea6d82db45db0dd6597d7820a769f79d009",
+    "cxx": "brew/gcc@14/bin/g++-14",
+    "python": "python/bin/python3",
+    "clangd": "",
+    "flags": [
+      "-static-libstdc++",
+      "-static-libgcc"
+    ],
+    "sdk": true
+  },
+  "linux-arm64": {
+    "url": "https://downloads.eolymp.com/code/toolchains/linux-arm64-8b6bca5395b4.tar.gz",
+    "sha256": "8b6bca5395b4a136421e79058bcde55bc29609b0ace749052a73c72e967786be",
+    "cxx": "gcc/bin/aarch64-conda-linux-gnu-g++",
+    "python": "python/bin/python3",
+    "clangd": "",
+    "flags": [
+      "-static-libstdc++",
+      "-static-libgcc"
+    ]
+  },
+  "linux-x64": {
+    "url": "https://downloads.eolymp.com/code/toolchains/linux-x64-fd2fdb1cc1d2.tar.gz",
+    "sha256": "fd2fdb1cc1d246153164235587f172801a602f7bdc68e81e41af4331e22846de",
+    "cxx": "gcc/bin/x86_64-conda-linux-gnu-g++",
+    "python": "python/bin/python3",
+    "clangd": "clangd/bin/clangd",
+    "flags": [
+      "-static-libstdc++",
+      "-static-libgcc"
+    ]
+  },
+  "win32-x64": {
+    "url": "https://downloads.eolymp.com/code/toolchains/win32-x64-5f265c6e2d8b.tar.gz",
+    "sha256": "5f265c6e2d8b4426bc53096244776b95d2cc2011c9fd0696243b59e04b6dfb2f",
+    "cxx": "gcc/Library/bin/x86_64-w64-mingw32-g++.exe",
+    "python": "python/python.exe",
+    "clangd": "clangd/bin/clangd.exe",
+    "flags": [
+      "-static"
+    ]
+  }
 }
