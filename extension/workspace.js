@@ -9,6 +9,15 @@ function natural(a, b) {
   return a.localeCompare(b, undefined, { numeric: true });
 }
 
+function list(dir, options) {
+  try {
+    return fs.readdirSync(dir, options);
+  } catch (err) {
+    if (err.code === 'ENOENT') return [];
+    throw err;
+  }
+}
+
 function read(file) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
 }
@@ -42,20 +51,19 @@ function solutionOf(file) {
 
 function solutionsIn(dir) {
   const own = path.basename(dir);
-  return fs.readdirSync(dir)
+  return list(dir)
     .filter(langOf)
     .sort((a, b) => (path.parse(b).name === own) - (path.parse(a).name === own) || natural(a, b))
     .map((f) => path.join(dir, f));
 }
 
 function testIds(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((f) => f.endsWith('.in')).map((f) => f.slice(0, -3)).sort(natural);
+  return list(dir).filter((f) => f.endsWith('.in')).map((f) => f.slice(0, -3)).sort(natural);
 }
 
 function othersIn(dir) {
   const tests = new Set(testIds(dir));
-  return fs.readdirSync(dir, { withFileTypes: true })
+  return list(dir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && !entry.name.startsWith('.') && !langOf(entry.name))
     .map((entry) => entry.name)
     .filter((name) => !(/\.(in|out|answer)$/.test(name) && tests.has(name.replace(/\.[^.]+$/, ''))))
@@ -77,7 +85,7 @@ function isProblem(dir) {
 }
 
 function problemsIn(dir) {
-  return fs.readdirSync(dir, { withFileTypes: true })
+  return list(dir, { withFileTypes: true })
     .filter((e) => e.isDirectory() && !e.name.startsWith('.') && isProblem(path.join(dir, e.name)))
     .map((e) => e.name)
     .sort(natural)

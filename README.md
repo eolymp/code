@@ -59,6 +59,8 @@ To run them against the released Linux package without a window on your screen:
     docker build -t eolymp-code-tests tests
     docker run --rm --cap-add=SYS_ADMIN -e EOLYMP_CODE_SOURCE=1 -v "$PWD":/code eolymp-code-tests
 
+The first-launch test installs the compiler for the others, so it runs before any of them. Pass `--no-deps` to Playwright to skip it when the tools are already installed.
+
 ## Licences
 
 The editor is built from [Code - OSS](https://github.com/microsoft/vscode) (MIT). `extension/codicon.ttf` is from [vscode-codicons](https://github.com/microsoft/vscode-codicons) (CC BY 4.0).

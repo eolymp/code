@@ -82,3 +82,11 @@ test('a saved test starts without an answer', () => {
   assert.equal(fs.readFileSync(path.join(dir, '3.in'), 'utf8'), '1 2\n');
   assert.equal(fs.existsSync(path.join(dir, '3.answer')), false);
 });
+
+test('a folder that disappeared lists as empty', () => {
+  const gone = path.join(folder({}), 'gone');
+  assert.deepEqual(ws.solutionsIn(gone), []);
+  assert.deepEqual(ws.testIds(gone), []);
+  assert.deepEqual(ws.othersIn(gone), []);
+  assert.deepEqual(ws.problemsIn(gone), []);
+});

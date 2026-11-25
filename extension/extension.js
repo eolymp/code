@@ -628,12 +628,6 @@ async function newFile(node) {
   await vscode.window.showTextDocument(vscode.Uri.file(file));
 }
 
-async function erase(files) {
-  const edit = new vscode.WorkspaceEdit();
-  for (const file of files) edit.deleteFile(vscode.Uri.file(file), { ignoreIfNotExists: true, maxSize: 5000000 });
-  if (!await vscode.workspace.applyEdit(edit)) vscode.window.showErrorMessage(t('Could not delete the selected items.'));
-}
-
 async function move(from, to) {
   const edit = new vscode.WorkspaceEdit();
   edit.renameFile(vscode.Uri.file(from), vscode.Uri.file(to));
@@ -698,14 +692,6 @@ async function renameSolution(node) {
   refresh();
 }
 
-async function deleteProblem(dir) {
-  for (const file of ws.solutionsIn(dir)) await forget(file);
-  const edit = new vscode.WorkspaceEdit();
-  edit.deleteFile(vscode.Uri.file(dir), { recursive: true, folder: true });
-  await vscode.workspace.applyEdit(edit);
-  refresh();
-}
-
 async function renameFile(node) {
   const base = path.basename(node.file);
   const name = await askName({ prompt: t('New name of the file'), value: base, valueSelection: [0, path.parse(base).name.length] }, (value) => value !== base && fs.existsSync(path.join(node.dir, value)) && value);
@@ -732,9 +718,35 @@ function rename(node) {
   return renameTest(picked.dir, picked.id);
 }
 
+function whole(n) {
+  return n.kind === 'test' || (n.kind === 'testFile' && n.file.endsWith('.in'));
+}
+
+async function discard(items) {
+  const edit = new vscode.WorkspaceEdit();
+  const solutions = [];
+  for (const n of items) {
+    if (n.kind === 'problem') {
+      solutions.push(...ws.solutionsIn(n.dir));
+      edit.deleteFile(vscode.Uri.file(n.dir), { recursive: true, folder: true });
+      continue;
+    }
+    if (n.kind === 'solution') solutions.push(n.file);
+    for (const file of whole(n) ? ws.TEST_FILES.map((ext) => path.join(n.dir, `${n.id}.${ext}`)) : [n.file]) edit.deleteFile(vscode.Uri.file(file), { ignoreIfNotExists: true, maxSize: 5000000 });
+  }
+  const kept = [];
+  for (const file of solutions) kept.push([file, await forget(file)]);
+  if (!await vscode.workspace.applyEdit(edit)) vscode.window.showErrorMessage(t('Could not delete the selected items.'));
+  for (const [file, state] of kept) {
+    if (fs.existsSync(file)) recall(file, state);
+    else fs.rmSync(ws.solutionOf(file).outDir, { recursive: true, force: true });
+  }
+  for (const n of items) if (whole(n) && !fs.existsSync(path.join(n.dir, `${n.id}.in`))) moveResults(n.dir, n.id);
+  refresh();
+}
+
 async function remove(node, nodes) {
   const picked = chosen(node, nodes);
-  const whole = (n) => n.kind === 'test' || (n.kind === 'testFile' && n.file.endsWith('.in'));
   const items = picked.filter((n) => {
     if (n.kind !== 'problem' && picked.some((p) => p.kind === 'problem' && p.dir === n.dir)) return false;
     return n.kind !== 'testFile' || !picked.some((p) => p !== n && p.dir === n.dir && p.id === n.id && whole(p));
@@ -744,19 +756,7 @@ async function remove(node, nodes) {
   const message = items.length === 1 ? t("Are you sure you want to delete '{0}'?", names[0]) : t('Are you sure you want to delete these {0} items?', items.length);
   const button = process.platform === 'win32' ? t('Move to Recycle Bin') : t('Move to Trash');
   if (await vscode.window.showWarningMessage(message, { modal: true, detail: items.length === 1 ? undefined : names.join('\n') }, button) !== button) return;
-  const files = [];
-  for (const n of items) {
-    if (n.kind === 'problem') await deleteProblem(n.dir);
-    else if (whole(n)) files.push(...ws.TEST_FILES.map((ext) => path.join(n.dir, `${n.id}.${ext}`)));
-    else files.push(n.file);
-    if (n.kind === 'solution') await forget(n.file);
-  }
-  await erase(files);
-  for (const n of items) {
-    if (n.kind === 'solution') fs.rmSync(ws.solutionOf(n.file).outDir, { recursive: true, force: true });
-    else if (whole(n)) moveResults(n.dir, n.id);
-  }
-  refresh();
+  await discard(items);
 }
 
 function copy(node, nodes, cut) {
@@ -821,11 +821,12 @@ async function paste(node) {
 }
 
 async function openTest(node) {
-  opening = path.join(node.dir, `${node.id}.in`);
+  const file = path.join(node.dir, `${node.id}.in`);
+  opening = file;
   try {
-    await vscode.window.showTextDocument(vscode.Uri.file(opening), { preserveFocus: true });
+    await vscode.window.showTextDocument(vscode.Uri.file(file), { preserveFocus: true });
   } finally {
-    opening = undefined;
+    if (opening === file) opening = undefined;
   }
 }
 
@@ -867,10 +868,8 @@ async function renameTest(dir, id) {
   refresh();
 }
 
-async function deleteTest(dir, id) {
-  await erase(ws.TEST_FILES.map((ext) => path.join(dir, `${id}.${ext}`)));
-  moveResults(dir, id);
-  refresh();
+function deleteTest(dir, id) {
+  return discard([{ kind: 'test', dir, id }]);
 }
 
 function openTestFile(id, kind) {

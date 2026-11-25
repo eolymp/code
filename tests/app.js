@@ -48,6 +48,7 @@ async function launch(files, tools, settings) {
       const item = window.getByRole('menuitem', { name, exact: true });
       await expect(item).toBeVisible();
       for (let moved = 0; moved < 30 && !await item.evaluate((element) => element === document.activeElement); moved += 1) await window.keyboard.press('ArrowDown');
+      await expect(item).toBeFocused();
       await window.keyboard.press('Enter');
       await expect(item).toBeHidden();
     },
@@ -84,12 +85,6 @@ const test = base.extend({
       await editor.window.screenshot({ path: screenshot }).catch(() => {});
       await testInfo.attach('app trace', { path: trace });
       if (fs.existsSync(screenshot)) await testInfo.attach('window', { path: screenshot });
-      const logs = path.join(editor.sandbox, 'data/user-data/logs');
-      for (const entry of fs.existsSync(logs) ? fs.readdirSync(logs, { recursive: true, withFileTypes: true }) : []) {
-        if (entry.name !== 'exthost.log') continue;
-        fs.copyFileSync(path.join(entry.parentPath, entry.name), testInfo.outputPath('extension.log'));
-        await testInfo.attach('extension log', { path: testInfo.outputPath('extension.log') });
-      }
     }
     await editor.app.close();
     fs.rmSync(editor.sandbox, { recursive: true, force: true });
