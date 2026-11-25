@@ -6,6 +6,7 @@
   "publisher": "eolymp",
   "license": "MIT",
   "private": true,
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/eolymp/code"

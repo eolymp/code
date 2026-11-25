@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const ws = require('./workspace');
 const runner = require('./runner');
+const judging = require('./judges');
 const { StringDecoder } = require('string_decoder');
 const { PassThrough } = require('stream');
 const net = require('net');
@@ -564,14 +565,14 @@ async function showDiff(id) {
   await vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(answer), output, t('Test {0}: answer ↔ output of {1}', id, path.basename(s.file)));
 }
 
-async function openSolution(file, lang) {
+async function openSolution(file, lang, given) {
   const fresh = !fs.existsSync(file);
-  if (fresh) fs.writeFileSync(file, TEMPLATES[lang]);
+  if (fresh) fs.writeFileSync(file, given || TEMPLATES[lang]);
   target = ws.solutionOf(file);
   refresh();
   const document = await vscode.workspace.openTextDocument(file);
   const editor = await vscode.window.showTextDocument(document);
-  if (fresh) editor.selection = new vscode.Selection(CURSOR[lang], CURSOR[lang]);
+  if (fresh && !given) editor.selection = new vscode.Selection(CURSOR[lang], CURSOR[lang]);
 }
 
 function askName(options, taken) {
@@ -583,17 +584,21 @@ function askName(options, taken) {
 
 async function newProblem() {
   const name = await vscode.window.showInputBox({ prompt: t('Name of the problem'), placeHolder: t('Leave empty to name it later') });
-  if (name === undefined) return;
+  if (name !== undefined) await createProblem(name);
+}
+
+async function createProblem(name, templates = {}) {
   if (!root()) {
     vscode.window.showErrorMessage(t('Open a folder first: problems are created in it.'));
-    return;
+    return undefined;
   }
   let slug = ws.slugOf(name);
   for (let n = 1; !slug; n++) if (!fs.existsSync(path.join(root(), `untitled-${n}`))) slug = `untitled-${n}`;
   const dir = path.join(root(), slug);
   fs.mkdirSync(dir, { recursive: true });
   const lang = config().get('language');
-  await openSolution(ws.solutionsIn(dir)[0] || path.join(dir, `${slug}.${lang}`), lang);
+  await openSolution(ws.solutionsIn(dir)[0] || path.join(dir, `${slug}.${lang}`), lang, templates[lang]);
+  return dir;
 }
 
 async function newSolution(node) {
@@ -999,7 +1004,8 @@ function activate(context) {
     renameTest: (id, dir) => renameTest(dir, id),
     deleteTest: (id, dir) => deleteTest(dir, id),
   };
-  const commands = { run, runTests, runTest, debug, openTest, stop, newProblem, newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
+  const judges = judging.create(createProblem, refresh);
+  const commands = { run, runTests, runTest, debug, openTest, stop, newProblem, findProblem: judges.find, newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterTrackerFactory('*', {
       createDebugAdapterTracker(session) {
@@ -1058,6 +1064,7 @@ function activate(context) {
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
   show(vscode.window.activeTextEditor);
   return {
+    registerJudge: judges.register,
     provide(tools) {
       provided = tools;
       runner.forget();

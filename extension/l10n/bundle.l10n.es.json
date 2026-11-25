@@ -64,5 +64,9 @@
   "This file is not a test of a problem.": "Este archivo no es una prueba de un problema.",
   "Open a .cpp or .py file to debug it.": "Abre un archivo .cpp o .py para depurarlo.",
   "Debug": "Depurar",
+  "Where to look for a problem": "Dónde buscar un problema",
+  "Search problems on {0}": "Buscar problemas en {0}",
+  "Could not search: {0}": "No se pudo buscar: {0}",
+  "Could not open the problem: {0}": "No se pudo abrir el problema: {0}",
   "Could not delete the selected items.": "No se pudieron eliminar los elementos seleccionados."
 }

@@ -63,5 +63,10 @@
   "This problem has no solution to run.": "To zadanie nie ma rozwiązania do uruchomienia.",
   "This file is not a test of a problem.": "Ten plik nie jest testem zadania.",
   "Open a .cpp or .py file to debug it.": "Otwórz plik .cpp lub .py, aby go zdebugować.",
-  "Debug": "Debuguj"
+  "Debug": "Debuguj",
+  "Where to look for a problem": "Gdzie szukać zadania",
+  "Search problems on {0}": "Szukaj zadań w {0}",
+  "Could not search: {0}": "Nie udało się wyszukać: {0}",
+  "Could not open the problem: {0}": "Nie udało się otworzyć zadania: {0}",
+  "Could not delete the selected items.": "Nie udało się usunąć zaznaczonych elementów."
 }

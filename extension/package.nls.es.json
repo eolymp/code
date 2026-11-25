@@ -32,5 +32,6 @@
   "command.cut": "Cortar",
   "command.copy": "Copiar",
   "command.paste": "Pegar",
-  "command.runTest": "Ejecutar prueba"
+  "command.runTest": "Ejecutar prueba",
+  "command.findProblem": "Buscar problema"
 }

@@ -17,6 +17,7 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 - `app/` builds the editor from source with [VSCodium](https://github.com/VSCodium/vscodium)'s build scripts.
 - `extension/` is the Eolymp Code extension: the problem list, tests and the console.
 - `setup/` is the extension built into the app that installs the compiler and Python.
+- `eolymp/` is the extension built into the app that signs in to Eolymp and opens its problems. It registers a judge with `extension/` through `registerJudge`: an object with `id`, `label`, `search(query)` returning `{ id, label, description }` items, and `load(id)` returning `{ name, tests, templates, link }`.
 - `editor/` holds the default settings and the list of pinned extensions.
 - `l10n/` holds the Ukrainian language pack for the editor.
 - `tests/` drives the installed app with Playwright.
@@ -29,7 +30,7 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 
     cd tests && npm ci && npm test
 
-`tests/unit/` checks the file handling and the program runner with Node's test runner. The rest drives the installed app with Playwright; with `EOLYMP_CODE_SOURCE=1` it loads `extension/` and `setup/` from this checkout into it.
+`tests/unit/` checks the file handling and the program runner with Node's test runner. The rest drives the installed app with Playwright; with `EOLYMP_CODE_SOURCE=1` it loads `extension/`, `setup/` and `eolymp/` from this checkout into it.
 
 To run them against the released Linux package without a window on your screen:
 

@@ -3,6 +3,7 @@ const path = require('path');
 
 const LANGS = { '.cpp': 'cpp', '.cc': 'cpp', '.cxx': 'cpp', '.py': 'py' };
 const TEST_FILES = ['in', 'out', 'answer'];
+const LINK = '.problem.json';
 
 function natural(a, b) {
   return a.localeCompare(b, undefined, { numeric: true });
@@ -111,6 +112,6 @@ function verdictOf(output, answer) {
 }
 
 module.exports = {
-  TEST_FILES, read, slugOf, badName, langOf, solutionOf, solutionsIn, testIds,
+  TEST_FILES, LINK, read, slugOf, badName, langOf, solutionOf, solutionsIn, testIds,
   othersIn, problemsIn, answerOf, loadTests, saveTest, nextTest, verdictOf,
 };

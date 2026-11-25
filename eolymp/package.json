@@ -1,0 +1,33 @@
+{
+  "name": "eolymp-code-eolymp",
+  "displayName": "Eolymp",
+  "description": "%description%",
+  "version": "0.1.0",
+  "publisher": "eolymp",
+  "license": "MIT",
+  "private": true,
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eolymp/code"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "extensionDependencies": [
+    "eolymp.eolymp-code"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "authentication": [
+      {
+        "id": "eolymp",
+        "label": "Eolymp"
+      }
+    ]
+  },
+  "l10n": "./l10n"
+}

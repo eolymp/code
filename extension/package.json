@@ -6,6 +6,7 @@
   "publisher": "eolymp",
   "license": "MIT",
   "private": true,
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/eolymp/code"
@@ -76,6 +77,12 @@
         "title": "%command.newProblem%",
         "category": "Eolymp Code",
         "icon": "$(add)"
+      },
+      {
+        "command": "eolympCode.findProblem",
+        "title": "%command.findProblem%",
+        "category": "Eolymp Code",
+        "icon": "$(search)"
       },
       {
         "command": "eolympCode.newSolution",
@@ -194,6 +201,11 @@
         }
       ],
       "view/title": [
+        {
+          "command": "eolympCode.findProblem",
+          "group": "navigation@0",
+          "when": "view == eolympCode.problems && eolympCode.hasJudges"
+        },
         {
           "command": "eolympCode.newProblem",
           "group": "navigation",
@@ -359,6 +371,10 @@
         {
           "command": "eolympCode.runTest",
           "when": "false"
+        },
+        {
+          "command": "eolympCode.findProblem",
+          "when": "eolympCode.hasJudges"
         }
       ],
       "webview/context": [

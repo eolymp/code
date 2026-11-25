@@ -63,5 +63,10 @@
   "This problem has no solution to run.": "Bu problemde çalıştırılacak bir çözüm yok.",
   "This file is not a test of a problem.": "Bu dosya bir problemin testi değil.",
   "Open a .cpp or .py file to debug it.": "Hata ayıklamak için bir .cpp veya .py dosyası aç.",
-  "Debug": "Hata Ayıkla"
+  "Debug": "Hata Ayıkla",
+  "Where to look for a problem": "Problem nerede aransın",
+  "Search problems on {0}": "{0} üzerinde problem ara",
+  "Could not search: {0}": "Arama yapılamadı: {0}",
+  "Could not open the problem: {0}": "Problem açılamadı: {0}",
+  "Could not delete the selected items.": "Seçilen öğeler silinemedi."
 }
