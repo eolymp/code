@@ -32,6 +32,7 @@ let active;
 let testing;
 let pending;
 let provided = {};
+let self;
 let building = Promise.resolve();
 let starting = false;
 let launched = 0;
@@ -108,8 +109,8 @@ function shortName(command) {
 
 function build(s, debug) {
   const built = building.then(async () => {
-    const helper = vscode.extensions.getExtension('eolymp.eolymp-code-setup');
-    if (helper) await helper.activate();
+    const dependents = vscode.extensions.all.filter((extension) => (extension.packageJSON.extensionDependencies || []).includes(self));
+    await Promise.allSettled(dependents.map((extension) => extension.activate()));
     return compile(s, debug);
   }).catch((err) => ({ ok: false, command: '', args: [], compile: '', log: t('Could not build: {0}', err.message), run: '' }));
   building = built;
@@ -991,6 +992,7 @@ function receive(m) {
 }
 
 function activate(context) {
+  self = context.extension.id;
   problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree, canSelectMany: true, showCollapseAll: true });
   if (root() && path.basename(root()) !== 'practice') problems.description = path.basename(root());
   let settle;
@@ -1075,10 +1077,16 @@ function activate(context) {
   show(vscode.window.activeTextEditor);
   return {
     registerJudge: judges.register,
-    provide(tools) {
-      provided = tools;
-      runner.forget();
-      update();
+    registerToolchain(toolchain = {}) {
+      const use = (tools) => {
+        provided = tools;
+        runner.forget();
+        update();
+      };
+      use(toolchain);
+      return new vscode.Disposable(() => {
+        if (provided === toolchain) use({});
+      });
     },
   };
 }
