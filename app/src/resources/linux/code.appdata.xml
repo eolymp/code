@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+	<id>@@NAME@@.desktop</id>
+	<metadata_license>@@LICENSE@@</metadata_license>
+	<project_license>@@LICENSE@@</project_license>
+	<name>@@NAME_LONG@@</name>
+	<developer id="com.eolymp">
+		<name>Eolymp</name>
+	</developer>
+	<url type="homepage">https://eolymp.com/code</url>
+	<url type="bugtracker">https://github.com/eolymp/code/issues</url>
+	<summary>Editor for competitive programming</summary>
+	<description>
+		<p>C++ and Python with completion, a debugger, and a console to run a solution and check it against tests.</p>
+	</description>
+</component>

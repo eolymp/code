@@ -69,6 +69,8 @@ export SHOULD_BUILD_REH="no"
 export SHOULD_BUILD_REH_WEB="no"
 export SHOULD_BUILD_CLI="no"
 export DISABLE_UPDATE="yes"
+export BUILD_SOURCEVERSION="$(git -C "$repo" rev-parse HEAD)"
+export SOURCE_DATE_EPOCH="$(git -C "$repo" log -1 --format=%ct)"
 export VSCODE_SKIP_NODE_VERSION_CHECK="yes"
 
 if [ "$step" != package ]; then
@@ -79,7 +81,7 @@ for candidate in python3.11 python3.12 python3.13; do
   fi
 done
 
-jq -s '.[0] * .[1]' product.json "$here/product.json" > product.json.merged
+jq -s --arg release "${EOLYMP_CODE_VERSION:-}" '.[0] * .[1] | if $release == "" then . else .releaseVersion = $release end' product.json "$here/product.json" > product.json.merged
 mv product.json.merged product.json
 cp -R "$here/src/." src/stable/
 mkdir -p patches/user
