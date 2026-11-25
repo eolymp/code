@@ -49,5 +49,9 @@
     "eolymp.eolymp-code": [
       "treeViewActiveItem"
     ]
-  }
+  },
+  "trustedExtensionPublishers": [
+    "eolymp",
+    "ms-ceintl"
+  ]
 }

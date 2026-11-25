@@ -1,4 +1,5 @@
 {
   "description": "Встановлює компілятор і Python для застосунку Eolymp Code та перевіряє, що вони працюють.",
-  "command.checkSetup": "Діагностика"
+  "command.checkSetup": "Діагностика",
+  "command.welcome": "Вітальна сторінка"
 }

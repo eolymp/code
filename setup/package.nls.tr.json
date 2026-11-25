@@ -1,0 +1,5 @@
+{
+  "description": "Eolymp Code uygulaması için derleyiciyi ve Python'u kurar, çalıştıklarını kontrol eder.",
+  "command.checkSetup": "Tanılama",
+  "command.welcome": "Hoş Geldin"
+}

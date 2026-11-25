@@ -27,6 +27,11 @@
         "command": "eolympCode.checkSetup",
         "title": "%command.checkSetup%",
         "category": "Eolymp Code"
+      },
+      {
+        "command": "eolympCode.welcome",
+        "title": "%command.welcome%",
+        "category": "Eolymp Code"
       }
     ],
     "configurationDefaults": {
