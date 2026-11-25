@@ -32,6 +32,11 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 
 `tests/unit/` checks the file handling and the program runner with Node's test runner. The rest drives the installed app with Playwright; with `EOLYMP_CODE_SOURCE=1` it loads `extension/`, `setup/` and `eolymp/` from this checkout into it.
 
+To run them against the released Linux package without a window on your screen:
+
+    docker build -t eolymp-code-tests tests
+    docker run --rm --cap-add=SYS_ADMIN -e EOLYMP_CODE_SOURCE=1 -v "$PWD":/code eolymp-code-tests
+
 ## Licences
 
 The editor is built from [Code - OSS](https://github.com/microsoft/vscode) (MIT). `extension/codicon.ttf` is from [vscode-codicons](https://github.com/microsoft/vscode-codicons) (CC BY 4.0).

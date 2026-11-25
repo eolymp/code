@@ -20,11 +20,12 @@ async function launch(files, tools, settings) {
   }
   const data = path.join(sandbox, 'data');
   const cache = path.join(os.tmpdir(), 'eolymp-code-test-tools');
-  if (!tools) fs.rmSync(cache, { recursive: true, force: true });
   fs.mkdirSync(cache, { recursive: true });
+  if (!tools) for (const name of fs.readdirSync(cache)) fs.rmSync(path.join(cache, name), { recursive: true, force: true });
   fs.mkdirSync(path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup'), { recursive: true });
   fs.symlinkSync(cache, path.join(data, 'user-data/User/globalStorage/eolymp.eolymp-code-setup/tools'));
-  if (settings) fs.writeFileSync(path.join(data, 'user-data/User/settings.json'), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(__dirname, '../editor/settings.json'), 'utf8')), ...settings }));
+  const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '../editor/settings.json'), 'utf8'));
+  fs.writeFileSync(path.join(data, 'user-data/User/settings.json'), JSON.stringify({ ...defaults, 'window.dialogStyle': 'custom', 'window.menuStyle': 'custom', ...settings }));
   const opened = Object.keys(files).slice(0, 1).map((file) => path.join(workspace, file));
   const app = await electron.launch({
     executablePath: PROGRAM,
@@ -40,6 +41,29 @@ async function launch(files, tools, settings) {
     panel: window.frameLocator('iframe.webview[src*="purpose=webviewView"]').frameLocator('iframe#active-frame'),
     page: window.frameLocator('iframe.webview:not([src*="purpose=webviewView"])').frameLocator('iframe#active-frame'),
     toolbar: window.getByRole('toolbar', { name: 'Editor actions' }),
+    tree: window.getByRole('tree', { name: 'Practice' }),
+    box: window.locator('.quick-input-widget').getByRole('textbox'),
+    pick: async (name) => {
+      const item = window.getByRole('menuitem', { name, exact: true });
+      await expect(item).toBeVisible();
+      for (let moved = 0; moved < 30 && !await item.evaluate((element) => element === document.activeElement); moved += 1) await window.keyboard.press('ArrowDown');
+      await window.keyboard.press('Enter');
+      await expect(item).toBeHidden();
+    },
+    select: async (row) => {
+      await row.click();
+      await expect(row).toHaveAttribute('aria-selected', 'true');
+    },
+    answer: async (prompt, text) => {
+      const widget = window.locator('.quick-input-widget');
+      await expect(widget).toContainText(prompt);
+      await widget.getByRole('textbox').fill(text);
+      await expect(widget.getByRole('textbox')).toHaveValue(text);
+      await widget.getByRole('textbox').press('Enter');
+      await expect(widget).toBeHidden();
+    },
+    read: (file) => fs.readFileSync(path.join(workspace, file), 'utf8'),
+    there: (file) => fs.existsSync(path.join(workspace, file)),
   };
 }
 
@@ -59,6 +83,12 @@ const test = base.extend({
       await editor.window.screenshot({ path: screenshot }).catch(() => {});
       await testInfo.attach('app trace', { path: trace });
       if (fs.existsSync(screenshot)) await testInfo.attach('window', { path: screenshot });
+      const logs = path.join(editor.sandbox, 'data/user-data/logs');
+      for (const entry of fs.existsSync(logs) ? fs.readdirSync(logs, { recursive: true, withFileTypes: true }) : []) {
+        if (entry.name !== 'exthost.log') continue;
+        fs.copyFileSync(path.join(entry.parentPath, entry.name), testInfo.outputPath('extension.log'));
+        await testInfo.attach('extension log', { path: testInfo.outputPath('extension.log') });
+      }
     }
     await editor.app.close();
     fs.rmSync(editor.sandbox, { recursive: true, force: true });

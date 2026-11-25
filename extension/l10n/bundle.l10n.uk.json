@@ -67,5 +67,6 @@
   "Where to look for a problem": "Де шукати задачу",
   "Search problems on {0}": "Пошук задач на {0}",
   "Could not search: {0}": "Не вдалося виконати пошук: {0}",
-  "Could not open the problem: {0}": "Не вдалося відкрити задачу: {0}"
+  "Could not open the problem: {0}": "Не вдалося відкрити задачу: {0}",
+  "Could not delete the selected items.": "Не вдалося видалити вибрані елементи."
 }

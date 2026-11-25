@@ -67,5 +67,6 @@
   "Where to look for a problem": "Dove cercare un problema",
   "Search problems on {0}": "Cerca problemi su {0}",
   "Could not search: {0}": "Ricerca non riuscita: {0}",
-  "Could not open the problem: {0}": "Impossibile aprire il problema: {0}"
+  "Could not open the problem: {0}": "Impossibile aprire il problema: {0}",
+  "Could not delete the selected items.": "Impossibile eliminare gli elementi selezionati."
 }

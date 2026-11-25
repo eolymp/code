@@ -67,5 +67,6 @@
   "Where to look for a problem": "Problem nerede aransın",
   "Search problems on {0}": "{0} üzerinde problem ara",
   "Could not search: {0}": "Arama yapılamadı: {0}",
-  "Could not open the problem: {0}": "Problem açılamadı: {0}"
+  "Could not open the problem: {0}": "Problem açılamadı: {0}",
+  "Could not delete the selected items.": "Seçilen öğeler silinemedi."
 }
