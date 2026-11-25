@@ -19,7 +19,7 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 - `ext/eolymp/` is the Eolymp Judge extension: it signs in to Eolymp, opens its problems and submits solutions.
 - `ext/core/` is the Eolymp Core extension: what makes the app, such as installing the compiler and Python and the welcome page.
 - `editor/` holds the default settings and the list of pinned extensions.
-- `l10n/` holds the Ukrainian and Azerbaijani language packs for the editor.
+- `l10n/` holds the Ukrainian and Azerbaijani language packs for the editor, published to Open VSX.
 - `tests/` drives the installed app with Playwright.
 
 ## Judges

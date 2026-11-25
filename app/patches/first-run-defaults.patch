@@ -1,6 +1,6 @@
 --- a/src/mainImpl.ts
 +++ b/src/mainImpl.ts
-@@ -68,6 +68,42 @@
+@@ -68,6 +68,16 @@
  	}
  }
  app.setPath('userData', userDataPath);
@@ -11,52 +11,9 @@
 +		fs.mkdirSync(path.dirname(settings), { recursive: true });
 +		fs.copyFileSync(path.join(defaults, 'settings.json'), settings);
 +	}
-+	if (fs.existsSync(path.join(defaults, 'languagepacks.json'))) {
-+		const root = path.join(import.meta.dirname, '..');
-+		const file = path.join(userDataPath, 'languagepacks.json');
-+		const bundled = JSON.parse(fs.readFileSync(path.join(defaults, 'languagepacks.json'), 'utf8'));
-+		let known: Record<string, { hash: string; translations: Record<string, string> }> = {};
-+		try {
-+			known = JSON.parse(fs.readFileSync(file, 'utf8'));
-+		} catch {
-+			known = {};
-+		}
-+		let changed = false;
-+		for (const language of Object.keys(bundled)) {
-+			const pack = bundled[language];
-+			for (const id of Object.keys(pack.translations)) {
-+				pack.translations[id] = path.join(root, pack.translations[id]);
-+			}
-+			if (!known[language] || known[language].hash !== pack.hash || !Object.values(known[language].translations).every(translation => fs.existsSync(translation))) {
-+				known[language] = pack;
-+				changed = true;
-+			}
-+		}
-+		if (changed) {
-+			fs.mkdirSync(userDataPath, { recursive: true });
-+			fs.writeFileSync(file, JSON.stringify(known));
-+		}
-+	}
 +} catch {
 +	// start without the defaults
 +}
  perf.mark('code/didGetUserDataPath');
  
  if (process.platform === 'linux') {
-@@ -151,7 +187,15 @@
- perf.mark('code/willGetPreferredSystemLanguages');
- const osLocale = processZhLocale((app.getPreferredSystemLanguages()?.[0] ?? 'en').toLowerCase());
- perf.mark('code/didGetPreferredSystemLanguages');
--const userLocale = getUserDefinedLocale(argvConfig);
-+let userLocale = getUserDefinedLocale(argvConfig);
-+if (!userLocale) {
-+	try {
-+		const bundled = Object.keys(JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'defaults', 'languagepacks.json'), 'utf8')));
-+		userLocale = bundled.find(language => `${osLocale.replace(/^ru(?=-|$)/, 'uk')}-`.startsWith(`${language}-`));
-+	} catch {
-+		// start in English
-+	}
-+}
- if (userLocale) {
- 	nlsConfigurationPromise = resolveNLSConfiguration({
- 		userLocale,

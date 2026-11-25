@@ -88,6 +88,27 @@ jobs:
           path: artifacts/EolympCode-*
           if-no-files-found: error
 
+  language-packs:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: app/.nvmrc
+      - name: Publish the language packs to Open VSX
+        run: |
+          for pack in l10n/*/; do
+            id=$(node -p "const m = require('./${pack}package.json'); [m.publisher, m.name, m.version].join('/')")
+            if curl -sf "https://open-vsx.org/api/$id" > /dev/null; then echo "$id is already published"; continue; fi
+            (cd "$pack" && npx -y @vscode/vsce@4.1.1 package --no-dependencies -o "$RUNNER_TEMP/pack.vsix")
+            npx -y ovsx@1.4.0 publish "$RUNNER_TEMP/pack.vsix" --trusted-publishing
+          done
+
   publish:
     needs: editor
     runs-on: ubuntu-24.04

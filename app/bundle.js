@@ -52,23 +52,8 @@ async function main() {
     fs.writeFileSync(path.join(own.target, 'package.json'), `${JSON.stringify(own.manifest, null, 2)}\n`);
   }
 
-  const packs = {};
-  for (const name of fs.readdirSync(path.join(repo, 'l10n'))) {
-    const { target, manifest } = placed(path.join(repo, 'l10n', name));
-    const id = `${manifest.publisher}.${manifest.name}`;
-    for (const localization of manifest.contributes.localizations) {
-      packs[localization.languageId] = {
-        hash: localization.translations.reduce((hash, translation) => hash.update(fs.readFileSync(path.join(target, translation.path))), crypto.createHash('md5').update(id).update(manifest.version)).digest('hex'),
-        label: localization.localizedLanguageName || localization.languageName,
-        extensions: [{ extensionIdentifier: { id }, version: manifest.version }],
-        translations: Object.fromEntries(localization.translations.map((translation) => [translation.id, path.join(path.relative(app, target), translation.path)])),
-      };
-    }
-  }
-
   fs.mkdirSync(path.join(app, 'defaults'), { recursive: true });
   fs.copyFileSync(path.join(repo, 'editor', 'settings.json'), path.join(app, 'defaults', 'settings.json'));
-  fs.writeFileSync(path.join(app, 'defaults', 'languagepacks.json'), JSON.stringify(packs));
 }
 
 main().catch((err) => {
