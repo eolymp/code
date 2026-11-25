@@ -158,6 +158,20 @@
         "command": "eolympCode.runTest",
         "title": "%command.runTest%",
         "icon": "$(play)"
+      },
+      {
+        "command": "eolympCode.signIn",
+        "title": "%command.signIn%",
+        "category": "Eolymp Code"
+      },
+      {
+        "command": "eolympCode.signOut",
+        "title": "%command.signOut%",
+        "category": "Eolymp Code"
+      },
+      {
+        "command": "eolympCode.account",
+        "title": "%command.signOut%"
       }
     ],
     "menus": {
@@ -358,6 +372,18 @@
         },
         {
           "command": "eolympCode.runTest",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.signIn",
+          "when": "!eolympCode.signedIn"
+        },
+        {
+          "command": "eolympCode.signOut",
+          "when": "eolympCode.signedIn"
+        },
+        {
+          "command": "eolympCode.account",
           "when": "false"
         }
       ],

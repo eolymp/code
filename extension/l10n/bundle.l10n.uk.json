@@ -63,5 +63,14 @@
   "This problem has no solution to run.": "У цій задачі немає розв'язку для запуску.",
   "This file is not a test of a problem.": "Цей файл не є тестом задачі.",
   "Open a .cpp or .py file to debug it.": "Відкрийте файл .cpp або .py, щоб налагодити його.",
-  "Debug": "Налагодити"
+  "Debug": "Налагодити",
+  "Sign In": "Увійти",
+  "Sign Out": "Вийти",
+  "Sign in to {0}": "Увійти на {0}",
+  "Signed in to {0} as {1}": "Ви увійшли на {0} як {1}",
+  "Eolymp Account": "Обліковий запис Eolymp",
+  "Continue signing in in your browser.": "Продовжте вхід у браузері.",
+  "Could not sign in: {0}": "Не вдалося увійти: {0}",
+  "You are signed in": "Ви увійшли",
+  "You can close this page and return to Eolymp Code.": "Можете закрити цю сторінку й повернутися до Eolymp Code."
 }

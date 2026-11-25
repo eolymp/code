@@ -63,5 +63,14 @@
   "This problem has no solution to run.": "Este problema no tiene una solución para ejecutar.",
   "This file is not a test of a problem.": "Este archivo no es una prueba de un problema.",
   "Open a .cpp or .py file to debug it.": "Abre un archivo .cpp o .py para depurarlo.",
-  "Debug": "Depurar"
+  "Debug": "Depurar",
+  "Sign In": "Iniciar sesión",
+  "Sign Out": "Cerrar sesión",
+  "Sign in to {0}": "Iniciar sesión en {0}",
+  "Signed in to {0} as {1}": "Sesión iniciada en {0} como {1}",
+  "Eolymp Account": "Cuenta de Eolymp",
+  "Continue signing in in your browser.": "Continúa el inicio de sesión en el navegador.",
+  "Could not sign in: {0}": "No se pudo iniciar sesión: {0}",
+  "You are signed in": "Has iniciado sesión",
+  "You can close this page and return to Eolymp Code.": "Puedes cerrar esta página y volver a Eolymp Code."
 }

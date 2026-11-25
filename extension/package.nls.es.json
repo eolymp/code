@@ -32,5 +32,7 @@
   "command.cut": "Cortar",
   "command.copy": "Copiar",
   "command.paste": "Pegar",
-  "command.runTest": "Ejecutar prueba"
+  "command.runTest": "Ejecutar prueba",
+  "command.signIn": "Iniciar sesión",
+  "command.signOut": "Cerrar sesión"
 }

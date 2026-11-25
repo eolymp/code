@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const ws = require('./workspace');
 const runner = require('./runner');
+const account = require('./account');
 const { StringDecoder } = require('string_decoder');
 const { PassThrough } = require('stream');
 const net = require('net');
@@ -1033,6 +1034,7 @@ function activate(context) {
       update();
     }),
   );
+  account.register(context);
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
   show(vscode.window.activeTextEditor);
   return {

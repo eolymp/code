@@ -32,5 +32,7 @@
   "command.cut": "Cut",
   "command.copy": "Copy",
   "command.paste": "Paste",
-  "command.runTest": "Run Test"
+  "command.runTest": "Run Test",
+  "command.signIn": "Sign In",
+  "command.signOut": "Sign Out"
 }
