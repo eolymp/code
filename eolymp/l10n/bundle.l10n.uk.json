@@ -5,5 +5,6 @@
   "{0}% accepted": "{0}% зараховано",
   "Could not end the session on Eolymp: {0}": "Не вдалося завершити сеанс на Eolymp: {0}",
   "You are not signed in": "Ви не увійшли",
-  "You can close this page and try again in Eolymp Code.": "Можете закрити цю сторінку й спробувати ще раз в Eolymp Code."
+  "You can close this page and try again in Eolymp Code.": "Можете закрити цю сторінку й спробувати ще раз в Eolymp Code.",
+  "Language to submit in": "Мова, якою надіслати розв'язок"
 }

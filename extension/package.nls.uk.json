@@ -33,5 +33,10 @@
   "command.copy": "Копіювати",
   "command.paste": "Вставити",
   "command.runTest": "Запустити тест",
-  "command.findProblem": "Знайти задачу"
+  "command.findProblem": "Знайти задачу",
+  "view.submission": "Перевірка",
+  "command.submit": "Надіслати",
+  "command.openSubmission": "Відкрити в браузері",
+  "command.consoleRerun": "Запустити знову",
+  "command.consoleEndInput": "Завершити введення"
 }

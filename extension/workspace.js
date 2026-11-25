@@ -63,6 +63,15 @@ function othersIn(dir) {
     .map((name) => path.join(dir, name));
 }
 
+function linkOf(dir) {
+  try {
+    const link = JSON.parse(fs.readFileSync(path.join(dir, LINK), 'utf8'));
+    return typeof link.judge === 'string' && typeof link.id === 'string' ? link : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function isProblem(dir) {
   return solutionsIn(dir).length > 0 || testIds(dir).length > 0;
 }
@@ -112,6 +121,6 @@ function verdictOf(output, answer) {
 }
 
 module.exports = {
-  TEST_FILES, LINK, read, slugOf, badName, langOf, solutionOf, solutionsIn, testIds,
+  TEST_FILES, LINK, linkOf, read, slugOf, badName, langOf, solutionOf, solutionsIn, testIds,
   othersIn, problemsIn, answerOf, loadTests, saveTest, nextTest, verdictOf,
 };

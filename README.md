@@ -17,10 +17,32 @@ The app installs its own GCC and Python. On Intel Macs and on macOS older than 1
 - `app/` builds the editor from source with [VSCodium](https://github.com/VSCodium/vscodium)'s build scripts.
 - `extension/` is the Eolymp Code extension: the problem list, tests and the console.
 - `setup/` is the extension built into the app that installs the compiler and Python.
-- `eolymp/` is the extension built into the app that signs in to Eolymp and opens its problems. It registers a judge with `extension/` through `registerJudge`: an object with `id`, `label`, `search(query)` returning `{ id, label, description }` items, and `load(id)` returning `{ name, tests, templates, link }`.
+- `eolymp/` is the extension built into the app that signs in to Eolymp, opens its problems and submits solutions.
 - `editor/` holds the default settings and the list of pinned extensions.
 - `l10n/` holds the Ukrainian language pack for the editor.
 - `tests/` drives the installed app with Playwright.
+
+## Judges
+
+An extension adds an online judge by calling `registerJudge` on the API the Eolymp Code extension exports:
+
+    const core = await vscode.extensions.getExtension('eolymp.eolymp-code').activate();
+    core.registerJudge({
+      id: 'example',
+      label: 'Example',
+      search: async (query) => [{ id, label, description }],
+      load: async (id) => ({ name, url, tests: [{ input, answer }], templates: { cpp, py } }),
+      submit: async (problem, { language, source }) => submissionId,
+      watch: async (problem, submissionId, update, signal) => {},
+    });
+
+`problem` is `{ id, url }`, kept in `.problem.json` next to the solution. `language` is `cpp` or `py`. `submit` and `watch` are optional.
+
+`watch` calls `update` with the state of the submission every time it changes and returns when testing is over:
+
+    { id, label, url, message, verdict, score, maxScore, time, memory, children }
+
+`children` are results of the same shape with `kind` (`testset` or `test`) and `index`, and may have `children` of their own. `time` is in milliseconds, `memory` in bytes. `verdict` is one of `waiting`, `testing`, `accepted`, `partial`, `skipped`, `wrong-answer`, `time-limit`, `memory-limit`, `idleness-limit`, `runtime-error`, `compilation-error`, `failed`; any other text is shown as it is.
 
 ## Build
 

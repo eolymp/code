@@ -33,5 +33,10 @@
   "command.copy": "Kopyala",
   "command.paste": "Yapıştır",
   "command.runTest": "Testi Çalıştır",
-  "command.findProblem": "Problem Bul"
+  "command.findProblem": "Problem Bul",
+  "view.submission": "Gönderim",
+  "command.submit": "Gönder",
+  "command.openSubmission": "Tarayıcıda aç",
+  "command.consoleRerun": "Yeniden çalıştır",
+  "command.consoleEndInput": "Girdiyi bitir"
 }

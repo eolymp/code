@@ -16,10 +16,43 @@ async function get(token, route, input) {
   return body;
 }
 
+async function post(token, route, input) {
+  const res = await fetch(`${BASE}${route}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(body.message || `HTTP ${res.status}`), { status: res.status });
+  return body;
+}
+
+async function* events(chunks) {
+  const decoder = new TextDecoder();
+  let buffer = '';
+  for await (const chunk of chunks) {
+    buffer += decoder.decode(chunk, { stream: true }).replace(/\r\n/g, '\n');
+    for (let end = buffer.indexOf('\n\n'); end >= 0; end = buffer.indexOf('\n\n')) {
+      const lines = buffer.slice(0, end).split('\n');
+      buffer = buffer.slice(end + 2);
+      const field = (name) => lines.filter((line) => line.startsWith(`${name}:`)).map((line) => line.slice(name.length + 1).replace(/^ /, ''));
+      const [event] = field('event');
+      const data = field('data').join('\n');
+      if (!data) continue;
+      if (event === 'eof') return;
+      if (event === 'error') throw new Error(JSON.parse(data).message || 'stream failed');
+      yield JSON.parse(data);
+    }
+  }
+  throw new Error('stream closed unexpectedly');
+}
+
+async function stream(token, route, input, signal) {
+  const res = await fetch(`${BASE}${route}?${new URLSearchParams({ q: JSON.stringify(input) })}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' }, signal });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || `HTTP ${res.status}`);
+  return events(res.body);
+}
+
 async function text(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();
 }
 
-module.exports = { numberIn, get, text };
+module.exports = { numberIn, get, post, events, stream, text };

@@ -2,19 +2,48 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 const ws = require('./workspace');
+const submission = require('./submission');
 
 const t = vscode.l10n.t;
 
 function create(createProblem, refresh) {
   const judges = new Map();
 
+  const linkOf = (document) => {
+    const link = document.uri.scheme === 'file' && ws.langOf(document.fileName) ? ws.linkOf(path.dirname(document.fileName)) : undefined;
+    const judge = link && judges.get(link.judge);
+    return judge && judge.submit ? link : undefined;
+  };
+
+  const mark = () => {
+    const editor = vscode.window.activeTextEditor;
+    vscode.commands.executeCommand('setContext', 'eolympCode.linked', Boolean(editor && linkOf(editor.document)));
+  };
+
   const register = (judge) => {
     judges.set(judge.id, judge);
     vscode.commands.executeCommand('setContext', 'eolympCode.hasJudges', true);
+    mark();
     return new vscode.Disposable(() => {
       judges.delete(judge.id);
       vscode.commands.executeCommand('setContext', 'eolympCode.hasJudges', judges.size > 0);
+      mark();
     });
+  };
+
+  const submit = async () => {
+    const editor = vscode.window.activeTextEditor;
+    const link = editor && linkOf(editor.document);
+    if (!link) return;
+    const file = editor.document.fileName;
+    const judge = judges.get(link.judge);
+    const problem = { id: link.id, url: link.url };
+    try {
+      const id = await judge.submit(problem, { language: ws.langOf(file), source: editor.document.getText() });
+      if (id) await submission.watch(judge, problem, id, file);
+    } catch (err) {
+      if (!(err instanceof vscode.CancellationError)) vscode.window.showErrorMessage(t('Could not submit {0}: {1}', path.basename(file), err.message));
+    }
   };
 
   const open = async (judge, found) => {
@@ -28,8 +57,9 @@ function create(createProblem, refresh) {
         fs.writeFileSync(input, test.input);
         fs.writeFileSync(path.join(dir, `${index + 1}.answer`), test.answer);
       });
-      fs.writeFileSync(path.join(dir, ws.LINK), `${JSON.stringify({ judge: judge.id, ...problem.link }, null, 2)}\n`);
+      fs.writeFileSync(path.join(dir, ws.LINK), `${JSON.stringify({ judge: judge.id, id: String(found.id), url: problem.url }, null, 2)}\n`);
       refresh();
+      mark();
     } catch (err) {
       vscode.window.showErrorMessage(t('Could not open the problem: {0}', err.message));
     }
@@ -84,7 +114,7 @@ function create(createProblem, refresh) {
     look();
   };
 
-  return { register, find };
+  return { register, find, submit, mark };
 }
 
 module.exports = { create };

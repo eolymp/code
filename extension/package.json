@@ -28,6 +28,11 @@
           "id": "eolympCode",
           "title": "%view.eolympCode%",
           "icon": "$(terminal)"
+        },
+        {
+          "id": "eolympCodeSubmission",
+          "title": "%view.submission%",
+          "icon": "$(cloud-upload)"
         }
       ],
       "activitybar": [
@@ -50,6 +55,14 @@
         {
           "id": "eolympCode.problems",
           "name": "%view.problems%"
+        }
+      ],
+      "eolympCodeSubmission": [
+        {
+          "type": "webview",
+          "id": "eolympCode.submission",
+          "name": "%view.submission%",
+          "when": "eolympCode.submitted"
         }
       ]
     },
@@ -165,6 +178,38 @@
         "command": "eolympCode.runTest",
         "title": "%command.runTest%",
         "icon": "$(play)"
+      },
+      {
+        "command": "eolympCode.submit",
+        "title": "%command.submit%",
+        "category": "Eolymp Code",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "eolympCode.openSubmission",
+        "title": "%command.openSubmission%",
+        "category": "Eolymp Code",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "eolympCode.consoleEndInput",
+        "title": "%command.consoleEndInput%",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "eolympCode.consoleDebug",
+        "title": "%command.debug%",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "eolympCode.consoleRerun",
+        "title": "%command.consoleRerun%",
+        "icon": "$(debug-rerun)"
+      },
+      {
+        "command": "eolympCode.consoleStop",
+        "title": "%command.stop%",
+        "icon": "$(debug-stop)"
       }
     ],
     "menus": {
@@ -198,6 +243,11 @@
           "command": "eolympCode.debug",
           "group": "navigation@1",
           "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !eolympCode.running && !inDebugMode"
+        },
+        {
+          "command": "eolympCode.submit",
+          "group": "navigation@3",
+          "when": "eolympCode.linked && (resourceLangId == cpp || resourceLangId == python)"
         }
       ],
       "view/title": [
@@ -210,6 +260,31 @@
           "command": "eolympCode.newProblem",
           "group": "navigation",
           "when": "view == eolympCode.problems"
+        },
+        {
+          "command": "eolympCode.openSubmission",
+          "group": "navigation",
+          "when": "view == eolympCode.submission"
+        },
+        {
+          "command": "eolympCode.consoleEndInput",
+          "group": "navigation@1",
+          "when": "view == eolympCode.tests && eolympCode.console.typing"
+        },
+        {
+          "command": "eolympCode.consoleDebug",
+          "group": "navigation@2",
+          "when": "view == eolympCode.tests && eolympCode.console.debug"
+        },
+        {
+          "command": "eolympCode.consoleRerun",
+          "group": "navigation@3",
+          "when": "view == eolympCode.tests && eolympCode.console.idle"
+        },
+        {
+          "command": "eolympCode.consoleStop",
+          "group": "navigation@3",
+          "when": "view == eolympCode.tests && eolympCode.console.busy"
         }
       ],
       "view/item/context": [
@@ -659,6 +734,30 @@
         {
           "command": "lldb.excludedCallers.removeAll",
           "when": "false"
+        },
+        {
+          "command": "eolympCode.submit",
+          "when": "eolympCode.linked"
+        },
+        {
+          "command": "eolympCode.openSubmission",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.consoleEndInput",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.consoleDebug",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.consoleRerun",
+          "when": "false"
+        },
+        {
+          "command": "eolympCode.consoleStop",
+          "when": "false"
         }
       ],
       "webview/context": [
@@ -782,6 +881,11 @@
         "key": "ctrl+v",
         "mac": "cmd+v",
         "when": "focusedView == eolympCode.problems && listFocus && !inputFocus"
+      },
+      {
+        "command": "eolympCode.submit",
+        "key": "f7",
+        "when": "!inDebugMode && eolympCode.linked && (editorTextFocus || focusedView == eolympCode.tests || focusedView == eolympCode.submission)"
       }
     ],
     "configuration": {

@@ -5,5 +5,6 @@
   "{0}% accepted": "{0} % acceptés",
   "Could not end the session on Eolymp: {0}": "Impossible de fermer la session sur Eolymp : {0}",
   "You are not signed in": "Tu n'es pas connecté",
-  "You can close this page and try again in Eolymp Code.": "Tu peux fermer cette page et réessayer dans Eolymp Code."
+  "You can close this page and try again in Eolymp Code.": "Tu peux fermer cette page et réessayer dans Eolymp Code.",
+  "Language to submit in": "Langage de la soumission"
 }

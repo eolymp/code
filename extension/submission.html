@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-{{nonce}}'; font-src {{source}}; script-src 'nonce-{{nonce}}';">
+<style nonce="{{nonce}}">
+  @font-face { font-family: codicon; src: url('{{font}}') format('truetype'); }
+  body { padding: 0 0 4px; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); }
+  summary:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+  .row, summary { display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 16px 0 8px; white-space: nowrap; }
+  summary, details .row { cursor: pointer; }
+  summary:hover, details .row:hover { background: var(--vscode-list-hoverBackground); }
+  summary { list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  .twist { flex: 0 0 16px; font: 16px/1 codicon; color: var(--vscode-icon-foreground); }
+  .twist.dot { opacity: 0.6; }
+  details .row { padding-left: 38px; cursor: default; }
+  .kids details > summary { padding-left: 16px; }
+  .kids .kids::before { left: 23px; }
+  .kids .kids .row { padding-left: 46px; }
+  .kids { position: relative; }
+  .kids::before { content: ''; position: absolute; top: 0; bottom: 0; left: 15px; border-left: 1px solid var(--vscode-tree-indentGuidesStroke); pointer-events: none; }
+  .mark { flex: 0 0 16px; font: 16px/1 codicon; -webkit-font-smoothing: antialiased; text-align: center; color: var(--vscode-descriptionForeground); }
+  .mark.ok { color: var(--vscode-testing-iconPassed); }
+  .mark.bad { color: var(--vscode-testing-iconFailed); }
+  .mark.warn { color: var(--vscode-list-warningForeground); }
+  .mark.busy { animation: spin 1.5s steps(30) infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .note { flex: 1 1 auto; min-width: 0; font-size: 0.9em; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; }
+  .cell { flex: 0 0 68px; text-align: right; font-size: 0.9em; font-variant-numeric: tabular-nums; opacity: 0.7; }
+  #head { height: 26px; padding-left: 8px; }
+  #head .title { font-weight: 600; }
+  #caption { display: flex; align-items: center; gap: 0; white-space: pre; box-sizing: border-box; height: 34px; margin-bottom: 4px; padding: 0 16px 0 8px; border-bottom: 1px solid var(--vscode-widget-border, color-mix(in srgb, var(--vscode-foreground) 12%, transparent)); }
+  #caption a { font-weight: 600; color: inherit; text-decoration: none; cursor: pointer; }
+  #caption a:hover { text-decoration: underline; }
+  a:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+  pre { font-family: var(--vscode-terminal-font-family, var(--vscode-editor-font-family)); font-size: var(--vscode-editor-font-size); line-height: 1.5; max-height: 240px; margin: 0; padding: 4px 16px 8px 30px; overflow: auto; white-space: pre; user-select: text; color: var(--vscode-terminal-ansiRed); }
+</style>
+</head>
+<body>
+<div id="caption"></div>
+<div id="head" class="row"></div>
+<div id="tree"></div>
+<script nonce="{{nonce}}">
+  const vscode = acquireVsCodeApi();
+  const ICONS = { ok: 0xeba4, bad: 0xea87, warn: 0xea6c, busy: 0xeb19, none: 0xeb8a };
+  const el = (id) => document.getElementById(id);
+  const make = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  const mark = (row, still) => {
+    const kind = still && row.kind === 'busy' ? 'none' : row.kind;
+    const span = make('span', `mark ${kind}`, String.fromCharCode(ICONS[kind]));
+    span.style.animationDelay = `-${Date.now() % 1500}ms`;
+    return span;
+  };
+  const parts = (row, still) => [mark(row, still), make('span', 'title', row.title), make('span', 'note', row.verdict), make('span', 'cell', row.score), make('span', 'cell', row.time), make('span', 'cell', row.memory)];
+  const folded = {};
+  let last = '';
+  window.addEventListener('message', ({ data }) => {
+    if (data.id !== last) for (const key of Object.keys(folded)) delete folded[key];
+    last = data.id;
+    const name = make('a', '', data.name);
+    name.href = '#';
+    name.onclick = (event) => { event.preventDefault(); vscode.postMessage({ type: 'open' }); };
+    el('caption').replaceChildren(make('span', '', data.caption[0]), name, make('span', '', data.caption[1] || ''));
+    el('head').replaceChildren(mark(data), make('span', 'title', data.verdict), make('span', 'note'), make('span', 'cell', data.score), make('span', 'cell', data.time), make('span', 'cell', data.memory));
+    const render = (row, path) => {
+      if (!row.rows.length && path.length > 1) {
+        const leaf = make('div', 'row');
+        leaf.append(...parts(row, true));
+        return leaf;
+      }
+      const key = path.join('/');
+      const details = make('details');
+      details.open = key in folded ? !folded[key] : row.kind !== 'ok' || data.rows.length === 1;
+      const twist = make('span', row.rows.length ? 'twist' : 'twist dot', String.fromCharCode(!row.rows.length ? 0xeb8a : details.open ? 0xeab4 : 0xeab6));
+      details.ontoggle = () => {
+        folded[key] = !details.open;
+        if (row.rows.length) twist.textContent = String.fromCharCode(details.open ? 0xeab4 : 0xeab6);
+      };
+      const summary = make('summary');
+      if (!row.rows.length) summary.onclick = (event) => event.preventDefault();
+      summary.append(twist, ...parts(row, !row.rows.length));
+      const kids = make('div', 'kids');
+      kids.append(...row.rows.map((child, index) => render(child, [...path, index])));
+      details.append(summary, kids);
+      return details;
+    };
+    const rows = [];
+    if (data.message) rows.push(make('pre', '', data.message));
+    rows.push(...data.rows.map((row, index) => render(row, [index])));
+    el('tree').replaceChildren(...rows);
+  });
+  vscode.postMessage({ type: 'ready' });
+</script>
+</body>
+</html>

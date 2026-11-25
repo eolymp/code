@@ -3,8 +3,39 @@ const api = require('./api');
 
 const t = vscode.l10n.t;
 const FAMILIES = { cpp: 'cpp', py: 'python' };
+const RUNNING = ['PENDING', 'PROVISIONING', 'INITIALIZING', 'TESTING'];
+const VERDICTS = {
+  ACCEPTED: 'accepted',
+  WRONG_ANSWER: 'wrong-answer',
+  TIME_LIMIT_EXCEEDED: 'time-limit',
+  CPU_EXHAUSTED: 'time-limit',
+  MEMORY_OVERFLOW: 'memory-limit',
+  RUNTIME_ERROR: 'runtime-error',
+  IDLENESS_LIMIT_EXCEEDED: 'idleness-limit',
+  PARTIALLY_CORRECT: 'partial',
+};
 
-function create(account) {
+function verdictOf(item) {
+  if (item.status === 'PENDING') return 'waiting';
+  if (RUNNING.includes(item.status)) return 'testing';
+  if (item.status === 'ERROR') return 'compilation-error';
+  if (item.status === 'SKIPPED' || item.status === 'BLOCKED') return 'skipped';
+  return (item.status === 'COMPLETE' && VERDICTS[item.verdict]) || 'failed';
+}
+
+function resultOf(item) {
+  const judged = item.status === 'COMPLETE';
+  return {
+    index: item.index,
+    verdict: verdictOf(item),
+    score: item.score || 0,
+    maxScore: item.cost || 0,
+    time: judged ? item.timeUsage || 0 : undefined,
+    memory: judged ? Number(item.memoryUsage) || 0 : undefined,
+  };
+}
+
+function create(account, memory) {
   const locale = () => vscode.env.language.slice(0, 2);
   const get = async (route, input) => {
     const token = await account.token();
@@ -33,10 +64,45 @@ function create(account) {
       const template = items.find((item) => typeof item.source === 'string' && String(item.runtime).startsWith(`${family}:`));
       if (template) templates[lang] = template.source.replace(/\r\n/g, '\n');
     }
-    return { name: `${problem.number} ${problem.title}`, tests, templates, link: { id: problem.id, url: problem.spaceLink } };
+    return { name: `${problem.number} ${problem.title}`, url: problem.spaceLink, tests, templates };
   };
 
-  return { id: 'eolymp', label: 'Eolymp', search, load };
+  const submit = async (problem, { language, source }) => {
+    const token = await account.token(true);
+    const family = FAMILIES[language];
+    const { items = [] } = await api.get(token, `/problems/${problem.id}/runtime`);
+    const offered = items.filter((r) => r.lang === family);
+    let runtime = offered.find((r) => r.id === memory.get(`runtime:${family}`)) || (offered.length < 2 ? offered[0] : undefined);
+    if (!runtime) {
+      const picked = await vscode.window.showQuickPick(offered.map((r) => ({ label: r.name, runtime: r })), { placeHolder: t('Language to submit in') });
+      if (!picked) return undefined;
+      runtime = picked.runtime;
+      await memory.update(`runtime:${family}`, runtime.id);
+    }
+    const created = await api.post(token, '/submissions', { problemId: problem.id, lang: runtime.id, source });
+    return created.submissionId;
+  };
+
+  const watch = async (problem, id, update, signal) => {
+    const token = await account.token();
+    for await (const { submission } of await api.stream(token, `/submissions/${id}/watch`, { extra: ['GROUPS', 'RUNS'] }, signal)) {
+      const done = !RUNNING.includes(submission.status);
+      update({
+        ...resultOf(submission),
+        id: submission.id,
+        label: `#${submission.id.slice(0, 8).toUpperCase()}`,
+        url: submission.spaceLink || problem.url,
+        message: submission.error || (done && submission.errorUrl ? await api.text(submission.errorUrl) : ''),
+        children: (submission.groups || []).map((group) => ({
+          ...resultOf(group),
+          kind: 'testset',
+          children: (group.runs || []).map((run) => ({ ...resultOf(run), kind: 'test' })),
+        })),
+      });
+    }
+  };
+
+  return { id: 'eolymp', label: 'Eolymp', search, load, submit, watch };
 }
 
 module.exports = { create };

@@ -102,8 +102,8 @@ async function create(context) {
   };
 
   const offer = () => vscode.authentication.getSession(ID, [], { createIfNone: false }).then(undefined, () => {});
-  const token = async () => {
-    const session = await vscode.authentication.getSession(ID, [], { silent: true });
+  const token = async (create) => {
+    const session = await vscode.authentication.getSession(ID, [], create ? { createIfNone: true } : { silent: true });
     return session && session.accessToken;
   };
 
