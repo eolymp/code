@@ -37,8 +37,7 @@ function examine(root) {
   const completion = checks.find((c) => c.id === 'llvm-vs-code-extensions.vscode-clangd');
   if (completion.ok && !served) Object.assign(completion, { ok: false, detail: t('clangd was not found') });
   const debugging = checks.find((c) => c.id === 'vadimcn.vscode-lldb');
-  const server = vscode.workspace.getConfiguration('lldb').get('server');
-  if (process.platform === 'darwin' && debugging.ok && !(server && fs.existsSync(server))) Object.assign(debugging, { ok: false, detail: t('debugserver was not found'), fix: 'debugger' });
+  if (process.platform === 'darwin' && debugging.ok && !toolset.debugserver()) Object.assign(debugging, { ok: false, detail: t('debugserver was not found') });
   return checks;
 }
 
