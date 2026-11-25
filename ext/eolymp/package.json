@@ -1,6 +1,6 @@
 {
-  "name": "eolymp-code-eolymp",
-  "displayName": "Eolymp",
+  "name": "judge",
+  "displayName": "Eolymp Judge",
   "description": "%description%",
   "version": "0.1.0",
   "publisher": "eolymp",
@@ -18,7 +18,7 @@
     "onStartupFinished"
   ],
   "extensionDependencies": [
-    "eolymp.eolymp-code"
+    "eolymp.cp"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -29,9 +29,9 @@
       }
     ],
     "configuration": {
-      "title": "Eolymp",
+      "title": "Eolymp Judge",
       "properties": {
-        "eolymp.runtimes": {
+        "judge.runtimes": {
           "type": "object",
           "description": "%setting.runtimes%",
           "default": {

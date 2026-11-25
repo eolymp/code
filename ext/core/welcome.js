@@ -11,7 +11,7 @@ function create(context, setup, done) {
 
   const show = () => {
     if (panel) { panel.reveal(); return; }
-    const settings = vscode.workspace.getConfiguration('eolympCode');
+    const settings = vscode.workspace.getConfiguration('cp');
     const current = LOCALES.some((item) => item.id === vscode.env.language) ? vscode.env.language : 'en';
     const strings = (locale) => {
       const file = path.join(__dirname, 'l10n', `bundle.l10n.${locale}.json`);
@@ -25,7 +25,7 @@ function create(context, setup, done) {
     let finished = false;
     let finishing = false;
     let cancelled = false;
-    const dialog = vscode.window.createWebviewPanel('eolympCode.welcome', state.strings.Welcome || 'Welcome', MODAL, { enableScripts: true, retainContextWhenHidden: true });
+    const dialog = vscode.window.createWebviewPanel('core.welcome', state.strings.Welcome || 'Welcome', MODAL, { enableScripts: true, retainContextWhenHidden: true });
     panel = dialog;
     const post = () => { if (panel === dialog) dialog.webview.postMessage(state); };
     const watching = setup.watch((text, fraction, source) => {
@@ -71,7 +71,7 @@ function create(context, setup, done) {
         await context.globalState.update('onboarded', true);
         let restarting = false;
         for (let tries = 0; state.locale !== current && !restarting && tries < 10; tries += 1) {
-          restarting = await vscode.commands.executeCommand('eolympCode.setLocale', state.locale).then(() => true, () => false);
+          restarting = await vscode.commands.executeCommand('core.setLocale', state.locale).then(() => true, () => false);
           if (!restarting) await new Promise((resolve) => setTimeout(resolve, 500));
         }
         finishing = false;

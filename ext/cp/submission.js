@@ -67,8 +67,8 @@ async function watch(judge, link, id, file) {
   watching = mine;
   shown = { submission: { id, verdict: 'waiting' }, name, file, judge: judge.label };
   post();
-  await vscode.commands.executeCommand('setContext', 'eolympCode.submitted', true);
-  await vscode.commands.executeCommand('eolympCode.submission.focus');
+  await vscode.commands.executeCommand('setContext', 'cp.submitted', true);
+  await vscode.commands.executeCommand('cp.submission.focus');
   try {
     await judge.watch(link, id, (submission) => {
       if (mine.signal.aborted) return;
@@ -82,10 +82,10 @@ async function watch(judge, link, id, file) {
 
 function register(context) {
   context.subscriptions.push(
-    vscode.commands.registerCommand('eolympCode.openSubmission', () => {
+    vscode.commands.registerCommand('cp.openSubmission', () => {
       if (shown && shown.submission.url) vscode.env.openExternal(vscode.Uri.parse(shown.submission.url));
     }),
-    vscode.window.registerWebviewViewProvider('eolympCode.submission', {
+    vscode.window.registerWebviewViewProvider('cp.submission', {
       resolveWebviewView(v) {
         view = v;
         const nonce = crypto.randomBytes(16).toString('base64');

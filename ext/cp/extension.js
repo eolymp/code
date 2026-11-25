@@ -38,7 +38,7 @@ let launched = 0;
 const launches = new Map();
 
 function config() {
-  return vscode.workspace.getConfiguration('eolympCode');
+  return vscode.workspace.getConfiguration('cp');
 }
 
 function root() {
@@ -108,7 +108,7 @@ function shortName(command) {
 
 function build(s, debug) {
   const built = building.then(async () => {
-    const providers = vscode.extensions.all.filter((extension) => extension.packageJSON.eolympCode && extension.packageJSON.eolympCode.toolchain);
+    const providers = vscode.extensions.all.filter((extension) => extension.packageJSON.cp && extension.packageJSON.cp.toolchain);
     await Promise.allSettled(providers.map((extension) => extension.activate()));
     return compile(s, debug);
   }).catch((err) => ({ ok: false, command: '', args: [], compile: '', log: t('Could not build: {0}', err.message), run: '' }));
@@ -181,7 +181,7 @@ function refresh() {
 }
 
 function setBusy() {
-  vscode.commands.executeCommand('setContext', 'eolympCode.running', Boolean(testing || (active && active.state !== 'finished')));
+  vscode.commands.executeCommand('setContext', 'cp.running', Boolean(testing || (active && active.state !== 'finished')));
 }
 
 function stopActive() {
@@ -231,7 +231,7 @@ async function prepare(from, missing) {
     await stopActive();
     target = s;
     used.set(s.dir, s.file);
-    await vscode.commands.executeCommand('eolympCode.tests.focus');
+    await vscode.commands.executeCommand('cp.tests.focus');
   } finally {
     starting = false;
   }
@@ -429,7 +429,7 @@ async function debugWith(node, input) {
   const state = stateOf(s.file);
   const token = ++launched;
   const typing = input.test === undefined && input.typed === undefined;
-  const pipe = process.platform === 'win32' ? `\\\\.\\pipe\\eolymp-code-${process.pid}-${token}` : path.join(s.outDir, `debug-${token}.in`);
+  const pipe = process.platform === 'win32' ? `\\\\.\\pipe\\cp-${process.pid}-${token}` : path.join(s.outDir, `debug-${token}.in`);
   const stdin = typing ? pipe : input.test === undefined ? path.join(s.outDir, 'run.in') : path.join(s.dir, `${input.test}.in`);
   const uri = vscode.Uri.file(s.file);
   let ended;
@@ -517,7 +517,7 @@ async function debugWith(node, input) {
     const quoted = (text) => `"${text.replace(/[\\"]/g, '\\$&')}"`;
     const env = toolEnv();
     const added = Object.keys(env).filter((key) => env[key] !== process.env[key]);
-    const common = { request: 'launch', name: input.test === undefined ? t('Run') : t('Test {0}', input.test), cwd: s.dir, internalConsoleOptions: 'neverOpen', eolympCode: token };
+    const common = { request: 'launch', name: input.test === undefined ? t('Run') : t('Test {0}', input.test), cwd: s.dir, internalConsoleOptions: 'neverOpen', cp: token };
     mine.halt = () => {
       mine.stopped = true;
       if (mine.session) vscode.debug.stopDebugging(mine.session);
@@ -764,7 +764,7 @@ function copy(node, nodes, cut) {
   const items = picked.filter((n) => !cut || n.kind !== 'problem');
   if (!items.length) return;
   clip = { items, cut };
-  vscode.commands.executeCommand('setContext', 'eolympCode.canPaste', true);
+  vscode.commands.executeCommand('setContext', 'cp.canPaste', true);
 }
 
 async function paste(node) {
@@ -815,7 +815,7 @@ async function paste(node) {
   await vscode.workspace.applyEdit(edit);
   if (clip.cut) {
     clip = undefined;
-    vscode.commands.executeCommand('setContext', 'eolympCode.canPaste', false);
+    vscode.commands.executeCommand('setContext', 'cp.canPaste', false);
   }
   refresh();
 }
@@ -927,7 +927,7 @@ const tree = {
       const item = new vscode.TreeItem(testName(node.id), vscode.TreeItemCollapsibleState.Collapsed);
       item.id = `${node.dir}#${node.id}`;
       item.iconPath = { dark: vscode.Uri.file(path.join(__dirname, 'test-dark.svg')), light: vscode.Uri.file(path.join(__dirname, 'test-light.svg')) };
-      item.command = { command: 'eolympCode.openTest', title: 'Open', arguments: [node] };
+      item.command = { command: 'cp.openTest', title: 'Open', arguments: [node] };
       item.contextValue = 'test';
       return item;
     }
@@ -954,10 +954,10 @@ function receive(m) {
   if (m.type === 'ready') flush();
   if (m.type === 'tools') {
     tools = m;
-    vscode.commands.executeCommand('setContext', 'eolympCode.console.idle', !m.hidden && !m.busy);
-    vscode.commands.executeCommand('setContext', 'eolympCode.console.busy', !m.hidden && m.busy);
-    vscode.commands.executeCommand('setContext', 'eolympCode.console.typing', !m.hidden && m.typing);
-    vscode.commands.executeCommand('setContext', 'eolympCode.console.debug', !m.hidden && m.debug);
+    vscode.commands.executeCommand('setContext', 'cp.console.idle', !m.hidden && !m.busy);
+    vscode.commands.executeCommand('setContext', 'cp.console.busy', !m.hidden && m.busy);
+    vscode.commands.executeCommand('setContext', 'cp.console.typing', !m.hidden && m.typing);
+    vscode.commands.executeCommand('setContext', 'cp.console.debug', !m.hidden && m.debug);
   }
   const shown = target && { kind: 'solution', file: target.file };
   if (m.type === 'run') runTests(shown);
@@ -991,7 +991,7 @@ function receive(m) {
 }
 
 function activate(context) {
-  problems = vscode.window.createTreeView('eolympCode.problems', { treeDataProvider: tree, canSelectMany: true, showCollapseAll: true });
+  problems = vscode.window.createTreeView('cp.problems', { treeDataProvider: tree, canSelectMany: true, showCollapseAll: true });
   if (root() && path.basename(root()) !== 'practice') problems.description = path.basename(root());
   let settle;
   const later = () => {
@@ -1017,7 +1017,7 @@ function activate(context) {
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterTrackerFactory('*', {
       createDebugAdapterTracker(session) {
-        const mine = launches.get(session.configuration.eolympCode);
+        const mine = launches.get(session.configuration.cp);
         if (!mine || session.parentSession) return undefined;
         return {
           onWillReceiveMessage: (m) => { if ((m.command === 'disconnect' || m.command === 'terminate') && mine.code === undefined) mine.stopped = true; },
@@ -1035,18 +1035,18 @@ function activate(context) {
       },
     }),
     vscode.debug.onDidStartDebugSession((session) => {
-      const mine = launches.get(session.configuration.eolympCode);
+      const mine = launches.get(session.configuration.cp);
       if (!mine || session.parentSession) return;
       mine.session = session;
       if (mine.stopped) vscode.debug.stopDebugging(session);
     }),
     vscode.debug.onDidTerminateDebugSession((session) => {
-      const mine = launches.get(session.configuration.eolympCode);
+      const mine = launches.get(session.configuration.cp);
       if (mine && !session.parentSession) mine.finish();
     }),
     problems,
     watcher,
-    vscode.window.registerWebviewViewProvider('eolympCode.tests', {
+    vscode.window.registerWebviewViewProvider('cp.tests', {
       resolveWebviewView(v) {
         view = v;
         v.webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.file(__dirname)] };
@@ -1055,11 +1055,11 @@ function activate(context) {
         v.webview.onDidReceiveMessage(receive);
       },
     }, { webviewOptions: { retainContextWhenHidden: true } }),
-    ...Object.entries(testCommands).map(([name, action]) => vscode.commands.registerCommand(`eolympCode.${name}`, (item) => {
+    ...Object.entries(testCommands).map(([name, action]) => vscode.commands.registerCommand(`cp.${name}`, (item) => {
       if (item && item.kind === 'test') action(item.id, item.dir);
       else if (target && item && item.test) action(String(item.test), target.dir);
     })),
-    ...Object.entries(commands).map(([name, action]) => vscode.commands.registerCommand(`eolympCode.${name}`, action)),
+    ...Object.entries(commands).map(([name, action]) => vscode.commands.registerCommand(`cp.${name}`, action)),
     problems.onDidChangeVisibility(() => show(vscode.window.activeTextEditor)),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       judges.mark();

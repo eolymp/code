@@ -1,7 +1,7 @@
 {
   "description": "Resuelve problemas de programación competitiva: lista de problemas, pruebas con respuestas guardadas, ejecución y depuración con una prueba.",
-  "view.eolympCode": "Consola",
-  "view.eolympCodeSidebar": "Práctica",
+  "view.cp": "Consola",
+  "view.cpSidebar": "Práctica",
   "view.tests": "Consola",
   "view.problems": "Práctica",
   "command.run": "Ejecutar",
@@ -20,7 +20,7 @@
   "command.renameTest": "Cambiar nombre",
   "command.newFile": "Nuevo archivo",
   "command.stop": "Detener",
-  "welcome.0": "Todavía no hay ningún problema aquí.\n[Nuevo problema](command:eolympCode.newProblem)",
+  "welcome.0": "Todavía no hay ningún problema aquí.\n[Nuevo problema](command:cp.newProblem)",
   "welcome.1": "Abre una carpeta para guardar tus soluciones.\n[Abrir carpeta](command:vscode.openFolder)",
   "setting.cxx": "Compilador de C++.",
   "setting.cxxFlags": "Opciones del compilador para ejecutar y probar.",

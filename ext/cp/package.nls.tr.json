@@ -1,7 +1,7 @@
 {
   "description": "Yarışmalı programlama problemlerini çöz: problem listesi, kayıtlı cevaplı testler ve bir test üzerinde Çalıştır ile Hata Ayıkla.",
-  "view.eolympCode": "Konsol",
-  "view.eolympCodeSidebar": "Alıştırma",
+  "view.cp": "Konsol",
+  "view.cpSidebar": "Alıştırma",
   "view.tests": "Konsol",
   "view.problems": "Alıştırma",
   "command.run": "Çalıştır",
@@ -20,7 +20,7 @@
   "command.renameTest": "Yeniden Adlandır",
   "command.newFile": "Yeni Dosya",
   "command.stop": "Durdur",
-  "welcome.0": "Burada henüz çözülen bir problem yok.\n[Yeni Problem Çalışma Alanı](command:eolympCode.newProblem)",
+  "welcome.0": "Burada henüz çözülen bir problem yok.\n[Yeni Problem Çalışma Alanı](command:cp.newProblem)",
   "welcome.1": "Çözümlerini saklamak için bir klasör aç.\n[Klasör Aç](command:vscode.openFolder)",
   "setting.cxx": "C++ derleyicisi.",
   "setting.cxxFlags": "Testleri çalıştırmak için bayraklar.",

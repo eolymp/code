@@ -34,7 +34,7 @@ function measures(python) {
 
 async function measured(python, command, args) {
   if (!await measures(python) || stopped) return { command, args, finish: (result) => result };
-  if (!folder) folder = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-'));
+  if (!folder) folder = fs.mkdtempSync(path.join(os.tmpdir(), 'cp-'));
   const stats = path.join(folder, `${counter += 1}.json`);
   const finish = (result) => {
     let found;

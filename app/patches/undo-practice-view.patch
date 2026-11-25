@@ -22,7 +22,7 @@
 +
 +UndoCommand.addImplementation(110, 'eolymp-practice', accessor => {
 +	const undoRedoService = accessor.get(IUndoRedoService);
-+	if (FocusedViewContext.getValue(accessor.get(IContextKeyService)) !== 'eolympCode.problems' || !undoRedoService.canUndo(FILE_EDITS)) {
++	if (FocusedViewContext.getValue(accessor.get(IContextKeyService)) !== 'cp.problems' || !undoRedoService.canUndo(FILE_EDITS)) {
 +		return false;
 +	}
 +	undoRedoService.undo(FILE_EDITS);
@@ -31,7 +31,7 @@
 +
 +RedoCommand.addImplementation(110, 'eolymp-practice', accessor => {
 +	const undoRedoService = accessor.get(IUndoRedoService);
-+	if (FocusedViewContext.getValue(accessor.get(IContextKeyService)) !== 'eolympCode.problems' || !undoRedoService.canRedo(FILE_EDITS)) {
++	if (FocusedViewContext.getValue(accessor.get(IContextKeyService)) !== 'cp.problems' || !undoRedoService.canRedo(FILE_EDITS)) {
 +		return false;
 +	}
 +	undoRedoService.redo(FILE_EDITS);

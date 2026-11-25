@@ -1,7 +1,7 @@
 {
   "description": "Risolvi problemi di programmazione competitiva: un elenco di problemi, test con risposte salvate, ed Esegui e Debug su un test.",
-  "view.eolympCode": "Console",
-  "view.eolympCodeSidebar": "Esercizio",
+  "view.cp": "Console",
+  "view.cpSidebar": "Esercizio",
   "view.tests": "Console",
   "view.problems": "Esercizio",
   "command.run": "Esegui",
@@ -20,7 +20,7 @@
   "command.renameTest": "Rinomina",
   "command.newFile": "Nuovo file",
   "command.stop": "Arresta",
-  "welcome.0": "Qui non si sta ancora risolvendo nessun problema.\n[Nuovo spazio di lavoro per problema](command:eolympCode.newProblem)",
+  "welcome.0": "Qui non si sta ancora risolvendo nessun problema.\n[Nuovo spazio di lavoro per problema](command:cp.newProblem)",
   "welcome.1": "Apri una cartella dove tenere le tue soluzioni.\n[Apri cartella](command:vscode.openFolder)",
   "setting.cxx": "Compilatore C++.",
   "setting.cxxFlags": "Opzioni per l'esecuzione dei test.",

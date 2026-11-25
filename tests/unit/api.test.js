@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const api = require('../../eolymp/api');
+const api = require('../../ext/eolymp/api');
 
 test('a problem link gives the problem number', () => {
   assert.equal(api.numberIn('https://eolymp.com/problems/1'), 1);

@@ -1,6 +1,6 @@
 [
   { "id": "en" },
-  { "id": "uk", "pack": "eolymp.vscode-language-pack-uk" },
+  { "id": "uk", "pack": "eolymp.uk" },
   { "id": "es", "pack": "MS-CEINTL.vscode-language-pack-es" },
   { "id": "de", "pack": "MS-CEINTL.vscode-language-pack-de" },
   { "id": "fr", "pack": "MS-CEINTL.vscode-language-pack-fr" },

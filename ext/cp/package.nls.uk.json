@@ -1,7 +1,7 @@
 {
   "description": "Розв'язуйте задачі зі спортивного програмування: список задач, тести зі збереженими відповідями, запуск і налагодження на тесті.",
-  "view.eolympCode": "Консоль",
-  "view.eolympCodeSidebar": "Практика",
+  "view.cp": "Консоль",
+  "view.cpSidebar": "Практика",
   "view.tests": "Консоль",
   "view.problems": "Практика",
   "command.run": "Запустити",
@@ -20,7 +20,7 @@
   "command.renameTest": "Перейменувати",
   "command.newFile": "Новий файл",
   "command.stop": "Зупинити",
-  "welcome.0": "Тут ще немає жодної задачі.\n[Нова задача](command:eolympCode.newProblem)",
+  "welcome.0": "Тут ще немає жодної задачі.\n[Нова задача](command:cp.newProblem)",
   "welcome.1": "Відкрийте папку, у якій зберігатимуться ваші розв'язки.\n[Відкрити папку](command:vscode.openFolder)",
   "setting.cxx": "Компілятор C++.",
   "setting.cxxFlags": "Прапорці компілятора для запуску й тестів.",

@@ -1,6 +1,6 @@
 {
-  "name": "eolymp-code-setup",
-  "displayName": "Eolymp Code Setup",
+  "name": "core",
+  "displayName": "Eolymp Core",
   "description": "%description%",
   "version": "0.1.0",
   "publisher": "eolymp",
@@ -18,21 +18,21 @@
     "onStartupFinished"
   ],
   "extensionDependencies": [
-    "eolymp.eolymp-code"
+    "eolymp.cp"
   ],
-  "eolympCode": {
+  "cp": {
     "toolchain": true
   },
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "eolympCode.checkSetup",
+        "command": "core.checkSetup",
         "title": "%command.checkSetup%",
         "category": "Eolymp Code"
       },
       {
-        "command": "eolympCode.welcome",
+        "command": "core.welcome",
         "title": "%command.welcome%",
         "category": "Eolymp Code"
       }

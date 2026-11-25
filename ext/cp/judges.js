@@ -17,16 +17,16 @@ function create(createProblem, refresh) {
 
   const mark = () => {
     const editor = vscode.window.activeTextEditor;
-    vscode.commands.executeCommand('setContext', 'eolympCode.linked', Boolean(editor && linkOf(editor.document)));
+    vscode.commands.executeCommand('setContext', 'cp.linked', Boolean(editor && linkOf(editor.document)));
   };
 
   const register = (judge) => {
     judges.set(judge.id, judge);
-    vscode.commands.executeCommand('setContext', 'eolympCode.hasJudges', true);
+    vscode.commands.executeCommand('setContext', 'cp.hasJudges', true);
     mark();
     return new vscode.Disposable(() => {
       judges.delete(judge.id);
-      vscode.commands.executeCommand('setContext', 'eolympCode.hasJudges', judges.size > 0);
+      vscode.commands.executeCommand('setContext', 'cp.hasJudges', judges.size > 0);
       mark();
     });
   };

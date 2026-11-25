@@ -42,11 +42,11 @@
   ],
   "trustedExtensionAuthAccess": {
     "eolymp": [
-      "eolymp.eolymp-code-eolymp"
+      "eolymp.judge"
     ]
   },
   "extensionEnabledApiProposals": {
-    "eolymp.eolymp-code": [
+    "eolymp.cp": [
       "treeViewActiveItem"
     ]
   },

@@ -1,7 +1,7 @@
 {
   "description": "Résous des problèmes de programmation compétitive : une liste de problèmes, des tests avec réponses enregistrées, et Exécuter et Déboguer sur un test.",
-  "view.eolympCode": "Console",
-  "view.eolympCodeSidebar": "Entraînement",
+  "view.cp": "Console",
+  "view.cpSidebar": "Entraînement",
   "view.tests": "Console",
   "view.problems": "Entraînement",
   "command.run": "Exécuter",
@@ -20,7 +20,7 @@
   "command.renameTest": "Renommer",
   "command.newFile": "Nouveau fichier",
   "command.stop": "Arrêter",
-  "welcome.0": "Aucun problème n'est résolu ici pour l'instant.\n[Nouvel espace de problème](command:eolympCode.newProblem)",
+  "welcome.0": "Aucun problème n'est résolu ici pour l'instant.\n[Nouvel espace de problème](command:cp.newProblem)",
   "welcome.1": "Ouvre un dossier pour y ranger tes solutions.\n[Ouvrir un dossier](command:vscode.openFolder)",
   "setting.cxx": "Compilateur C++.",
   "setting.cxxFlags": "Options pour l'exécution des tests.",

@@ -4,8 +4,8 @@ const judges = require('./judge');
 
 async function activate(context) {
   const account = await accounts.create(context);
-  const core = await vscode.extensions.getExtension('eolymp.eolymp-code').activate();
-  context.subscriptions.push(core.registerJudge(judges.create(account)));
+  const cp = await vscode.extensions.getExtension('eolymp.cp').activate();
+  context.subscriptions.push(cp.registerJudge(judges.create(account)));
 }
 
 module.exports = { activate };

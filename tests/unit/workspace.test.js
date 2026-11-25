@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const ws = require('../../extension/workspace');
+const ws = require('../../ext/cp/workspace');
 
 function folder(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'eolymp-code-unit-'));

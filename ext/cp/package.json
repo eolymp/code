@@ -1,6 +1,6 @@
 {
-  "name": "eolymp-code",
-  "displayName": "Eolymp Code",
+  "name": "cp",
+  "displayName": "Competitive Programming",
   "description": "%description%",
   "version": "0.1.0",
   "publisher": "eolymp",
@@ -25,189 +25,189 @@
     "viewsContainers": {
       "panel": [
         {
-          "id": "eolympCode",
-          "title": "%view.eolympCode%",
+          "id": "cp",
+          "title": "%view.cp%",
           "icon": "$(terminal)"
         },
         {
-          "id": "eolympCodeSubmission",
+          "id": "cpSubmission",
           "title": "%view.submission%",
           "icon": "$(cloud-upload)"
         }
       ],
       "activitybar": [
         {
-          "id": "eolympCodeSidebar",
-          "title": "%view.eolympCodeSidebar%",
+          "id": "cpSidebar",
+          "title": "%view.cpSidebar%",
           "icon": "$(symbol-event)"
         }
       ]
     },
     "views": {
-      "eolympCode": [
+      "cp": [
         {
           "type": "webview",
-          "id": "eolympCode.tests",
+          "id": "cp.tests",
           "name": "%view.tests%"
         }
       ],
-      "eolympCodeSidebar": [
+      "cpSidebar": [
         {
-          "id": "eolympCode.problems",
+          "id": "cp.problems",
           "name": "%view.problems%"
         }
       ],
-      "eolympCodeSubmission": [
+      "cpSubmission": [
         {
           "type": "webview",
-          "id": "eolympCode.submission",
+          "id": "cp.submission",
           "name": "%view.submission%",
-          "when": "eolympCode.submitted"
+          "when": "cp.submitted"
         }
       ]
     },
     "commands": [
       {
-        "command": "eolympCode.run",
+        "command": "cp.run",
         "title": "%command.run%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(play)"
       },
       {
-        "command": "eolympCode.runTests",
+        "command": "cp.runTests",
         "title": "%command.runTests%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(run-all)"
       },
       {
-        "command": "eolympCode.debug",
+        "command": "cp.debug",
         "title": "%command.debug%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(debug-alt)"
       },
       {
-        "command": "eolympCode.newProblem",
+        "command": "cp.newProblem",
         "title": "%command.newProblem%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(add)"
       },
       {
-        "command": "eolympCode.findProblem",
+        "command": "cp.findProblem",
         "title": "%command.findProblem%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(search)"
       },
       {
-        "command": "eolympCode.newSolution",
+        "command": "cp.newSolution",
         "title": "%command.newSolution%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(new-file)"
       },
       {
-        "command": "eolympCode.newTest",
+        "command": "cp.newTest",
         "title": "%command.newTest%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": {
           "light": "new-test-light.svg",
           "dark": "new-test-dark.svg"
         }
       },
       {
-        "command": "eolympCode.openInput",
+        "command": "cp.openInput",
         "title": "%command.openInput%"
       },
       {
-        "command": "eolympCode.openAnswer",
+        "command": "cp.openAnswer",
         "title": "%command.openAnswer%"
       },
       {
-        "command": "eolympCode.addAnswer",
+        "command": "cp.addAnswer",
         "title": "%command.addAnswer%"
       },
       {
-        "command": "eolympCode.showDiff",
+        "command": "cp.showDiff",
         "title": "%command.showDiff%"
       },
       {
-        "command": "eolympCode.markCorrect",
+        "command": "cp.markCorrect",
         "title": "%command.markCorrect%"
       },
       {
-        "command": "eolympCode.deleteTest",
+        "command": "cp.deleteTest",
         "title": "%command.deleteTest%"
       },
       {
-        "command": "eolympCode.addAsTest",
+        "command": "cp.addAsTest",
         "title": "%command.addAsTest%"
       },
       {
-        "command": "eolympCode.renameTest",
+        "command": "cp.renameTest",
         "title": "%command.renameTest%"
       },
       {
-        "command": "eolympCode.newFile",
+        "command": "cp.newFile",
         "title": "%command.newFile%"
       },
       {
-        "command": "eolympCode.stop",
+        "command": "cp.stop",
         "title": "%command.stop%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(debug-stop)"
       },
       {
-        "command": "eolympCode.rename",
+        "command": "cp.rename",
         "title": "%command.rename%"
       },
       {
-        "command": "eolympCode.delete",
+        "command": "cp.delete",
         "title": "%command.delete%"
       },
       {
-        "command": "eolympCode.cut",
+        "command": "cp.cut",
         "title": "%command.cut%"
       },
       {
-        "command": "eolympCode.copy",
+        "command": "cp.copy",
         "title": "%command.copy%"
       },
       {
-        "command": "eolympCode.paste",
+        "command": "cp.paste",
         "title": "%command.paste%"
       },
       {
-        "command": "eolympCode.runTest",
+        "command": "cp.runTest",
         "title": "%command.runTest%",
         "icon": "$(play)"
       },
       {
-        "command": "eolympCode.submit",
+        "command": "cp.submit",
         "title": "%command.submit%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(cloud-upload)"
       },
       {
-        "command": "eolympCode.openSubmission",
+        "command": "cp.openSubmission",
         "title": "%command.openSubmission%",
-        "category": "Eolymp Code",
+        "category": "Competitive Programming",
         "icon": "$(link-external)"
       },
       {
-        "command": "eolympCode.consoleEndInput",
+        "command": "cp.consoleEndInput",
         "title": "%command.consoleEndInput%",
         "icon": "$(debug-disconnect)"
       },
       {
-        "command": "eolympCode.consoleDebug",
+        "command": "cp.consoleDebug",
         "title": "%command.debug%",
         "icon": "$(debug-alt)"
       },
       {
-        "command": "eolympCode.consoleRerun",
+        "command": "cp.consoleRerun",
         "title": "%command.consoleRerun%",
         "icon": "$(debug-rerun)"
       },
       {
-        "command": "eolympCode.consoleStop",
+        "command": "cp.consoleStop",
         "title": "%command.stop%",
         "icon": "$(debug-stop)"
       }
@@ -215,405 +215,405 @@
     "menus": {
       "editor/title": [
         {
-          "command": "eolympCode.run",
+          "command": "cp.run",
           "group": "navigation@0",
-          "when": "(resourceLangId == cpp || resourceLangId == python) && !eolympCode.running"
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !cp.running"
         },
         {
-          "command": "eolympCode.runTests",
+          "command": "cp.runTests",
           "group": "navigation@2",
-          "when": "(resourceLangId == cpp || resourceLangId == python) && !eolympCode.running"
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !cp.running"
         },
         {
-          "command": "eolympCode.stop",
+          "command": "cp.stop",
           "group": "navigation@0",
-          "when": "(resourceLangId == cpp || resourceLangId == python) && eolympCode.running"
+          "when": "(resourceLangId == cpp || resourceLangId == python) && cp.running"
         },
         {
-          "command": "eolympCode.runTest",
+          "command": "cp.runTest",
           "group": "navigation@0",
-          "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !eolympCode.running"
+          "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !cp.running"
         },
         {
-          "command": "eolympCode.debug",
+          "command": "cp.debug",
           "group": "navigation@1",
-          "when": "(resourceLangId == cpp || resourceLangId == python) && !eolympCode.running && !inDebugMode"
+          "when": "(resourceLangId == cpp || resourceLangId == python) && !cp.running && !inDebugMode"
         },
         {
-          "command": "eolympCode.debug",
+          "command": "cp.debug",
           "group": "navigation@1",
-          "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !eolympCode.running && !inDebugMode"
+          "when": "(resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out) && !cp.running && !inDebugMode"
         },
         {
-          "command": "eolympCode.submit",
+          "command": "cp.submit",
           "group": "navigation@3",
-          "when": "eolympCode.linked && (resourceLangId == cpp || resourceLangId == python)"
+          "when": "cp.linked && (resourceLangId == cpp || resourceLangId == python)"
         }
       ],
       "view/title": [
         {
-          "command": "eolympCode.findProblem",
+          "command": "cp.findProblem",
           "group": "navigation@0",
-          "when": "view == eolympCode.problems && eolympCode.hasJudges"
+          "when": "view == cp.problems && cp.hasJudges"
         },
         {
-          "command": "eolympCode.newProblem",
+          "command": "cp.newProblem",
           "group": "navigation",
-          "when": "view == eolympCode.problems"
+          "when": "view == cp.problems"
         },
         {
-          "command": "eolympCode.openSubmission",
+          "command": "cp.openSubmission",
           "group": "navigation",
-          "when": "view == eolympCode.submission"
+          "when": "view == cp.submission"
         },
         {
-          "command": "eolympCode.consoleEndInput",
+          "command": "cp.consoleEndInput",
           "group": "navigation@1",
-          "when": "view == eolympCode.tests && eolympCode.console.typing"
+          "when": "view == cp.tests && cp.console.typing"
         },
         {
-          "command": "eolympCode.consoleDebug",
+          "command": "cp.consoleDebug",
           "group": "navigation@2",
-          "when": "view == eolympCode.tests && eolympCode.console.debug"
+          "when": "view == cp.tests && cp.console.debug"
         },
         {
-          "command": "eolympCode.consoleRerun",
+          "command": "cp.consoleRerun",
           "group": "navigation@3",
-          "when": "view == eolympCode.tests && eolympCode.console.idle"
+          "when": "view == cp.tests && cp.console.idle"
         },
         {
-          "command": "eolympCode.consoleStop",
+          "command": "cp.consoleStop",
           "group": "navigation@3",
-          "when": "view == eolympCode.tests && eolympCode.console.busy"
+          "when": "view == cp.tests && cp.console.busy"
         }
       ],
       "view/item/context": [
         {
-          "command": "eolympCode.newSolution",
+          "command": "cp.newSolution",
           "group": "inline@1",
-          "when": "view == eolympCode.problems && viewItem == problem"
+          "when": "view == cp.problems && viewItem == problem"
         },
         {
-          "command": "eolympCode.newTest",
+          "command": "cp.newTest",
           "group": "inline@2",
-          "when": "view == eolympCode.problems && viewItem == problem"
+          "when": "view == cp.problems && viewItem == problem"
         },
         {
-          "command": "eolympCode.newSolution",
+          "command": "cp.newSolution",
           "group": "1@1",
-          "when": "view == eolympCode.problems && viewItem == problem"
+          "when": "view == cp.problems && viewItem == problem"
         },
         {
-          "command": "eolympCode.newTest",
+          "command": "cp.newTest",
           "group": "1@2",
-          "when": "view == eolympCode.problems && viewItem == problem"
+          "when": "view == cp.problems && viewItem == problem"
         },
         {
-          "command": "eolympCode.runTests",
+          "command": "cp.runTests",
           "group": "inline@1",
-          "when": "view == eolympCode.problems && viewItem == solution"
+          "when": "view == cp.problems && viewItem == solution"
         },
         {
-          "command": "eolympCode.run",
+          "command": "cp.run",
           "group": "1@1",
-          "when": "view == eolympCode.problems && viewItem == solution"
+          "when": "view == cp.problems && viewItem == solution"
         },
         {
-          "command": "eolympCode.runTests",
+          "command": "cp.runTests",
           "group": "1@2",
-          "when": "view == eolympCode.problems && viewItem == solution"
+          "when": "view == cp.problems && viewItem == solution"
         },
         {
-          "command": "eolympCode.newFile",
+          "command": "cp.newFile",
           "group": "1@3",
-          "when": "view == eolympCode.problems && viewItem == problem"
+          "when": "view == cp.problems && viewItem == problem"
         },
         {
-          "command": "eolympCode.rename",
+          "command": "cp.rename",
           "group": "7_modification@1",
-          "when": "view == eolympCode.problems"
+          "when": "view == cp.problems"
         },
         {
-          "command": "eolympCode.delete",
+          "command": "cp.delete",
           "group": "7_modification@2",
-          "when": "view == eolympCode.problems"
+          "when": "view == cp.problems"
         },
         {
-          "command": "eolympCode.cut",
+          "command": "cp.cut",
           "group": "5_cutcopypaste@1",
-          "when": "view == eolympCode.problems && viewItem != problem"
+          "when": "view == cp.problems && viewItem != problem"
         },
         {
-          "command": "eolympCode.copy",
+          "command": "cp.copy",
           "group": "5_cutcopypaste@2",
-          "when": "view == eolympCode.problems"
+          "when": "view == cp.problems"
         },
         {
-          "command": "eolympCode.paste",
+          "command": "cp.paste",
           "group": "5_cutcopypaste@3",
-          "when": "view == eolympCode.problems && eolympCode.canPaste"
+          "when": "view == cp.problems && cp.canPaste"
         },
         {
-          "command": "eolympCode.runTest",
+          "command": "cp.runTest",
           "group": "inline@1",
-          "when": "view == eolympCode.problems && viewItem == test"
+          "when": "view == cp.problems && viewItem == test"
         },
         {
-          "command": "eolympCode.runTest",
+          "command": "cp.runTest",
           "group": "1@1",
-          "when": "view == eolympCode.problems && viewItem == test"
+          "when": "view == cp.problems && viewItem == test"
         },
         {
-          "command": "eolympCode.debug",
+          "command": "cp.debug",
           "group": "1@3",
-          "when": "view == eolympCode.problems && viewItem == solution"
+          "when": "view == cp.problems && viewItem == solution"
         },
         {
-          "command": "eolympCode.debug",
+          "command": "cp.debug",
           "group": "1@2",
-          "when": "view == eolympCode.problems && viewItem == test"
+          "when": "view == cp.problems && viewItem == test"
         }
       ],
       "commandPalette": [
         {
-          "command": "eolympCode.newSolution",
+          "command": "cp.newSolution",
           "when": "false"
         },
         {
-          "command": "eolympCode.newTest",
+          "command": "cp.newTest",
           "when": "false"
         },
         {
-          "command": "eolympCode.openInput",
+          "command": "cp.openInput",
           "when": "false"
         },
         {
-          "command": "eolympCode.openAnswer",
+          "command": "cp.openAnswer",
           "when": "false"
         },
         {
-          "command": "eolympCode.addAnswer",
+          "command": "cp.addAnswer",
           "when": "false"
         },
         {
-          "command": "eolympCode.showDiff",
+          "command": "cp.showDiff",
           "when": "false"
         },
         {
-          "command": "eolympCode.markCorrect",
+          "command": "cp.markCorrect",
           "when": "false"
         },
         {
-          "command": "eolympCode.deleteTest",
+          "command": "cp.deleteTest",
           "when": "false"
         },
         {
-          "command": "eolympCode.addAsTest",
+          "command": "cp.addAsTest",
           "when": "false"
         },
         {
-          "command": "eolympCode.renameTest",
+          "command": "cp.renameTest",
           "when": "false"
         },
         {
-          "command": "eolympCode.newFile",
+          "command": "cp.newFile",
           "when": "false"
         },
         {
-          "command": "eolympCode.stop",
-          "when": "eolympCode.running"
+          "command": "cp.stop",
+          "when": "cp.running"
         },
         {
-          "command": "eolympCode.rename",
+          "command": "cp.rename",
           "when": "false"
         },
         {
-          "command": "eolympCode.delete",
+          "command": "cp.delete",
           "when": "false"
         },
         {
-          "command": "eolympCode.cut",
+          "command": "cp.cut",
           "when": "false"
         },
         {
-          "command": "eolympCode.copy",
+          "command": "cp.copy",
           "when": "false"
         },
         {
-          "command": "eolympCode.paste",
+          "command": "cp.paste",
           "when": "false"
         },
         {
-          "command": "eolympCode.runTest",
+          "command": "cp.runTest",
           "when": "false"
         },
         {
-          "command": "eolympCode.findProblem",
-          "when": "eolympCode.hasJudges"
+          "command": "cp.findProblem",
+          "when": "cp.hasJudges"
         },
         {
-          "command": "eolympCode.submit",
-          "when": "eolympCode.linked"
+          "command": "cp.submit",
+          "when": "cp.linked"
         },
         {
-          "command": "eolympCode.openSubmission",
+          "command": "cp.openSubmission",
           "when": "false"
         },
         {
-          "command": "eolympCode.consoleEndInput",
+          "command": "cp.consoleEndInput",
           "when": "false"
         },
         {
-          "command": "eolympCode.consoleDebug",
+          "command": "cp.consoleDebug",
           "when": "false"
         },
         {
-          "command": "eolympCode.consoleRerun",
+          "command": "cp.consoleRerun",
           "when": "false"
         },
         {
-          "command": "eolympCode.consoleStop",
+          "command": "cp.consoleStop",
           "when": "false"
         }
       ],
       "webview/context": [
         {
-          "command": "eolympCode.openInput",
+          "command": "cp.openInput",
           "group": "1@1",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test'"
         },
         {
-          "command": "eolympCode.openAnswer",
+          "command": "cp.openAnswer",
           "group": "1@2",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && hasAnswer"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test' && hasAnswer"
         },
         {
-          "command": "eolympCode.addAnswer",
+          "command": "cp.addAnswer",
           "group": "1@2",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && !hasAnswer"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test' && !hasAnswer"
         },
         {
-          "command": "eolympCode.showDiff",
+          "command": "cp.showDiff",
           "group": "1@4",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && canDiff"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test' && canDiff"
         },
         {
-          "command": "eolympCode.markCorrect",
+          "command": "cp.markCorrect",
           "group": "1@3",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test' && canAccept"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test' && canAccept"
         },
         {
-          "command": "eolympCode.debug",
+          "command": "cp.debug",
           "group": "1@5",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test'"
         },
         {
-          "command": "eolympCode.deleteTest",
+          "command": "cp.deleteTest",
           "group": "2@1",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test'"
         },
         {
-          "command": "eolympCode.addAsTest",
+          "command": "cp.addAsTest",
           "group": "1@1",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'run'"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'run'"
         },
         {
-          "command": "eolympCode.renameTest",
+          "command": "cp.renameTest",
           "group": "1@6",
-          "when": "webviewId == 'eolympCode.tests' && webviewSection == 'test'"
+          "when": "webviewId == 'cp.tests' && webviewSection == 'test'"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "eolympCode.debug",
+        "command": "cp.debug",
         "key": "f5",
-        "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
+        "when": "!inDebugMode && (editorTextFocus || focusedView == cp.tests)"
       },
       {
-        "command": "eolympCode.run",
+        "command": "cp.run",
         "key": "ctrl+f5",
-        "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
+        "when": "!inDebugMode && (editorTextFocus || focusedView == cp.tests)"
       },
       {
-        "command": "eolympCode.debug",
+        "command": "cp.debug",
         "key": "f5",
         "args": "focused",
-        "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus"
+        "when": "!inDebugMode && focusedView == cp.problems && listFocus"
       },
       {
-        "command": "eolympCode.run",
+        "command": "cp.run",
         "key": "ctrl+f5",
         "args": "focused",
-        "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus"
+        "when": "!inDebugMode && focusedView == cp.problems && listFocus"
       },
       {
-        "command": "eolympCode.runTest",
+        "command": "cp.runTest",
         "key": "ctrl+f5",
         "when": "!inDebugMode && editorTextFocus && (resourceExtname == .in || resourceExtname == .answer || resourceExtname == .out)"
       },
       {
-        "command": "eolympCode.runTests",
+        "command": "cp.runTests",
         "key": "f6",
-        "when": "!inDebugMode && (editorTextFocus || focusedView == eolympCode.tests)"
+        "when": "!inDebugMode && (editorTextFocus || focusedView == cp.tests)"
       },
       {
-        "command": "eolympCode.runTests",
+        "command": "cp.runTests",
         "key": "f6",
         "args": "focused",
-        "when": "!inDebugMode && focusedView == eolympCode.problems && listFocus"
+        "when": "!inDebugMode && focusedView == cp.problems && listFocus"
       },
       {
-        "command": "eolympCode.stop",
+        "command": "cp.stop",
         "key": "shift+f5",
-        "when": "!inDebugMode && eolympCode.running"
+        "when": "!inDebugMode && cp.running"
       },
       {
-        "command": "eolympCode.delete",
+        "command": "cp.delete",
         "key": "delete",
         "mac": "cmd+backspace",
-        "when": "focusedView == eolympCode.problems && listFocus && !inputFocus"
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
       },
       {
-        "command": "eolympCode.rename",
+        "command": "cp.rename",
         "key": "f2",
         "mac": "enter",
-        "when": "focusedView == eolympCode.problems && listFocus && !inputFocus"
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
       },
       {
-        "command": "eolympCode.cut",
+        "command": "cp.cut",
         "key": "ctrl+x",
         "mac": "cmd+x",
-        "when": "focusedView == eolympCode.problems && listFocus && !inputFocus"
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
       },
       {
-        "command": "eolympCode.copy",
+        "command": "cp.copy",
         "key": "ctrl+c",
         "mac": "cmd+c",
-        "when": "focusedView == eolympCode.problems && listFocus && !inputFocus"
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
       },
       {
-        "command": "eolympCode.paste",
+        "command": "cp.paste",
         "key": "ctrl+v",
         "mac": "cmd+v",
-        "when": "focusedView == eolympCode.problems && listFocus && !inputFocus"
+        "when": "focusedView == cp.problems && listFocus && !inputFocus"
       },
       {
-        "command": "eolympCode.submit",
+        "command": "cp.submit",
         "key": "f7",
-        "when": "!inDebugMode && eolympCode.linked && (editorTextFocus || focusedView == eolympCode.tests || focusedView == eolympCode.submission)"
+        "when": "!inDebugMode && cp.linked && (editorTextFocus || focusedView == cp.tests || focusedView == cp.submission)"
       }
     ],
     "configuration": {
-      "title": "Eolymp Code",
+      "title": "Competitive Programming",
       "properties": {
-        "eolympCode.cxx": {
+        "cp.cxx": {
           "type": "string",
           "default": "g++",
           "description": "%setting.cxx%",
           "scope": "machine"
         },
-        "eolympCode.cxxFlags": {
+        "cp.cxxFlags": {
           "type": "array",
           "items": {
             "type": "string"
@@ -626,19 +626,19 @@
           "description": "%setting.cxxFlags%",
           "scope": "machine"
         },
-        "eolympCode.includePath": {
+        "cp.includePath": {
           "type": "string",
           "default": "",
           "description": "%setting.includePath%",
           "scope": "machine"
         },
-        "eolympCode.python": {
+        "cp.python": {
           "type": "string",
           "default": "",
           "description": "%setting.python%",
           "scope": "machine"
         },
-        "eolympCode.language": {
+        "cp.language": {
           "type": "string",
           "enum": [
             "cpp",
@@ -651,12 +651,12 @@
     },
     "viewsWelcome": [
       {
-        "view": "eolympCode.problems",
+        "view": "cp.problems",
         "contents": "%welcome.0%",
         "when": "workbenchState != empty"
       },
       {
-        "view": "eolympCode.problems",
+        "view": "cp.problems",
         "contents": "%welcome.1%",
         "when": "workbenchState == empty"
       }

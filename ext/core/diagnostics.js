@@ -49,7 +49,7 @@ function create(context, root, changed) {
   let notify;
   let state = { checks: null, progress: '', fresh: !context.globalState.get('setup') };
   const bar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
-  bar.command = 'eolympCode.checkSetup';
+  bar.command = 'core.checkSetup';
   bar.text = `$(warning) ${t('Setup')}`;
   bar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
   context.subscriptions.push(bar);
@@ -162,9 +162,9 @@ function create(context, root, changed) {
 
   const open = async () => {
     if (panel) { panel.reveal(); return; }
-    panel = vscode.window.createWebviewPanel('eolympCode.setup', t('Diagnostics'), vscode.ViewColumn.Active, { enableScripts: true, localResourceRoots: [vscode.Uri.file(vscode.extensions.getExtension('eolymp.eolymp-code').extensionPath)] });
+    panel = vscode.window.createWebviewPanel('core.setup', t('Diagnostics'), vscode.ViewColumn.Active, { enableScripts: true, localResourceRoots: [vscode.Uri.file(vscode.extensions.getExtension('eolymp.cp').extensionPath)] });
     const nonce = crypto.randomBytes(16).toString('base64');
-    const font = panel.webview.asWebviewUri(vscode.Uri.file(path.join(vscode.extensions.getExtension('eolymp.eolymp-code').extensionPath, 'codicon.ttf')));
+    const font = panel.webview.asWebviewUri(vscode.Uri.file(path.join(vscode.extensions.getExtension('eolymp.cp').extensionPath, 'codicon.ttf')));
     panel.webview.html = fs.readFileSync(path.join(__dirname, 'diagnostics.html'), 'utf8')
       .replace(/{{nonce}}/g, nonce).replace(/{{font}}/g, String(font)).replace(/{{source}}/g, panel.webview.cspSource)
       .replace('{{strings}}', JSON.stringify(Object.fromEntries(STRINGS.map((text) => [text, t(text)]))).replace(/</g, '\\u003c'));

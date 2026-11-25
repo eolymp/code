@@ -14,7 +14,7 @@
  registerSingleton(ILocaleService, NativeLocaleService, InstantiationType.Delayed);
  registerSingleton(IActiveLanguagePackService, NativeActiveLanguagePackService, InstantiationType.Delayed);
 +
-+CommandsRegistry.registerCommand('eolympCode.setLocale', async (accessor: ServicesAccessor, locale: string) => {
++CommandsRegistry.registerCommand('core.setLocale', async (accessor: ServicesAccessor, locale: string) => {
 +	const jsonEditingService = accessor.get(IJSONEditingService);
 +	const environmentService = accessor.get(IEnvironmentService);
 +	const hostService = accessor.get(IHostService);

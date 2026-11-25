@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const runner = require('../../extension/runner');
+const runner = require('../../ext/cp/runner');
 
 const node = process.execPath;
 const python = ['python3', 'python'].find((name) => childProcess.spawnSync(name, ['-c', 'pass']).status === 0);

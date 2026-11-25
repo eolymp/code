@@ -45,8 +45,8 @@ async function main() {
 
   if (!pinned) throw new Error(`editor/pins.txt lists no extensions for ${platform}`);
 
-  for (const name of ['extension', 'setup', 'eolymp']) {
-    const own = placed(path.join(repo, name));
+  for (const name of fs.readdirSync(path.join(repo, 'ext'))) {
+    const own = placed(path.join(repo, 'ext', name));
     if (!process.env.EOLYMP_CODE_VERSION) continue;
     own.manifest.version = process.env.EOLYMP_CODE_VERSION;
     fs.writeFileSync(path.join(own.target, 'package.json'), `${JSON.stringify(own.manifest, null, 2)}\n`);

@@ -1,7 +1,7 @@
 {
   "description": "Solve competitive programming problems: a problem list, tests with saved answers, and Run and Debug on a test.",
-  "view.eolympCode": "Console",
-  "view.eolympCodeSidebar": "Practice",
+  "view.cp": "Console",
+  "view.cpSidebar": "Practice",
   "view.tests": "Console",
   "view.problems": "Practice",
   "command.run": "Run",
@@ -20,7 +20,7 @@
   "command.renameTest": "Rename",
   "command.newFile": "New File",
   "command.stop": "Stop",
-  "welcome.0": "No problems are being solved here yet.\n[New Problem Workspace](command:eolympCode.newProblem)",
+  "welcome.0": "No problems are being solved here yet.\n[New Problem Workspace](command:cp.newProblem)",
   "welcome.1": "Open a folder to keep your solutions in.\n[Open Folder](command:vscode.openFolder)",
   "setting.cxx": "C++ compiler.",
   "setting.cxxFlags": "Flags for running tests.",
