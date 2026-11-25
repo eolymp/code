@@ -998,14 +998,6 @@ function activate(context) {
         };
       },
     }),
-    ...['lldb', 'debugpy'].map((type) => vscode.debug.registerDebugConfigurationProvider(type, {
-      resolveDebugConfiguration(folder, launch) {
-        if ((launch.type || launch.request || launch.name) && !String(launch.program).includes('<your program>')) return launch;
-        if (launch.noDebug) run();
-        else debug();
-        return undefined;
-      },
-    })),
     vscode.debug.onDidStartDebugSession((session) => {
       const mine = launches.get(session.configuration.eolympCode);
       if (!mine || session.parentSession) return;

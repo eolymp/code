@@ -1,0 +1,16 @@
+--- a/src/vs/workbench/contrib/debug/browser/debugCommands.ts
++++ b/src/vs/workbench/contrib/debug/browser/debugCommands.ts
+@@ -768,8 +768,13 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
+ 	when: ContextKeyExpr.and(CONTEXT_DEBUGGERS_AVAILABLE, CONTEXT_DEBUG_STATE.isEqualTo('inactive')),
+ 	handler: async (accessor: ServicesAccessor, debugStartOptions?: { config?: Partial<IConfig>; noDebug?: boolean }) => {
+ 		const debugService = accessor.get(IDebugService);
++		const commandService = accessor.get(ICommandService);
+ 		await saveAllBeforeDebugStart(accessor.get(IConfigurationService), accessor.get(IEditorService));
+ 		const { launch, name, getConfig } = debugService.getConfigurationManager().selectedConfiguration;
++		if (!name && !debugStartOptions?.config && CommandsRegistry.getCommand('eolympCode.debug')) {
++			await commandService.executeCommand(debugStartOptions?.noDebug ? 'eolympCode.run' : 'eolympCode.debug');
++			return;
++		}
+ 		const config = await getConfig();
+ 		const configOrName = config ? Object.assign(deepClone(config), debugStartOptions?.config) : name;
+ 		await debugService.startDebugging(launch, configOrName, { noDebug: debugStartOptions?.noDebug, startedByUser: true }, false);
