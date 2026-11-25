@@ -6,5 +6,5 @@
   "Could not end the session on Eolymp: {0}": "No se pudo cerrar la sesión en Eolymp: {0}",
   "You are not signed in": "No has iniciado sesión",
   "You can close this page and try again in Eolymp Code.": "Puedes cerrar esta página e intentarlo de nuevo en Eolymp Code.",
-  "Language to submit in": "Lenguaje en el que enviar"
+  "This problem does not take solutions in this language.": "Este problema no acepta soluciones en este lenguaje."
 }

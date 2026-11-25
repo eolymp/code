@@ -65,6 +65,8 @@ async function watch(judge, link, id, file) {
   if (watching) watching.abort();
   const mine = new AbortController();
   watching = mine;
+  shown = { submission: { id, verdict: 'waiting' }, name, file, judge: judge.label };
+  post();
   await vscode.commands.executeCommand('setContext', 'eolympCode.submitted', true);
   await vscode.commands.executeCommand('eolympCode.submission.focus');
   try {

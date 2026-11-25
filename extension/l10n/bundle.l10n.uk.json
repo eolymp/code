@@ -58,7 +58,6 @@
   "This problem has no solution to run.": "У цій задачі немає розв'язку для запуску.",
   "This file is not a test of a problem.": "Цей файл не є тестом задачі.",
   "Open a .cpp or .py file to debug it.": "Відкрийте файл .cpp або .py, щоб налагодити його.",
-  "Debug": "Налагодити",
   "Where to look for a problem": "Де шукати задачу",
   "Search problems on {0}": "Пошук задач на {0}",
   "Could not search: {0}": "Не вдалося виконати пошук: {0}",
@@ -81,5 +80,6 @@
   "Could not submit {0}: {1}": "Не вдалося надіслати {0}: {1}",
   "Testing {0} at {1} ({2})": "Перевірка {0} на {1} ({2})",
   "Testing {0} on your computer": "Тестування {0} на вашому комп'ютері",
-  "Running {0} on your computer": "Запуск {0} на вашому комп'ютері"
+  "Running {0} on your computer": "Запуск {0} на вашому комп'ютері",
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} надіслано, але стежити за перевіркою не вдалося: {1}"
 }

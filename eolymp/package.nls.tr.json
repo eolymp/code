@@ -1,3 +1,4 @@
 {
-  "description": "Eolymp'te oturum aç ve problemlerini Eolymp Code uygulamasında aç."
+  "description": "Eolymp'te oturum aç ve problemlerini Eolymp Code uygulamasında aç.",
+  "setting.runtimes": "Eolymp'te çözümlerin gönderileceği diller: problemin kabul ettiği ilki kullanılır."
 }

@@ -1,3 +1,4 @@
 {
-  "description": "Inicia sesión en Eolymp y abre sus problemas en la aplicación Eolymp Code."
+  "description": "Inicia sesión en Eolymp y abre sus problemas en la aplicación Eolymp Code.",
+  "setting.runtimes": "Lenguajes de Eolymp en los que enviar soluciones: se usa el primero que acepta el problema."
 }

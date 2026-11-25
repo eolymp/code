@@ -1,3 +1,4 @@
 {
-  "description": "Sign in to Eolymp and open its problems in the Eolymp Code app."
+  "description": "Sign in to Eolymp and open its problems in the Eolymp Code app.",
+  "setting.runtimes": "Languages on Eolymp to submit solutions in, the first one a problem accepts is used."
 }

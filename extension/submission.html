@@ -74,11 +74,13 @@
       details.open = key in folded ? !folded[key] : row.kind !== 'ok' || data.rows.length === 1;
       const twist = make('span', row.rows.length ? 'twist' : 'twist dot', String.fromCharCode(!row.rows.length ? 0xeb8a : details.open ? 0xeab4 : 0xeab6));
       details.ontoggle = () => {
-        folded[key] = !details.open;
         if (row.rows.length) twist.textContent = String.fromCharCode(details.open ? 0xeab4 : 0xeab6);
       };
       const summary = make('summary');
-      if (!row.rows.length) summary.onclick = (event) => event.preventDefault();
+      summary.onclick = (event) => {
+        if (row.rows.length) folded[key] = details.open;
+        else event.preventDefault();
+      };
       summary.append(twist, ...parts(row, !row.rows.length));
       const kids = make('div', 'kids');
       kids.append(...row.rows.map((child, index) => render(child, [...path, index])));

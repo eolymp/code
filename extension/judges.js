@@ -12,7 +12,7 @@ function create(createProblem, refresh) {
   const linkOf = (document) => {
     const link = document.uri.scheme === 'file' && ws.langOf(document.fileName) ? ws.linkOf(path.dirname(document.fileName)) : undefined;
     const judge = link && judges.get(link.judge);
-    return judge && judge.submit ? link : undefined;
+    return judge && judge.submit && judge.watch ? link : undefined;
   };
 
   const mark = () => {
@@ -38,11 +38,17 @@ function create(createProblem, refresh) {
     const file = editor.document.fileName;
     const judge = judges.get(link.judge);
     const problem = { id: link.id, url: link.url };
+    let id;
     try {
-      const id = await judge.submit(problem, { language: ws.langOf(file), source: editor.document.getText() });
-      if (id) await submission.watch(judge, problem, id, file);
+      id = await judge.submit(problem, { language: ws.langOf(file), source: editor.document.getText() });
     } catch (err) {
       if (!(err instanceof vscode.CancellationError)) vscode.window.showErrorMessage(t('Could not submit {0}: {1}', path.basename(file), err.message));
+    }
+    if (!id) return;
+    try {
+      await submission.watch(judge, problem, id, file);
+    } catch (err) {
+      vscode.window.showErrorMessage(t('{0} is submitted, but its testing could not be followed: {1}', path.basename(file), err.message));
     }
   };
 

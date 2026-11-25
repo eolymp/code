@@ -1,3 +1,4 @@
 {
-  "description": "Zaloguj się do Eolymp i otwieraj jego zadania w aplikacji Eolymp Code."
+  "description": "Zaloguj się do Eolymp i otwieraj jego zadania w aplikacji Eolymp Code.",
+  "setting.runtimes": "Języki na Eolymp, w których wysyłać rozwiązania: używany jest pierwszy przyjmowany przez zadanie."
 }

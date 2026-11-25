@@ -942,7 +942,7 @@ const tree = {
   },
 };
 
-const VIEW_STRINGS = ["Debug", "Open a .cpp or .py file to run it here.", "Run", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Crashed", "Finished with an error", "stopped", "Input for the program", "input ended", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "The output matches the answer", "The output differs from the answer", "output changed", "Diagnostics", "More actions", "runtime error", "Output trimmed, open {0}", "{0} ms", "{0} MB", "# compile", "# test {0}", "{0}/{1} match", "Testing {0} on your computer", "Running {0} on your computer"];
+const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Crashed", "Finished with an error", "stopped", "Input for the program", "input ended", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "The output matches the answer", "The output differs from the answer", "output changed", "Diagnostics", "More actions", "runtime error", "Output trimmed, open {0}", "{0} ms", "{0} MB", "# compile", "# test {0}", "{0}/{1} match", "Testing {0} on your computer", "Running {0} on your computer"];
 
 function html(webview) {
   const nonce = crypto.randomBytes(16).toString('base64');

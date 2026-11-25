@@ -36,7 +36,7 @@ An extension adds an online judge by calling `registerJudge` on the API the Eoly
       watch: async (problem, submissionId, update, signal) => {},
     });
 
-`problem` is `{ id, url }`, kept in `.problem.json` next to the solution. `language` is `cpp` or `py`. `submit` and `watch` are optional.
+`problem` is `{ id, url }`, kept in `.problem.json` next to the solution. `language` is `cpp` or `py`. A judge without `submit` and `watch` only offers its problems.
 
 `watch` calls `update` with the state of the submission every time it changes and returns when testing is over:
 
