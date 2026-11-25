@@ -1,0 +1,21 @@
+{
+  "Continue signing in in your browser.": "Continúa el inicio de sesión en el navegador.",
+  "Could not end the session on {0}: {1}": "No se pudo cerrar la sesión en {0}: {1}",
+  "You are signed in": "Has iniciado sesión",
+  "You can close this page and return to Eolymp Code.": "Puedes cerrar esta página y volver a Eolymp Code.",
+  "Compilation error": "Error de compilación",
+  "Testing failed on the server": "La evaluación falló en el servidor",
+  "Accepted": "Aceptado",
+  "Wrong answer": "Respuesta incorrecta",
+  "Time limit exceeded": "Límite de tiempo excedido",
+  "Memory limit exceeded": "Límite de memoria excedido",
+  "Runtime error": "Error de ejecución",
+  "Idleness limit exceeded": "Límite de inactividad excedido",
+  "Partially correct": "Parcialmente correcto",
+  "{0}, {1} of {2} points": "{0}, {1} de {2} puntos",
+  "Language to submit in": "Lenguaje en el que enviar",
+  "Testing {0} on {1}": "Evaluando {0} en {1}",
+  "Open on {0}": "Abrir en {0}",
+  "Could not submit {0}: {1}": "No se pudo enviar {0}: {1}",
+  "{0}% accepted": "{0}% aceptados"
+}

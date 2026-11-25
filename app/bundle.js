@@ -45,7 +45,7 @@ async function main() {
 
   if (!pinned) throw new Error(`editor/pins.txt lists no extensions for ${platform}`);
 
-  for (const name of ['extension', 'setup']) {
+  for (const name of ['extension', 'setup', 'eolymp']) {
     const own = placed(path.join(repo, name));
     if (!process.env.EOLYMP_CODE_VERSION) continue;
     own.manifest.version = process.env.EOLYMP_CODE_VERSION;

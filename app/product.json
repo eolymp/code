@@ -35,6 +35,16 @@
   "licenseUrl": "https://github.com/eolymp/code",
   "reportIssueUrl": "https://github.com/eolymp/code/issues/new",
   "downloadUrl": "https://eolymp.com/code",
+  "linkProtectionTrustedDomains": [
+    "https://open-vsx.org",
+    "https://eolymp.com",
+    "https://*.eolymp.com"
+  ],
+  "trustedExtensionAuthAccess": {
+    "eolymp": [
+      "eolymp.eolymp-code-eolymp"
+    ]
+  },
   "extensionEnabledApiProposals": {
     "eolymp.eolymp-code": [
       "treeViewActiveItem"

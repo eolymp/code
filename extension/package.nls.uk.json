@@ -32,5 +32,6 @@
   "command.cut": "Вирізати",
   "command.copy": "Копіювати",
   "command.paste": "Вставити",
-  "command.runTest": "Запустити тест"
+  "command.runTest": "Запустити тест",
+  "command.findProblem": "Знайти задачу"
 }
