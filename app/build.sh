@@ -114,14 +114,22 @@ fi
 out="$repo/artifacts"
 mkdir -p "$out"
 if [ "$platform" = darwin ]; then
-  [ -z "${CERTIFICATE_OSX_P12_DATA:-}" ] || export SHOULD_BUILD_ZIP=no
+  for name in CERTIFICATE_OSX_P12_DATA CERTIFICATE_OSX_P12_PASSWORD CERTIFICATE_OSX_APPLE_ID CERTIFICATE_OSX_APP_PASSWORD CERTIFICATE_OSX_TEAM_ID; do
+    [ -n "${!name:-}" ] || { echo "$name is needed to sign the disk image"; exit 1; }
+  done
+  export SHOULD_BUILD_ZIP=no
+  cp "$here/dmg/package.json" "$here/dmg/package-lock.json" .
+  npm ci --no-audit --no-fund
   rm -rf assets
   mkdir assets
   set +u
   . build/osx/prepare_assets.sh
   set -u
-  [ ! -e "assets/$APP_NAME.$arch.$version.dmg" ] || cp "assets/$APP_NAME.$arch.$version.dmg" "$out/EolympCode-$platform-$arch-$version.dmg"
-  [ ! -e "assets/$APP_NAME-$platform-$arch-$version.zip" ] || cp "assets/$APP_NAME-$platform-$arch-$version.zip" "$out/EolympCode-$platform-$arch-$version.zip"
+  rm -f "$APP_NAME.p12"
+  dmg="assets/$APP_NAME.$arch.$version.dmg"
+  xcrun notarytool submit "$dmg" --apple-id "$CERTIFICATE_OSX_APPLE_ID" --team-id "$CERTIFICATE_OSX_TEAM_ID" --password "$CERTIFICATE_OSX_APP_PASSWORD" --wait
+  xcrun stapler staple "$dmg"
+  cp "$dmg" "$out/EolympCode-$platform-$arch-$version.dmg"
 elif [ "$platform" = linux ]; then
   cp "$work"/vscodium/vscode/.build/linux/deb/*/deb/*.deb "$out/EolympCode-$platform-$arch-$version.deb"
   tar -czf "$out/EolympCode-$platform-$arch-$version.tar.gz" -C "$built" .
