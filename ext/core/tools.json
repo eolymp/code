@@ -23,6 +23,18 @@
     ],
     "sdk": true
   },
+  "darwin-x64-24": {
+    "url": "https://downloads.eolymp.com/code/toolchains/darwin-x64-24-12822dae595f.tar.gz",
+    "sha256": "12822dae595f0c718ce8180acf0a3b7fff7594414980d3bea54c56b3f3cc6537",
+    "cxx": "brew/gcc@14/bin/g++-14",
+    "python": "python/bin/python3",
+    "clangd": "",
+    "flags": [
+      "-static-libstdc++",
+      "-static-libgcc"
+    ],
+    "sdk": true
+  },
   "linux-arm64": {
     "url": "https://downloads.eolymp.com/code/toolchains/linux-arm64-8b6bca5395b4.tar.gz",
     "sha256": "8b6bca5395b4a136421e79058bcde55bc29609b0ace749052a73c72e967786be",
