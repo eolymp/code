@@ -55,10 +55,10 @@ function create(context, root, changed) {
   const watchers = new Set();
   const post = () => {
     if (panel) panel.webview.postMessage(state);
-    for (const watcher of watchers) watcher(state.progress, state.fraction);
+    for (const watcher of watchers) watcher(state.progress, state.fraction, state.source);
   };
-  const progress = (text, fraction) => {
-    state = { ...state, progress: text, fraction, stoppable: true };
+  const progress = (text, fraction, source) => {
+    state = { ...state, progress: text, fraction, source, stoppable: true };
     post();
     if (notify) notify.report({ message: text });
   };
@@ -90,9 +90,10 @@ function create(context, root, changed) {
     const have = toolset.installed(root);
     if (!toolset.wanted() || (have && have.current)) return;
     await toolset.install(root, (stage, value, part) => {
-      const text = stage === 'download' ? t('{0} MB downloaded', Math.round(value / 1048576)) : stage === 'unpack' ? t('Unpacking…') : t('Preparing…');
+      const source = stage === 'download' ? ['{0} MB downloaded', Math.round(value / 1048576)] : stage === 'unpack' ? ['Unpacking…'] : ['Preparing…'];
+      const text = t(...source);
       const fraction = stage === 'download' ? Math.round(part * 80) / 100 : stage === 'unpack' ? Math.round(80 + value * 20) / 100 : undefined;
-      if (text !== state.progress || fraction !== state.fraction) progress(text, fraction);
+      if (text !== state.progress || fraction !== state.fraction) progress(text, fraction, source);
     }, stopper.signal);
     await changed();
   };

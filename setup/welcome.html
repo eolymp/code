@@ -96,8 +96,10 @@
   const draw = () => {
     const s = state;
     const picked = s.locales.find((item) => item.id === s.locale);
-    if (waiting && picked.installed) { waiting = false; step = 'language'; }
-    if (waiting && s.failed === 'locale') waiting = false;
+    if (waiting && !s.packing) {
+      waiting = false;
+      if (picked.installed) step = 'language';
+    }
     if (step === 'tools' && s.ready && !s.busy) step = 'done';
     const go = (next) => () => { step = next; draw(); };
     const body = el('body');
@@ -162,6 +164,7 @@
         else {
           waiting = true;
           vscode.postMessage({ type: 'pack' });
+          draw();
         }
       }));
     }
@@ -193,7 +196,7 @@
         const fill = make('div');
         if (s.fraction !== undefined) fill.style.width = `${Math.round(s.fraction * 100)}%`;
         bar.append(fill);
-        body.append(bar, make('div', 'progress', s.progress));
+        body.append(bar, make('div', 'progress', s.progress ? T(...s.progress) : ''));
         actions.append(button(T('Cancel'), send('cancel'), 'quiet'));
       } else {
         if (s.reason) body.append(make('div', 'progress', s.reason));
