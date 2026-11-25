@@ -33,6 +33,7 @@
   "Tools": "Araçlar",
   "Unpacking…": "Açılıyor…",
   "clangd was not found": "clangd bulunamadı",
+  "debugserver was not found": "debugserver bulunamadı",
   "the extension is not installed": "eklenti kurulu değil",
   "{0} MB downloaded": "{0} MB indirildi",
   "Programming language": "Programlama dili",

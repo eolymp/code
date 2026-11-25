@@ -2,7 +2,7 @@ const { test, expect } = require('./app');
 
 const LAUNCH = {
   version: '0.2.0',
-  configurations: [{ name: 'sum', type: 'lldb', request: 'launch', program: '${workspaceFolder}/sum/.build/sum/run' }],
+  configurations: [{ name: 'sum', type: 'lldb', request: 'launch', program: '${workspaceFolder}/sum/.build/sum/run', stdio: ['${workspaceFolder}/sum/1.in'] }],
 };
 
 test.use({
@@ -22,8 +22,7 @@ test('The debugger starts a compiled solution', async ({ editor }) => {
   await editor.window.keyboard.type('Debug: Select and Start Debugging');
   await editor.window.keyboard.press('Enter');
   await editor.window.getByRole('option', { name: /^sum/ }).click();
-  await expect(editor.window.getByRole('button', { name: /^Pause/ })).toBeVisible({ timeout: 60000 });
-  await expect(editor.window.getByText('Launching:')).toBeVisible();
+  await expect(editor.window.getByText('Process exited with code 0.')).toBeVisible({ timeout: 60000 });
 });
 
 test('F5 debugs the solution with typed input', async ({ editor }) => {

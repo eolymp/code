@@ -1,4 +1,7 @@
-const { test, expect } = require('./app');
+const { test, expect, TOOLS } = require('./app');
+const toolset = require('../setup/tools');
+
+test.skip(!process.env.EOLYMP_CODE_FRESH_TOOLS && Boolean(toolset.installed(TOOLS)?.current), 'The compiler and Python are installed already; set EOLYMP_CODE_FRESH_TOOLS=1 to install them afresh.');
 
 test.use({ files: { 'sum/sum.cpp': '#include <bits/stdc++.h>\nint main() { int a, b; std::cin >> a >> b; std::cout << a + b << "\\n"; }\n' }, tools: false });
 test.setTimeout(900000);
