@@ -57,8 +57,12 @@ mkdir "$tmp/image"
 ditto "$app" "$tmp/image/$(basename "$app")"
 ln -s /Applications "$tmp/image/Applications"
 [ ! -e "$here/dmg.DS_Store" ] || cp "$here/dmg.DS_Store" "$tmp/image/.DS_Store"
-rm -f "$dmg"
-hdiutil create -volname "Eolymp Code" -srcfolder "$tmp/image" -format ULMO "$dmg"
+tries=0
+until hdiutil create -ov -volname "Eolymp Code" -srcfolder "$tmp/image" -format ULMO "$dmg"; do
+  tries=$((tries + 1))
+  [ "$tries" -lt 5 ] || exit 1
+  sleep 10
+done
 if [ -n "$identity" ]; then
   codesign --force --timestamp --sign "$identity" "$dmg"
 fi
