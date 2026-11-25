@@ -24,7 +24,6 @@
   "New name of the solution": "Нова назва розв'язку",
   "New name of the test": "Нова назва тесту",
   "No answer to compare with": "Немає відповіді для порівняння",
-  "Not run yet": "Ще не запускався",
   "Open a .cpp or .py file to run it here.": "Відкрийте файл .cpp або .py, щоб запустити його тут.",
   "Open a .cpp or .py file to run it.": "Відкрийте файл .cpp або .py, щоб запустити його.",
   "Open a .cpp or .py file to test it.": "Відкрийте файл .cpp або .py, щоб перевірити його на тестах.",
@@ -45,7 +44,6 @@
   "This name cannot be used for a file.": "Таку назву не можна дати файлу.",
   "failed": "помилка",
   "input ended": "введення завершено",
-  "not run yet": "ще не запускався",
   "output changed": "вивід змінився",
   "runtime error": "помилка виконання",
   "stopped": "зупинено",
@@ -60,5 +58,8 @@
   "Are you sure you want to delete these {0} items?": "Ви справді хочете видалити ці елементи ({0})?",
   "Move to Trash": "Перемістити в смітник",
   "Move to Recycle Bin": "Перемістити в кошик",
-  "Test \"{0}\"": "Тест \"{0}\""
+  "Test \"{0}\"": "Тест \"{0}\"",
+  "Rerun": "Запустити знову",
+  "This problem has no solution to run.": "У цій задачі немає розв'язку для запуску.",
+  "This file is not a test of a problem.": "Цей файл не є тестом задачі."
 }

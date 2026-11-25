@@ -31,5 +31,6 @@
   "command.delete": "Delete",
   "command.cut": "Cut",
   "command.copy": "Copy",
-  "command.paste": "Paste"
+  "command.paste": "Paste",
+  "command.runTest": "Run Test"
 }

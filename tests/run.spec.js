@@ -34,7 +34,13 @@ test('F5 runs the solution from a test file and from the Practice view', async (
   await expect(editor.window.getByRole('tab', { name: /^1\.in/ })).toBeVisible();
   await editor.window.keyboard.press('F5');
   await expect(title).toContainText('sum.cpp');
-  await expect(editor.panel.getByRole('textbox', { name: 'Input for the program' })).toBeVisible();
+  const input = editor.panel.getByRole('textbox', { name: 'Input for the program' });
+  await expect(input).toBeFocused();
+  await editor.window.keyboard.type('12 9');
+  await editor.window.keyboard.press('Enter');
+  await expect(editor.panel.locator('details[data-key="run"] pre')).toHaveText('12 9\n21\n');
+  await editor.window.waitForTimeout(500);
+  await expect(editor.window.locator('.quick-input-widget')).toBeHidden();
 
   await editor.window.locator('.monaco-editor .view-lines').first().click();
   await editor.window.keyboard.press('Shift+F5');

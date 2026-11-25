@@ -31,5 +31,6 @@
   "command.delete": "Видалити",
   "command.cut": "Вирізати",
   "command.copy": "Копіювати",
-  "command.paste": "Вставити"
+  "command.paste": "Вставити",
+  "command.runTest": "Запустити тест"
 }

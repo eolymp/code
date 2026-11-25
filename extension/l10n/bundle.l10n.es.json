@@ -24,7 +24,6 @@
   "New name of the solution": "Nuevo nombre de la solución",
   "New name of the test": "Nuevo nombre de la prueba",
   "No answer to compare with": "No hay respuesta con la que comparar",
-  "Not run yet": "Aún no se ha ejecutado",
   "Open a .cpp or .py file to run it here.": "Abre un archivo .cpp o .py para ejecutarlo aquí.",
   "Open a .cpp or .py file to run it.": "Abre un archivo .cpp o .py para ejecutarlo.",
   "Open a .cpp or .py file to test it.": "Abre un archivo .cpp o .py para probarlo.",
@@ -45,7 +44,6 @@
   "This name cannot be used for a file.": "Este nombre no se puede usar para un archivo.",
   "failed": "error",
   "input ended": "entrada terminada",
-  "not run yet": "aún no se ha ejecutado",
   "output changed": "la salida ha cambiado",
   "runtime error": "error de ejecución",
   "stopped": "detenido",
@@ -60,5 +58,8 @@
   "Are you sure you want to delete these {0} items?": "¿Seguro que quieres eliminar estos {0} elementos?",
   "Move to Trash": "Mover a la papelera",
   "Move to Recycle Bin": "Mover a la papelera de reciclaje",
-  "Test \"{0}\"": "Prueba \"{0}\""
+  "Test \"{0}\"": "Prueba \"{0}\"",
+  "Rerun": "Volver a ejecutar",
+  "This problem has no solution to run.": "Este problema no tiene una solución para ejecutar.",
+  "This file is not a test of a problem.": "Este archivo no es una prueba de un problema."
 }

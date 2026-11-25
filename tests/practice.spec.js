@@ -60,8 +60,8 @@ test('The Practice view copies, cuts and pastes with the keyboard', async ({ edi
   const there = (file) => fs.existsSync(path.join(editor.workspace, file));
   const key = (letter) => editor.window.keyboard.press(`ControlOrMeta+${letter}`);
 
-  await expect(tree.getByRole('treeitem', { name: 'Test "big"', exact: true })).toBeVisible();
-  await expect(tree.getByRole('treeitem', { name: 'Test 007', exact: true })).toBeVisible();
+  await expect(tree.getByRole('treeitem', { name: /^Test "big"/ })).toBeVisible();
+  await expect(tree.getByRole('treeitem', { name: /^Test 007/ })).toBeVisible();
 
   await tree.getByRole('treeitem', { name: 'sum.cpp' }).click();
   await key('c');
