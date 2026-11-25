@@ -32,6 +32,8 @@ if [ "$(git describe --tags --exact-match 2>/dev/null)" != "$version" ]; then
   git checkout -q "$version"
 fi
 git clean -qfd patches/user src
+fi
+cd "$work/vscodium"
 
 wanted="$(cat .nvmrc)"
 if [ "$(node --version 2>/dev/null)" != "v$wanted" ]; then
@@ -50,18 +52,6 @@ if [ "$(node --version 2>/dev/null)" != "v$wanted" ]; then
   fi
   export PATH="$work/$node/bin:$PATH"
 fi
-for candidate in python3.11 python3.12 python3.13; do
-  if command -v "$candidate" >/dev/null 2>&1; then
-    export npm_config_python="$(command -v "$candidate")"
-    break
-  fi
-done
-
-jq -s '.[0] * .[1]' product.json "$here/product.json" > product.json.merged
-mv product.json.merged product.json
-cp -R "$here/src/." src/stable/
-mkdir -p patches/user
-find "$here/patches" -name '*.patch' -exec cp {} patches/user/ \;
 
 export APP_NAME="Eolymp Code"
 export BINARY_NAME="eolymp-code"
@@ -80,6 +70,20 @@ export SHOULD_BUILD_REH_WEB="no"
 export SHOULD_BUILD_CLI="no"
 export DISABLE_UPDATE="yes"
 export VSCODE_SKIP_NODE_VERSION_CHECK="yes"
+
+if [ "$step" != package ]; then
+for candidate in python3.11 python3.12 python3.13; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    export npm_config_python="$(command -v "$candidate")"
+    break
+  fi
+done
+
+jq -s '.[0] * .[1]' product.json "$here/product.json" > product.json.merged
+mv product.json.merged product.json
+cp -R "$here/src/." src/stable/
+mkdir -p patches/user
+find "$here/patches" -name '*.patch' -exec cp {} patches/user/ \;
 
 rm -rf vscode "VSCode-$platform-$arch"
 if ! command -v git-lfs >/dev/null 2>&1; then
@@ -110,7 +114,14 @@ fi
 out="$repo/artifacts"
 mkdir -p "$out"
 if [ "$platform" = darwin ]; then
-  "$here/mac.sh" "$built/Eolymp Code.app" "$out/EolympCode-$platform-$arch-$version.dmg" "$work/vscodium/vscode/build/azure-pipelines/darwin"
+  [ -z "${CERTIFICATE_OSX_P12_DATA:-}" ] || export SHOULD_BUILD_ZIP=no
+  rm -rf assets
+  mkdir assets
+  set +u
+  . build/osx/prepare_assets.sh
+  set -u
+  [ ! -e "assets/$APP_NAME.$arch.$version.dmg" ] || cp "assets/$APP_NAME.$arch.$version.dmg" "$out/EolympCode-$platform-$arch-$version.dmg"
+  [ ! -e "assets/$APP_NAME-$platform-$arch-$version.zip" ] || cp "assets/$APP_NAME-$platform-$arch-$version.zip" "$out/EolympCode-$platform-$arch-$version.zip"
 elif [ "$platform" = linux ]; then
   cp "$work"/vscodium/vscode/.build/linux/deb/*/deb/*.deb "$out/EolympCode-$platform-$arch-$version.deb"
   tar -czf "$out/EolympCode-$platform-$arch-$version.tar.gz" -C "$built" .
