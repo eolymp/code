@@ -21,6 +21,8 @@ const used = new Map();
 const changed = new vscode.EventEmitter();
 let view;
 let problems;
+let drawn;
+let opening;
 let clip;
 let target;
 let active;
@@ -157,8 +159,21 @@ function update() {
   if (!pending) pending = setTimeout(flush, 40);
 }
 
+function scoreOf(file) {
+  const state = states.get(file);
+  const verdicts = state ? Object.values(sync(state, ws.solutionOf(file))).map((r) => r.verdict) : [];
+  const answered = ws.testIds(path.dirname(file)).filter((id) => ws.answerOf(path.dirname(file), id) !== undefined).length;
+  return verdicts.length && answered ? t('{0}/{1} match', verdicts.filter((v) => v === 'match').length, answered) : '';
+}
+
+function outline(node) {
+  return tree.getChildren(node).map((child) => [child.kind, child.file || child.dir, child.id, child.kind === 'solution' ? scoreOf(child.file) : '', outline(child)]);
+}
+
 function refresh() {
-  changed.fire();
+  const now = JSON.stringify(outline());
+  if (now !== drawn) changed.fire();
+  drawn = now;
   update();
 }
 
@@ -194,7 +209,8 @@ function say(session, kind, text) {
 async function prepare(from, missing) {
   const node = from === 'focused' ? chosen()[0] : from;
   const picked = node && node.kind === 'solution';
-  let document = picked ? await vscode.workspace.openTextDocument(node.file) : vscode.window.activeTextEditor && vscode.window.activeTextEditor.document;
+  const shown = from instanceof vscode.Uri ? await vscode.workspace.openTextDocument(from) : vscode.window.activeTextEditor && vscode.window.activeTextEditor.document;
+  let document = picked ? await vscode.workspace.openTextDocument(node.file) : shown;
   let s = solutionIn(document);
   if (!s && target && fs.existsSync(target.file)) {
     s = target;
@@ -551,11 +567,11 @@ async function showDiff(id) {
 async function openSolution(file, lang) {
   const fresh = !fs.existsSync(file);
   if (fresh) fs.writeFileSync(file, TEMPLATES[lang]);
+  target = ws.solutionOf(file);
+  refresh();
   const document = await vscode.workspace.openTextDocument(file);
   const editor = await vscode.window.showTextDocument(document);
   if (fresh) editor.selection = new vscode.Selection(CURSOR[lang], CURSOR[lang]);
-  target = ws.solutionOf(file);
-  refresh();
 }
 
 function askName(options, taken) {
@@ -601,14 +617,14 @@ async function newFile(node) {
   if (!name) return;
   const file = path.join(node.dir, name);
   fs.writeFileSync(file, '', { flag: 'wx' });
-  await vscode.window.showTextDocument(vscode.Uri.file(file));
   refresh();
+  await vscode.window.showTextDocument(vscode.Uri.file(file));
 }
 
 async function erase(files) {
   const edit = new vscode.WorkspaceEdit();
   for (const file of files) edit.deleteFile(vscode.Uri.file(file), { ignoreIfNotExists: true, maxSize: 5000000 });
-  await vscode.workspace.applyEdit(edit);
+  if (!await vscode.workspace.applyEdit(edit)) vscode.window.showErrorMessage(t('Could not delete the selected items.'));
 }
 
 async function move(from, to) {
@@ -797,6 +813,15 @@ async function paste(node) {
   refresh();
 }
 
+async function openTest(node) {
+  opening = path.join(node.dir, `${node.id}.in`);
+  try {
+    await vscode.window.showTextDocument(vscode.Uri.file(opening), { preserveFocus: true });
+  } finally {
+    opening = undefined;
+  }
+}
+
 function nodeOf(file) {
   const dir = path.dirname(file);
   const label = path.basename(file);
@@ -809,7 +834,7 @@ function nodeOf(file) {
 
 function show(editor) {
   const node = editor && editor.document.uri.scheme === 'file' ? nodeOf(editor.document.fileName) : undefined;
-  if (!node || !problems.visible || problems.selection.some((n) => n.file === node.file || (n.kind === 'test' && n.dir === node.dir && n.id === node.id))) return;
+  if (!node || node.file === opening || !problems.visible || problems.selection.some((n) => n.file === node.file || (n.kind === 'test' && n.dir === node.dir && n.id === node.id))) return;
   problems.reveal(node, { select: true, focus: false }).then(undefined, () => {});
 }
 
@@ -884,13 +909,10 @@ const tree = {
     }
     if (node.kind === 'solution') {
       const item = new vscode.TreeItem(path.basename(node.file));
-      const state = states.get(node.file);
-      const verdicts = state ? Object.values(sync(state, ws.solutionOf(node.file))).map((r) => r.verdict) : [];
-      const answered = ws.testIds(node.dir).filter((id) => ws.answerOf(node.dir, id) !== undefined).length;
       item.id = node.file;
       item.resourceUri = vscode.Uri.file(node.file);
       item.iconPath = vscode.ThemeIcon.File;
-      item.description = verdicts.length && answered ? t('{0}/{1} match', verdicts.filter((v) => v === 'match').length, answered) : '';
+      item.description = scoreOf(node.file);
       item.command = { command: 'vscode.open', title: 'Open', arguments: [item.resourceUri] };
       item.contextValue = 'solution';
       return item;
@@ -899,7 +921,7 @@ const tree = {
       const item = new vscode.TreeItem(testName(node.id), vscode.TreeItemCollapsibleState.Collapsed);
       item.id = `${node.dir}#${node.id}`;
       item.iconPath = { dark: vscode.Uri.file(path.join(__dirname, 'test-dark.svg')), light: vscode.Uri.file(path.join(__dirname, 'test-light.svg')) };
-      item.command = { command: 'vscode.open', title: 'Open', arguments: [vscode.Uri.file(path.join(node.dir, `${node.id}.in`))] };
+      item.command = { command: 'eolympCode.openTest', title: 'Open', arguments: [node] };
       item.contextValue = 'test';
       return item;
     }
@@ -977,7 +999,7 @@ function activate(context) {
     renameTest: (id, dir) => renameTest(dir, id),
     deleteTest: (id, dir) => deleteTest(dir, id),
   };
-  const commands = { run, runTests, runTest, debug, stop, newProblem, newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
+  const commands = { run, runTests, runTest, debug, openTest, stop, newProblem, newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterTrackerFactory('*', {
       createDebugAdapterTracker(session) {
