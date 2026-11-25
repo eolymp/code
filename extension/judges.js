@@ -53,12 +53,14 @@ function create(createProblem, refresh) {
       box.busy = true;
       judge.search(box.value).then((found) => {
         if (mine !== asked) return;
+        box.title = undefined;
         box.items = found.map((problem) => ({ label: problem.label, description: problem.description, alwaysShow: true, problem }));
         box.busy = false;
       }, (err) => {
         if (mine !== asked) return;
+        box.title = t('Could not search: {0}', err.message);
+        box.items = [];
         box.busy = false;
-        vscode.window.showErrorMessage(t('Could not search: {0}', err.message));
       });
     };
     box.placeholder = t('Search problems on {0}', judge.label);

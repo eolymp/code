@@ -12,7 +12,7 @@ async function get(token, route, input) {
   const query = input ? `?${new URLSearchParams({ q: JSON.stringify(input) })}` : '';
   const res = await fetch(`${BASE}${route}${query}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`);
+  if (!res.ok) throw Object.assign(new Error(body.message || `HTTP ${res.status}`), { status: res.status });
   return body;
 }
 

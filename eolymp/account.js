@@ -30,7 +30,8 @@ async function create(context) {
       await context.secrets.store(KEY, JSON.stringify(renewed));
       return renewed;
     } catch (err) {
-      if (!(err instanceof oauth.Rejected)) throw err;
+      if (!(err instanceof oauth.Rejected)) return profile.session.expires > Date.now() ? profile : undefined;
+      await new Promise((resolve) => { setTimeout(resolve, 2000); });
       const latest = await read();
       if (latest && latest.session.refresh !== profile.session.refresh) return latest;
       await context.secrets.delete(KEY);
@@ -53,10 +54,11 @@ async function create(context) {
     const before = known;
     known = now;
     if (!before && !now) return;
+    const same = now && before && now.account.id === before.account.id;
     changed.fire({
-      added: now && !before ? [now] : [],
-      removed: before && !now ? [before] : [],
-      changed: now && before && now.accessToken !== before.accessToken ? [now] : [],
+      added: now && !same ? [now] : [],
+      removed: before && !same ? [before] : [],
+      changed: same && now.accessToken !== before.accessToken ? [now] : [],
     });
   };
 
@@ -78,7 +80,10 @@ async function create(context) {
           cancelled: new Promise((resolve) => { cancel.onCancellationRequested(() => resolve(undefined)); }),
         });
         if (!session) throw new vscode.CancellationError();
-        const info = await oauth.userinfo(session.access);
+        const info = await oauth.userinfo(session.access).catch(async (err) => {
+          await oauth.revoke(session).catch(() => {});
+          throw err;
+        });
         const profile = { user: { id: info.sub, nickname: info.nickname, name: info.name }, session };
         await context.secrets.store(KEY, JSON.stringify(profile));
         return sessionOf(profile);

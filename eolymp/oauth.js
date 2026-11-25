@@ -43,7 +43,7 @@ async function post(path, fields) {
   const res = await fetch(`${API}/${path}`, { method: 'POST', body: new URLSearchParams(fields) });
   const body = await res.json().catch(() => ({}));
   if (res.ok) return body;
-  if ([400, 401, 403].includes(res.status)) throw new Rejected(body.message || `HTTP ${res.status}`);
+  if (res.status === 400) throw new Rejected(body.message || `HTTP ${res.status}`);
   throw new Error(body.message || `HTTP ${res.status}`);
 }
 
