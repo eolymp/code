@@ -50,7 +50,7 @@ By default the extension builds with the compiler and Python named in its settin
 
     const registration = core.registerToolchain({ cxx, python, flags, env, include, diagnose });
 
-`cxx` and `python` are paths to the compiler and Python. `flags` are added to the compiler's flags and `env` to its environment, as long as the settings don't name another compiler. `include` sets `CPLUS_INCLUDE_PATH` when the compiler in use is not the supplied one, unless the `includePath` setting is set. `diagnose` is called when a tool is missing and the user asks to fix it. Every field is optional. A new call replaces the previous toolchain, and `registration.dispose()` removes it. Before each build the extension starts every extension that depends on it, so a toolchain registered on activation is in place for the first build.
+`cxx` and `python` are paths to the compiler and Python. `flags` are added to the compiler's flags and `env` to its environment, as long as the settings don't name another compiler. `include` sets `CPLUS_INCLUDE_PATH` when the compiler in use is not the supplied one, unless the `includePath` setting is set. `diagnose` is called when a tool is missing and the user asks to fix it. Every field is optional. A new call replaces the previous toolchain, and `registration.dispose()` removes it. An extension that supplies a toolchain declares `"eolympCode": { "toolchain": true }` in its `package.json` and registers it as soon as it activates: the extension starts every such extension before a build, so the first build already uses the toolchain.
 
 ## Build
 

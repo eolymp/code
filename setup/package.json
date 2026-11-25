@@ -20,6 +20,9 @@
   "extensionDependencies": [
     "eolymp.eolymp-code"
   ],
+  "eolympCode": {
+    "toolchain": true
+  },
   "main": "./extension.js",
   "contributes": {
     "commands": [
