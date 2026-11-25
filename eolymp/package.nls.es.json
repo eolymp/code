@@ -1,4 +1,3 @@
 {
-  "description": "Abre problemas de Eolymp en la aplicación Eolymp Code y envía soluciones.",
-  "command.submit": "Enviar"
+  "description": "Inicia sesión en Eolymp y abre sus problemas en la aplicación Eolymp Code."
 }

@@ -27,30 +27,7 @@
         "id": "eolymp",
         "label": "Eolymp"
       }
-    ],
-    "commands": [
-      {
-        "command": "eolymp.submit",
-        "title": "%command.submit%",
-        "category": "Eolymp",
-        "icon": "$(cloud-upload)"
-      }
-    ],
-    "menus": {
-      "editor/title": [
-        {
-          "command": "eolymp.submit",
-          "group": "navigation@3",
-          "when": "eolymp.linked && (resourceLangId == cpp || resourceLangId == python)"
-        }
-      ],
-      "commandPalette": [
-        {
-          "command": "eolymp.submit",
-          "when": "eolymp.linked"
-        }
-      ]
-    }
+    ]
   },
   "l10n": "./l10n"
 }

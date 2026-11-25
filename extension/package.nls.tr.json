@@ -32,5 +32,6 @@
   "command.cut": "Kes",
   "command.copy": "Kopyala",
   "command.paste": "Yapıştır",
-  "command.runTest": "Testi Çalıştır"
+  "command.runTest": "Testi Çalıştır",
+  "command.findProblem": "Problem Bul"
 }

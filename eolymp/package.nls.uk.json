@@ -1,4 +1,3 @@
 {
-  "description": "Відкривайте задачі з Eolymp у застосунку Eolymp Code і надсилайте розв'язки.",
-  "command.submit": "Надіслати"
+  "description": "Вхід в Eolymp і відкриття його задач у застосунку Eolymp Code."
 }

@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const http = require('http');
 
 const CLIENT = 'code';
-const SCOPE = 'openid profile offline_access atlas:problem:read atlas:submission:read atlas:submission:write judge:contest:read judge:contest:participate';
+const SCOPE = 'openid profile offline_access atlas:problem:read';
 const AUTHORIZE = 'https://accounts.eolymp.com/authorize';
 const API = 'https://api.eolymp.com/oauth2';
 
@@ -55,7 +55,7 @@ async function signIn({ open, page, lang, cancelled }) {
   const verifier = random();
   const local = await listen(state, page);
   try {
-    const query = new URLSearchParams({
+    const query = {
       response_type: 'code',
       client_id: CLIENT,
       redirect_uri: local.redirect,
@@ -64,8 +64,8 @@ async function signIn({ open, page, lang, cancelled }) {
       code_challenge: crypto.createHash('sha256').update(verifier).digest('base64url'),
       code_challenge_method: 'S256',
       lang,
-    });
-    await open(`${AUTHORIZE}?${query.toString().replace(/\+/g, '%20')}`);
+    };
+    await open(`${AUTHORIZE}?${Object.entries(query).map(([name, value]) => `${name}=${encodeURIComponent(value)}`).join('&')}`);
     const code = await Promise.race([local.code, cancelled]);
     if (!code) return undefined;
     return session(await post('token', { grant_type: 'authorization_code', client_id: CLIENT, code, code_verifier: verifier, redirect_uri: local.redirect }));

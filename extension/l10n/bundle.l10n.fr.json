@@ -63,5 +63,9 @@
   "This problem has no solution to run.": "Ce problème n'a aucune solution à exécuter.",
   "This file is not a test of a problem.": "Ce fichier n'est pas un test d'un problème.",
   "Open a .cpp or .py file to debug it.": "Ouvre un fichier .cpp ou .py pour le déboguer.",
-  "Debug": "Déboguer"
+  "Debug": "Déboguer",
+  "Where to look for a problem": "Où chercher un problème",
+  "Search problems on {0}": "Rechercher des problèmes sur {0}",
+  "Could not search: {0}": "La recherche a échoué : {0}",
+  "Could not open the problem: {0}": "Impossible d'ouvrir le problème : {0}"
 }

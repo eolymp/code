@@ -1,21 +1,7 @@
 {
   "Continue signing in in your browser.": "Продовжте вхід у браузері.",
-  "Could not end the session on {0}: {1}": "Не вдалося завершити сеанс на {0}: {1}",
   "You are signed in": "Ви увійшли",
   "You can close this page and return to Eolymp Code.": "Можете закрити цю сторінку й повернутися до Eolymp Code.",
-  "Compilation error": "Помилка компіляції",
-  "Testing failed on the server": "Тестування на сервері не вдалося",
-  "Accepted": "Зараховано",
-  "Wrong answer": "Неправильна відповідь",
-  "Time limit exceeded": "Перевищено ліміт часу",
-  "Memory limit exceeded": "Перевищено ліміт пам'яті",
-  "Runtime error": "Помилка виконання",
-  "Idleness limit exceeded": "Перевищено ліміт простою",
-  "Partially correct": "Частково правильно",
-  "{0}, {1} of {2} points": "{0}, {1} з {2} балів",
-  "Language to submit in": "Мова, якою надіслати розв'язок",
-  "Testing {0} on {1}": "Тестування {0} на {1}",
-  "Open on {0}": "Відкрити на {0}",
-  "Could not submit {0}: {1}": "Не вдалося надіслати {0}: {1}",
-  "{0}% accepted": "{0}% зараховано"
+  "{0}% accepted": "{0}% зараховано",
+  "Could not end the session on Eolymp: {0}": "Не вдалося завершити сеанс на Eolymp: {0}"
 }

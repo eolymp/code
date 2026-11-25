@@ -32,5 +32,6 @@
   "command.cut": "Ausschneiden",
   "command.copy": "Kopieren",
   "command.paste": "Einfügen",
-  "command.runTest": "Test ausführen"
+  "command.runTest": "Test ausführen",
+  "command.findProblem": "Aufgabe suchen"
 }
