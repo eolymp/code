@@ -20,6 +20,7 @@ function verdictOf(item) {
   if (RUNNING.includes(item.status)) return 'testing';
   if (item.status === 'ERROR') return 'compilation-error';
   if (item.status === 'SKIPPED' || item.status === 'BLOCKED') return 'skipped';
+  if (item.status === 'TIMEOUT') return 'time-limit';
   return (item.status === 'COMPLETE' && VERDICTS[item.verdict]) || 'failed';
 }
 
@@ -35,7 +36,7 @@ function resultOf(item) {
   };
 }
 
-function create(account, memory) {
+function create(account) {
   const locale = () => vscode.env.language.slice(0, 2);
   const get = async (route, input) => {
     const token = await account.token();
@@ -69,16 +70,11 @@ function create(account, memory) {
 
   const submit = async (problem, { language, source }) => {
     const token = await account.token(true);
-    const family = FAMILIES[language];
     const { items = [] } = await api.get(token, `/problems/${problem.id}/runtime`);
-    const offered = items.filter((r) => r.lang === family);
-    let runtime = offered.find((r) => r.id === memory.get(`runtime:${family}`)) || (offered.length < 2 ? offered[0] : undefined);
-    if (!runtime) {
-      const picked = await vscode.window.showQuickPick(offered.map((r) => ({ label: r.name, runtime: r })), { placeHolder: t('Language to submit in') });
-      if (!picked) return undefined;
-      runtime = picked.runtime;
-      await memory.update(`runtime:${family}`, runtime.id);
-    }
+    const offered = items.filter((r) => r.lang === FAMILIES[language]);
+    const preferred = vscode.workspace.getConfiguration('eolymp').get('runtimes')[language] || [];
+    const runtime = preferred.map((id) => offered.find((r) => r.id === id)).find(Boolean) || offered[0];
+    if (!runtime) throw new Error(t('This problem does not take solutions in this language.'));
     const created = await api.post(token, '/submissions', { problemId: problem.id, lang: runtime.id, source });
     return created.submissionId;
   };
@@ -92,7 +88,7 @@ function create(account, memory) {
         id: submission.id,
         label: `#${submission.id.slice(0, 8).toUpperCase()}`,
         url: submission.spaceLink || problem.url,
-        message: submission.error || (done && submission.errorUrl ? await api.text(submission.errorUrl) : ''),
+        message: submission.error || (done && submission.errorUrl ? await api.text(submission.errorUrl).catch((err) => err.message) : ''),
         children: (submission.groups || []).map((group) => ({
           ...resultOf(group),
           kind: 'testset',

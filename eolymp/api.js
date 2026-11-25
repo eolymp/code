@@ -27,7 +27,7 @@ async function* events(chunks) {
   const decoder = new TextDecoder();
   let buffer = '';
   for await (const chunk of chunks) {
-    buffer += decoder.decode(chunk, { stream: true }).replace(/\r\n/g, '\n');
+    buffer = (buffer + decoder.decode(chunk, { stream: true })).replace(/\r\n/g, '\n');
     for (let end = buffer.indexOf('\n\n'); end >= 0; end = buffer.indexOf('\n\n')) {
       const lines = buffer.slice(0, end).split('\n');
       buffer = buffer.slice(end + 2);

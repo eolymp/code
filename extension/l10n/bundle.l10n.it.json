@@ -58,7 +58,6 @@
   "This problem has no solution to run.": "Questo problema non ha una soluzione da eseguire.",
   "This file is not a test of a problem.": "Questo file non è un test di un problema.",
   "Open a .cpp or .py file to debug it.": "Apri un file .cpp o .py per eseguirne il debug.",
-  "Debug": "Debug",
   "Where to look for a problem": "Dove cercare un problema",
   "Search problems on {0}": "Cerca problemi su {0}",
   "Could not search: {0}": "Ricerca non riuscita: {0}",
@@ -81,5 +80,6 @@
   "Could not submit {0}: {1}": "Impossibile inviare {0}: {1}",
   "Testing {0} at {1} ({2})": "Test di {0} su {1} ({2})",
   "Testing {0} on your computer": "Test di {0} sul tuo computer",
-  "Running {0} on your computer": "Esecuzione di {0} sul tuo computer"
+  "Running {0} on your computer": "Esecuzione di {0} sul tuo computer",
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} è stato inviato, ma non è stato possibile seguirne il test: {1}"
 }

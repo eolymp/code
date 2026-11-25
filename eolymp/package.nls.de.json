@@ -1,3 +1,4 @@
 {
-  "description": "Melde dich bei Eolymp an und öffne dessen Aufgaben in der App Eolymp Code."
+  "description": "Melde dich bei Eolymp an und öffne dessen Aufgaben in der App Eolymp Code.",
+  "setting.runtimes": "Sprachen auf Eolymp für Einreichungen: Die erste, die eine Aufgabe annimmt, wird verwendet."
 }

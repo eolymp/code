@@ -58,7 +58,6 @@
   "This problem has no solution to run.": "Bu problemde çalıştırılacak bir çözüm yok.",
   "This file is not a test of a problem.": "Bu dosya bir problemin testi değil.",
   "Open a .cpp or .py file to debug it.": "Hata ayıklamak için bir .cpp veya .py dosyası aç.",
-  "Debug": "Hata Ayıkla",
   "Where to look for a problem": "Problem nerede aransın",
   "Search problems on {0}": "{0} üzerinde problem ara",
   "Could not search: {0}": "Arama yapılamadı: {0}",
@@ -81,5 +80,6 @@
   "Could not submit {0}: {1}": "{0} gönderilemedi: {1}",
   "Testing {0} at {1} ({2})": "{0}, {1} üzerinde test ediliyor ({2})",
   "Testing {0} on your computer": "{0} bilgisayarınızda test ediliyor",
-  "Running {0} on your computer": "{0} bilgisayarınızda çalıştırılıyor"
+  "Running {0} on your computer": "{0} bilgisayarınızda çalıştırılıyor",
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} gönderildi, ancak testi izlenemedi: {1}"
 }

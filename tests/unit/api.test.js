@@ -16,7 +16,7 @@ test('other text is searched as it is', () => {
 });
 
 test('a watch stream gives its messages until the end marker', async () => {
-  const chunks = ['data: {"n":', '1}\n\n: keep-alive\n\ndata: {"n":2}\r\n\r\nevent: eof\ndata: {}\n\ndata: {"n":3}\n\n'].map((text) => new TextEncoder().encode(text));
+  const chunks = ['data: {"n":', '1}\n\n: keep-alive\n\ndata: {"n":2}\r\n\r', '\nevent: eof\ndata: {}\n\ndata: {"n":3}\n\n'].map((text) => new TextEncoder().encode(text));
   const seen = [];
   for await (const message of api.events(chunks)) seen.push(message.n);
   assert.deepEqual(seen, [1, 2]);

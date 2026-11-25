@@ -6,5 +6,5 @@
   "Could not end the session on Eolymp: {0}": "Eolymp'teki oturum kapatılamadı: {0}",
   "You are not signed in": "Oturum açılmadı",
   "You can close this page and try again in Eolymp Code.": "Bu sayfayı kapatıp Eolymp Code'da yeniden deneyebilirsin.",
-  "Language to submit in": "Gönderim dili"
+  "This problem does not take solutions in this language.": "Bu problem bu dilde çözüm kabul etmiyor."
 }

@@ -27,7 +27,33 @@
         "id": "eolymp",
         "label": "Eolymp"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Eolymp",
+      "properties": {
+        "eolymp.runtimes": {
+          "type": "object",
+          "description": "%setting.runtimes%",
+          "default": {
+            "cpp": [
+              "cpp:23-gnu14",
+              "cpp:20-gnu14"
+            ],
+            "py": [
+              "python:3.14-python",
+              "python:3.13-python",
+              "python:3.11-pypy"
+            ]
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
   },
   "l10n": "./l10n"
 }
