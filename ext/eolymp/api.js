@@ -8,6 +8,13 @@ function numberIn(query) {
   return HOSTS.includes(url.hostname) && found ? Number(found[1]) : undefined;
 }
 
+function contestIn(query) {
+  if (!URL.canParse(query)) return undefined;
+  const url = new URL(query);
+  const found = url.pathname.match(/^(?:\/[a-z]{2})?\/contests\/([^/]+)(?:\/|$)/);
+  return HOSTS.includes(url.hostname) && found ? decodeURIComponent(found[1]) : undefined;
+}
+
 async function get(token, route, input) {
   const query = input ? `?${new URLSearchParams({ q: JSON.stringify(input) })}` : '';
   const res = await fetch(`${BASE}${route}${query}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
@@ -55,4 +62,4 @@ async function text(url) {
   return res.text();
 }
 
-module.exports = { numberIn, get, post, events, stream, text };
+module.exports = { numberIn, contestIn, get, post, events, stream, text };

@@ -15,6 +15,15 @@ test('other text is searched as it is', () => {
   assert.equal(api.numberIn('https://eolymp.com/problems/12abc'), undefined);
 });
 
+test('a contest link gives the contest id', () => {
+  assert.equal(api.contestIn('https://eolymp.com/contests/b82uf556dh39rcgmipi7g4ghtg'), 'b82uf556dh39rcgmipi7g4ghtg');
+  assert.equal(api.contestIn('https://www.eolymp.com/uk/contests/b82uf556/problems/x'), 'b82uf556');
+  assert.equal(api.contestIn('https://eolymp.com/contests/test-rnd2'), 'test-rnd2');
+  assert.equal(api.contestIn('https://eolymp.com/problems/1'), undefined);
+  assert.equal(api.contestIn('https://example.com/contests/abc'), undefined);
+  assert.equal(api.contestIn('round 1'), undefined);
+});
+
 test('a watch stream gives its messages until the end marker', async () => {
   const chunks = ['data: {"n":', '1}\n\n: keep-alive\n\ndata: {"n":2}\r\n\r', '\nevent: eof\ndata: {}\n\ndata: {"n":3}\n\n'].map((text) => new TextEncoder().encode(text));
   const seen = [];

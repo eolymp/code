@@ -38,5 +38,7 @@
   "command.submit": "Wyślij",
   "command.openSubmission": "Otwórz w przeglądarce",
   "command.consoleRerun": "Uruchom ponownie",
-  "command.consoleEndInput": "Zakończ wejście"
+  "command.consoleEndInput": "Zakończ wejście",
+  "view.contests": "Zawody",
+  "setting.contests": "Pokazuj widok Zawody na pasku działań."
 }

@@ -38,5 +38,7 @@
   "command.submit": "Gönder",
   "command.openSubmission": "Tarayıcıda aç",
   "command.consoleRerun": "Yeniden çalıştır",
-  "command.consoleEndInput": "Girdiyi bitir"
+  "command.consoleEndInput": "Girdiyi bitir",
+  "view.contests": "Yarışmalar",
+  "setting.contests": "Etkinlik çubuğunda Yarışmalar görünümünü göster."
 }

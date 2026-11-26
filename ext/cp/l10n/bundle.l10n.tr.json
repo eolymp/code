@@ -81,5 +81,20 @@
   "Testing {0} at {1} ({2})": "{0}, {1} üzerinde test ediliyor ({2})",
   "Testing {0} on your computer": "{0} bilgisayarınızda test ediliyor",
   "Running {0} on your computer": "{0} bilgisayarınızda çalıştırılıyor",
-  "{0} is submitted, but its testing could not be followed: {1}": "{0} gönderildi, ancak testi izlenemedi: {1}"
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} gönderildi, ancak testi izlenemedi: {1}",
+  "Contest": "Yarışma",
+  "Contests": "Yarışmalar",
+  "Could not open the contest: {0}": "Yarışma açılamadı: {0}",
+  "No contests found.": "Yarışma bulunamadı.",
+  "Open in Editor": "Düzenleyicide aç",
+  "Open on {0}": "{0}'da aç",
+  "Participants: {0}": "Katılımcılar: {0}",
+  "Preparing the contest workspace…": "Yarışma klasörü hazırlanıyor…",
+  "Problems: {0}": "Problemler: {0}",
+  "Search contests": "Yarışma ara",
+  "{0} h": "{0} sa",
+  "{0} h {1} min": "{0} sa {1} dk",
+  "{0} min": "{0} dk",
+  "Problems": "Problemler",
+  "Could not update the contest problems: {0}": "Yarışma problemleri güncellenemedi: {0}"
 }

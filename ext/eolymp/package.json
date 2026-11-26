@@ -20,6 +20,9 @@
   "extensionDependencies": [
     "eolymp.cp"
   ],
+  "cp": {
+    "contests": true
+  },
   "main": "./extension.js",
   "contributes": {
     "authentication": [

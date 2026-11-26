@@ -81,5 +81,20 @@
   "Testing {0} at {1} ({2})": "Evaluación de {0} en {1} ({2})",
   "Testing {0} on your computer": "Pruebas de {0} en tu ordenador",
   "Running {0} on your computer": "Ejecución de {0} en tu ordenador",
-  "{0} is submitted, but its testing could not be followed: {1}": "{0} se envió, pero no se pudo seguir su evaluación: {1}"
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} se envió, pero no se pudo seguir su evaluación: {1}",
+  "Contest": "Concurso",
+  "Contests": "Concursos",
+  "Could not open the contest: {0}": "No se pudo abrir el concurso: {0}",
+  "No contests found.": "No se encontraron concursos.",
+  "Open in Editor": "Abrir en el editor",
+  "Open on {0}": "Abrir en {0}",
+  "Participants: {0}": "Participantes: {0}",
+  "Preparing the contest workspace…": "Preparando la carpeta del concurso…",
+  "Problems: {0}": "Problemas: {0}",
+  "Search contests": "Buscar concursos",
+  "{0} h": "{0} h",
+  "{0} h {1} min": "{0} h {1} min",
+  "{0} min": "{0} min",
+  "Problems": "Problemas",
+  "Could not update the contest problems: {0}": "No se pudieron actualizar los problemas del concurso: {0}"
 }

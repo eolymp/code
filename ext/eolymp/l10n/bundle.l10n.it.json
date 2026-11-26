@@ -6,5 +6,17 @@
   "Could not end the session on Eolymp: {0}": "Impossibile chiudere la sessione su Eolymp: {0}",
   "You are not signed in": "Accesso non effettuato",
   "You can close this page and try again in Eolymp Code.": "Puoi chiudere questa pagina e riprovare in Eolymp Code.",
-  "This problem does not take solutions in this language.": "Questo problema non accetta soluzioni in questo linguaggio."
+  "This problem does not take solutions in this language.": "Questo problema non accetta soluzioni in questo linguaggio.",
+  "Scheduled": "Programmata",
+  "Ready": "Pronto",
+  "In progress": "In corso",
+  "Paused": "In pausa",
+  "Upsolve": "Risoluzione a posteriori",
+  "Blocked": "Bloccato",
+  "Finished": "Terminata",
+  "Unofficial": "Non ufficiale",
+  "Open": "Aperta",
+  "Frozen": "Congelata",
+  "Suspended": "Sospeso",
+  "Virtual": "Virtuale"
 }

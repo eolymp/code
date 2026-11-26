@@ -6,5 +6,17 @@
   "Could not end the session on Eolymp: {0}": "Eolymp-də sessiyanı bitirmək mümkün olmadı: {0}",
   "You are not signed in": "Siz daxil olmadınız",
   "You can close this page and try again in Eolymp Code.": "Bu səhifəni bağlayıb Eolymp Code-da yenidən cəhd edə bilərsiniz.",
-  "This problem does not take solutions in this language.": "Bu məsələ bu dildə həlləri qəbul etmir."
+  "This problem does not take solutions in this language.": "Bu məsələ bu dildə həlləri qəbul etmir.",
+  "Scheduled": "Planlaşdırıldı",
+  "Ready": "Hazır",
+  "In progress": "Davam edir",
+  "Paused": "Fasilədə",
+  "Upsolve": "Sonradan həll",
+  "Blocked": "Bloklandı",
+  "Finished": "Tamamlandı",
+  "Unofficial": "Qeyri-rəsmi",
+  "Open": "Açıq",
+  "Frozen": "Dondurulmuş",
+  "Suspended": "Dayandırıldı",
+  "Virtual": "Virtual"
 }

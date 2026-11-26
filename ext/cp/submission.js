@@ -1,7 +1,6 @@
 const vscode = require('vscode');
-const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
+const { page } = require('./page');
 
 const t = vscode.l10n.t;
 const KINDS = { waiting: 'none', testing: 'busy', accepted: 'ok', partial: 'warn', skipped: 'none' };
@@ -88,12 +87,8 @@ function register(context) {
     vscode.window.registerWebviewViewProvider('cp.submission', {
       resolveWebviewView(v) {
         view = v;
-        const nonce = crypto.randomBytes(16).toString('base64');
         v.webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.file(__dirname)] };
-        v.webview.html = fs.readFileSync(path.join(__dirname, 'submission.html'), 'utf8')
-          .replace(/{{nonce}}/g, nonce)
-          .replace(/{{font}}/g, String(v.webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'codicon.ttf')))))
-          .replace(/{{source}}/g, v.webview.cspSource);
+        v.webview.html = page(v.webview, 'submission.html');
         v.onDidDispose(() => { view = undefined; });
         v.webview.onDidReceiveMessage((m) => {
           if (m.type === 'ready') post();

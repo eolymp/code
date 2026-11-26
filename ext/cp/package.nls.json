@@ -38,5 +38,7 @@
   "command.submit": "Submit",
   "command.openSubmission": "Open in the Browser",
   "command.consoleRerun": "Rerun",
-  "command.consoleEndInput": "End Input"
+  "command.consoleEndInput": "End Input",
+  "view.contests": "Contests",
+  "setting.contests": "Show the Contests view in the activity bar."
 }

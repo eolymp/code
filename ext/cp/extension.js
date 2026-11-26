@@ -1,11 +1,12 @@
 const vscode = require('vscode');
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const ws = require('./workspace');
 const runner = require('./runner');
 const judging = require('./judges');
 const submission = require('./submission');
+const contesting = require('./contests');
+const { page } = require('./page');
 const { StringDecoder } = require('string_decoder');
 const { PassThrough } = require('stream');
 const net = require('net');
@@ -945,10 +946,7 @@ const tree = {
 const VIEW_STRINGS = ["Open a .cpp or .py file to run it here.", "Run", "Compilation failed", "Compiled with warnings", "Compiled", "failed", "warnings", "Running", "Finished", "Stopped", "Crashed", "Finished with an error", "stopped", "Input for the program", "input ended", "Crashed ({0})", "Exit code {0}", "No answer to compare with", "The output matches the answer", "The output differs from the answer", "output changed", "Diagnostics", "More actions", "runtime error", "Output trimmed, open {0}", "{0} ms", "{0} MB", "# compile", "# test {0}", "{0}/{1} match", "Testing {0} on your computer", "Running {0} on your computer"];
 
 function html(webview) {
-  const nonce = crypto.randomBytes(16).toString('base64');
-  const font = webview.asWebviewUri(vscode.Uri.file(path.join(__dirname, 'codicon.ttf')));
-  return fs.readFileSync(path.join(__dirname, 'view.html'), 'utf8').replace(/{{nonce}}/g, nonce).replace(/{{font}}/g, String(font)).replace(/{{source}}/g, webview.cspSource)
-    .replace('{{strings}}', JSON.stringify(Object.fromEntries(VIEW_STRINGS.map((text) => [text, t(text)]))).replace(/</g, '\\u003c'));
+  return page(webview, 'view.html', { strings: JSON.stringify(Object.fromEntries(VIEW_STRINGS.map((text) => [text, t(text)]))).replace(/</g, '\\u003c') });
 }
 
 function receive(m) {
@@ -993,7 +991,9 @@ function receive(m) {
 
 function activate(context) {
   problems = vscode.window.createTreeView('cp.problems', { treeDataProvider: tree, canSelectMany: true, showCollapseAll: true });
-  if (root() && path.basename(root()) !== 'practice') problems.description = path.basename(root());
+  const contest = root() && ws.contestOf(root());
+  if (contest && contest.name) problems.title = contest.name;
+  else if (root() && path.basename(root()) !== 'practice') problems.description = path.basename(root());
   let settle;
   const later = () => {
     clearTimeout(settle);
@@ -1014,6 +1014,7 @@ function activate(context) {
     deleteTest: (id, dir) => deleteTest(dir, id),
   };
   const judges = judging.create(createProblem, refresh);
+  const contests = contesting.create({ judges, root, templateOf: (lang) => TEMPLATES[lang], refresh });
   const commands = { run, runTests, runTest, debug, openTest, stop, newProblem, findProblem: judges.find, submit: judges.submit, consoleRerun: () => receive({ type: tools.tested ? 'rerun' : 'single' }), consoleDebug: () => receive({ type: 'debug', only: tools.tested }), consoleEndInput: () => receive({ type: 'eof' }), consoleStop: () => receive({ type: 'stop' }), newSolution, newTest, newFile, rename, delete: remove, copy: (node, nodes) => copy(node, nodes, false), cut: (node, nodes) => copy(node, nodes, true), paste, addAsTest: keepSession };
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterTrackerFactory('*', {
@@ -1072,6 +1073,7 @@ function activate(context) {
     }),
   );
   submission.register(context);
+  contests.register(context);
   target = solutionIn(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
   show(vscode.window.activeTextEditor);
   return {

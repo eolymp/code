@@ -38,5 +38,7 @@
   "command.submit": "Надіслати",
   "command.openSubmission": "Відкрити в браузері",
   "command.consoleRerun": "Запустити знову",
-  "command.consoleEndInput": "Завершити введення"
+  "command.consoleEndInput": "Завершити введення",
+  "view.contests": "Змагання",
+  "setting.contests": "Показувати вкладку «Змагання» на панелі дій."
 }
