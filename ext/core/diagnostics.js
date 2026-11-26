@@ -79,13 +79,21 @@ function create(context, root, changed) {
     if (hasAppleTools()) return;
     childProcess.spawn('xcode-select', ['--install'], { stdio: 'ignore' }).on('error', () => {});
     progress(t('Finish the installation in the window Apple opened. The setup continues by itself.'));
-    for (let waited = 0; !hasAppleTools(); waited += 5) {
-      if (waited > 3600 || stopper.signal.aborted) throw new Error(t("Apple's Command Line Tools were not installed."));
+    const installing = () => childProcess.spawnSync('pgrep', ['-x', 'Install Command Line Developer Tools']).status === 0;
+    let opened = false;
+    for (let waited = 0; ; waited += 2) {
+      const running = installing();
+      if (running && !opened) childProcess.spawn('open', ['-b', 'com.apple.dt.CommandLineTools.installondemand'], { stdio: 'ignore' }).on('error', () => {});
+      if (opened && !running) break;
+      opened = opened || running;
+      if (!opened && hasAppleTools()) break;
+      if (waited > 3600 || stopper.signal.aborted) break;
       await new Promise((resolve) => {
-        const timer = setTimeout(resolve, 5000);
+        const timer = setTimeout(resolve, 2000);
         stopper.signal.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
       });
     }
+    if (!hasAppleTools()) throw new Error(t("Apple's Command Line Tools were not installed."));
   };
 
   const tools = async () => {

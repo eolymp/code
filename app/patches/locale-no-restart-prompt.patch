@@ -1,0 +1,79 @@
+--- a/src/vs/workbench/contrib/localization/electron-browser/localization.contribution.ts
++++ b/src/vs/workbench/contrib/localization/electron-browser/localization.contribution.ts
+@@ -8,8 +8,8 @@
+ import { Extensions as WorkbenchExtensions, IWorkbenchContributionsRegistry } from '../../../common/contributions.js';
+ import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
+ import * as platform from '../../../../base/common/platform.js';
+-import { IExtensionManagementService, IExtensionGalleryService, InstallOperation, ILocalExtension, InstallExtensionResult, DidUninstallExtensionEvent } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+-import { INotificationService, NeverShowAgainScope, NotificationPriority } from '../../../../platform/notification/common/notification.js';
++import { IExtensionManagementService, IExtensionGalleryService, DidUninstallExtensionEvent } from '../../../../platform/extensionManagement/common/extensionManagement.js';
++import { INotificationService, NotificationPriority } from '../../../../platform/notification/common/notification.js';
+ import Severity from '../../../../base/common/severity.js';
+ import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
+ import { IExtensionsWorkbenchService } from '../../extensions/common/extensions.js';
+@@ -17,7 +17,6 @@
+ import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
+ import { CancellationToken } from '../../../../base/common/cancellation.js';
+ import { ILocaleService } from '../../../services/localization/common/locale.js';
+-import { IProductService } from '../../../../platform/product/common/productService.js';
+ import { BaseLocalizationWorkbenchContribution } from '../common/localization.contribution.js';
+ 
+ class NativeLocalizationWorkbenchContribution extends BaseLocalizationWorkbenchContribution {
+@@ -26,7 +25,6 @@
+ 	constructor(
+ 		@INotificationService private readonly notificationService: INotificationService,
+ 		@ILocaleService private readonly localeService: ILocaleService,
+-		@IProductService private readonly productService: IProductService,
+ 		@IStorageService private readonly storageService: IStorageService,
+ 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
+ 		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
+@@ -36,49 +34,9 @@
+ 		super();
+ 
+ 		this.checkAndInstall();
+-		this._register(this.extensionManagementService.onDidInstallExtensions(e => this.onDidInstallExtensions(e)));
+ 		this._register(this.extensionManagementService.onDidUninstallExtension(e => this.onDidUninstallExtension(e)));
+ 	}
+ 
+-	private async onDidInstallExtensions(results: readonly InstallExtensionResult[]): Promise<void> {
+-		for (const result of results) {
+-			if (result.operation === InstallOperation.Install && result.local) {
+-				await this.onDidInstallExtension(result.local, !!result.context?.extensionsSync);
+-			}
+-		}
+-
+-	}
+-
+-	private async onDidInstallExtension(localExtension: ILocalExtension, fromSettingsSync: boolean): Promise<void> {
+-		const localization = localExtension.manifest.contributes?.localizations?.[0];
+-		if (!localization || platform.language === localization.languageId) {
+-			return;
+-		}
+-		const { languageId, languageName } = localization;
+-
+-		this.notificationService.prompt(
+-			Severity.Info,
+-			localize('updateLocale', "Would you like to change {0}'s display language to {1} and restart?", this.productService.nameLong, languageName || languageId),
+-			[{
+-				label: localize('changeAndRestart', "Change Language and Restart"),
+-				run: async () => {
+-					await this.localeService.setLocale({
+-						id: languageId,
+-						label: languageName ?? languageId,
+-						extensionId: localExtension.identifier.id,
+-						// If settings sync installs the language pack, then we would have just shown the notification so no
+-						// need to show the dialog.
+-					}, true);
+-				}
+-			}],
+-			{
+-				sticky: true,
+-				priority: NotificationPriority.URGENT,
+-				neverShowAgain: { id: 'langugage.update.donotask', isSecondary: true, scope: NeverShowAgainScope.APPLICATION }
+-			}
+-		);
+-	}
+-
+ 	private async onDidUninstallExtension(_event: DidUninstallExtensionEvent): Promise<void> {
+ 		if (!await this.isLocaleInstalled(platform.language)) {
+ 			this.localeService.setLocale({
