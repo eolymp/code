@@ -202,7 +202,7 @@
       } else {
         if (s.reason) body.append(make('div', 'progress', s.reason));
         actions.append(button(T('Back'), go('language'), 'quiet back'));
-        if (s.failed === 'tools') actions.append(button(T('Continue without them'), go('done'), 'quiet'));
+        if (s.failed === 'tools') actions.append(button(T('Continue without the compiler'), go('done'), 'quiet'));
         actions.append(button(s.failed === 'tools' ? T('Try again') : T('Install'), send('install')));
       }
     }
