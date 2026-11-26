@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, macos-15-intel, ubuntu-22.04, ubuntu-22.04-arm, windows-2022]
+        os: [macos-15, macos-15-intel, ubuntu-22.04, ubuntu-22.04-arm, windows-2022, windows-11-arm]
     runs-on: ${{ matrix.os }}
     environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || '' }}
     permissions:
@@ -56,7 +56,7 @@ jobs:
           endpoint: ${{ vars.AZURE_SIGNING_ENDPOINT }}
           trusted-signing-account-name: ${{ vars.AZURE_SIGNING_ACCOUNT }}
           certificate-profile-name: ${{ vars.AZURE_SIGNING_PROFILE }}
-          files-folder: .build/vscodium/VSCode-win32-x64
+          files-folder: .build/vscodium/VSCode-win32-${{ runner.arch == 'ARM64' && 'arm64' || 'x64' }}
           files-folder-filter: exe,dll
           files-folder-recurse: true
           file-digest: SHA256
@@ -133,8 +133,8 @@ jobs:
           bucket="${{ vars.DOWNLOADS_BUCKET }}"
           case "$GITHUB_REF_NAME" in *-*) channel=pre/ ;; *) channel= ;; esac
           put() { aws s3 cp $1 "$bucket/$channel$2" --cache-control "public, max-age=300"; }
-          put "artifacts/EolympCode-win32-x64-*.exe" EolympCode-windows-x64.exe
           for arch in arm64 x64; do
+            put "artifacts/EolympCode-win32-$arch-*.exe" "EolympCode-windows-$arch.exe"
             put "artifacts/EolympCode-darwin-$arch-*.dmg" "EolympCode-macos-$arch.dmg"
             put "artifacts/EolympCode-linux-$arch-*.deb" "EolympCode-linux-$arch.deb"
             put "artifacts/EolympCode-linux-$arch-*.tar.gz" "EolympCode-linux-$arch.tar.gz"

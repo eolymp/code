@@ -2,7 +2,7 @@ const vscode = require('vscode');
 
 const t = vscode.l10n.t;
 const BASE = 'https://downloads.eolymp.com/code/';
-const PACKAGES = { darwin: `EolympCode-macos-${process.arch}.dmg`, linux: `EolympCode-linux-${process.arch}.deb`, win32: 'EolympCode-windows-x64.exe' };
+const PACKAGES = { darwin: `EolympCode-macos-${process.arch}.dmg`, linux: `EolympCode-linux-${process.arch}.deb`, win32: `EolympCode-windows-${process.arch}.exe` };
 
 function newer(latest, current) {
   const numbers = (version) => version.split('-')[0].split('.').map(Number);

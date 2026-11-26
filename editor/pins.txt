@@ -28,3 +28,9 @@ darwin-x64 32030694fa6c0ef438f4e4219f84677cd32f603c7faa4c71a283efc1f5b51751 http
 linux-x64 32030694fa6c0ef438f4e4219f84677cd32f603c7faa4c71a283efc1f5b51751 https://open-vsx.org/api/llvm-vs-code-extensions/vscode-clangd/0.6.0/file/llvm-vs-code-extensions.vscode-clangd-0.6.0.vsix
 linux-arm64 32030694fa6c0ef438f4e4219f84677cd32f603c7faa4c71a283efc1f5b51751 https://open-vsx.org/api/llvm-vs-code-extensions/vscode-clangd/0.6.0/file/llvm-vs-code-extensions.vscode-clangd-0.6.0.vsix
 win32-x64 32030694fa6c0ef438f4e4219f84677cd32f603c7faa4c71a283efc1f5b51751 https://open-vsx.org/api/llvm-vs-code-extensions/vscode-clangd/0.6.0/file/llvm-vs-code-extensions.vscode-clangd-0.6.0.vsix
+win32-arm64 a916e509308dac817732f63ca604a8b93ed29cd16f38a2fa9f0b64ed58e8f51a https://github.com/vadimcn/codelldb/releases/download/v1.12.3/codelldb-win32-x64.vsix
+win32-arm64 d09641352173dcc0b2cea8dfa6f3cc07232b9f46a5f9006aff79dc1df7a79168 https://open-vsx.org/api/ms-python/python/win32-x64/2026.10.0/file/ms-python.python-2026.10.0@win32-x64.vsix
+win32-arm64 f4a8ba033acc9a1e14bf53f124d8d0848318702bbb161f2a5e47ae3d3d756a67 https://open-vsx.org/api/ms-python/debugpy/win32-x64/2026.6.0/file/ms-python.debugpy-2026.6.0@win32-x64.vsix
+win32-arm64 9c87b0b992714ca2f9298cb7e98bda621612f0ee96121a8e77ee7fcccce2f351 https://open-vsx.org/api/detachhead/basedpyright/1.40.2/file/detachhead.basedpyright-1.40.2.vsix
+win32-arm64 30fe246ccd53820c09921fdfba99bd08642fc6691e7d533b85ef7e0df0132ece https://open-vsx.org/api/charliermarsh/ruff/win32-x64/2026.98.0/file/charliermarsh.ruff-2026.98.0@win32-x64.vsix
+win32-arm64 32030694fa6c0ef438f4e4219f84677cd32f603c7faa4c71a283efc1f5b51751 https://open-vsx.org/api/llvm-vs-code-extensions/vscode-clangd/0.6.0/file/llvm-vs-code-extensions.vscode-clangd-0.6.0.vsix
