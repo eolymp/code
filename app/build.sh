@@ -17,6 +17,7 @@ case "$(uname -m)" in
   arm64|aarch64) arch=arm64 ;;
   *) arch=x64 ;;
 esac
+if [ "$platform" = win32 ]; then arch="$(node -p process.arch)"; fi
 
 built="$work/vscodium/VSCode-$platform-$arch"
 
