@@ -8,7 +8,7 @@ macOS: download the disk image for [Apple Silicon](https://downloads.eolymp.com/
 
 Linux: download the package for [x64](https://downloads.eolymp.com/code/EolympCode-linux-x64.deb) or [arm64](https://downloads.eolymp.com/code/EolympCode-linux-arm64.deb) and install it with `sudo apt install ./EolympCode-linux-x64.deb`. Other distributions can unpack the [x64](https://downloads.eolymp.com/code/EolympCode-linux-x64.tar.gz) or [arm64](https://downloads.eolymp.com/code/EolympCode-linux-arm64.tar.gz) archive.
 
-Windows: download and run the [setup program](https://downloads.eolymp.com/code/EolympCode-windows-x64.exe).
+Windows: download and run the setup program for [x64](https://downloads.eolymp.com/code/EolympCode-windows-x64.exe) or [Arm](https://downloads.eolymp.com/code/EolympCode-windows-arm64.exe).
 
 The app installs its own GCC and Python. On macOS older than 15 it uses Apple's compiler and Python instead.
 
