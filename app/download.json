@@ -1,0 +1,35 @@
+{
+  "about": "https://eolymp.com/code",
+  "strings": {
+    "en": {
+      "title": "Eolymp Code",
+      "intro": "An editor for competitive programming: C++ and Python with completion, a debugger, and a console to run a solution and check it against tests.",
+      "missing": "Eolymp Code is not available for {platform}. It runs on Windows, macOS and Linux."
+    },
+    "uk": {
+      "title": "Eolymp Code",
+      "intro": "Редактор для спортивного програмування: C++ і Python з автодоповненням, налагоджувачем і консоллю, де можна запустити розв'язок і перевірити його на тестах.",
+      "missing": "Eolymp Code для {platform} немає. Застосунок працює на Windows, macOS і Linux."
+    },
+    "es": {
+      "title": "Eolymp Code",
+      "intro": "Un editor para programación competitiva: C++ y Python con autocompletado, un depurador y una consola para ejecutar una solución y comprobarla con las pruebas.",
+      "missing": "Eolymp Code no está disponible para {platform}. Funciona en Windows, macOS y Linux."
+    },
+    "az": {
+      "title": "Eolymp Code",
+      "intro": "Olimpiada proqramlaşdırması üçün redaktor: avtomatik tamamlama ilə C++ və Python, sazlayıcı və həlli işə salıb testlərlə yoxlamaq üçün konsol.",
+      "missing": "Eolymp Code {platform} üçün mövcud deyil. Proqram Windows, macOS və Linux-da işləyir."
+    }
+  },
+  "builds": [
+    { "os": "windows", "arch": "x64", "file": "EolympCode-windows-x64.exe" },
+    { "os": "windows", "arch": "arm64", "file": "EolympCode-windows-arm64.exe" },
+    { "os": "mac", "arch": "arm64", "file": "EolympCode-macos-arm64.dmg" },
+    { "os": "mac", "arch": "x64", "file": "EolympCode-macos-x64.dmg" },
+    { "os": "linux", "arch": "x64", "format": ".deb", "file": "EolympCode-linux-x64.deb" },
+    { "os": "linux", "arch": "x64", "format": ".tar.gz", "file": "EolympCode-linux-x64.tar.gz" },
+    { "os": "linux", "arch": "arm64", "format": ".deb", "file": "EolympCode-linux-arm64.deb" },
+    { "os": "linux", "arch": "arm64", "format": ".tar.gz", "file": "EolympCode-linux-arm64.tar.gz" }
+  ]
+}

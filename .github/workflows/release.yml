@@ -117,6 +117,7 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: editor-*
@@ -139,4 +140,4 @@ jobs:
             put "artifacts/EolympCode-linux-$arch-*.deb" "EolympCode-linux-$arch.deb"
             put "artifacts/EolympCode-linux-$arch-*.tar.gz" "EolympCode-linux-$arch.tar.gz"
           done
-          [ -n "$channel" ] || { echo "{\"version\":\"${GITHUB_REF_NAME#v}\"}" > latest.json; put latest.json latest.json; }
+          [ -n "$channel" ] || { jq --arg version "${GITHUB_REF_NAME#v}" '{version: $version} + .' app/download.json > latest.json; put latest.json latest.json; }
