@@ -1,8 +1,7 @@
 const vscode = require('vscode');
 
 const t = vscode.l10n.t;
-const BASE = 'https://downloads.eolymp.com/code/';
-const PACKAGES = { darwin: `EolympCode-macos-${process.arch}.dmg`, linux: `EolympCode-linux-${process.arch}.deb`, win32: `EolympCode-windows-${process.arch}.exe` };
+const PAGE = 'https://downloads.eolymp.com/code';
 
 function newer(latest, current) {
   const numbers = (version) => version.split('-')[0].split('.').map(Number);
@@ -15,7 +14,7 @@ async function check(context) {
   if (context.extensionMode !== vscode.ExtensionMode.Production) return;
   if (Date.now() - (context.globalState.get('updateChecked') || 0) < 86400000) return;
   await context.globalState.update('updateChecked', Date.now());
-  const response = await fetch(`${BASE}latest.json`, { signal: AbortSignal.timeout(10000) });
+  const response = await fetch(`${PAGE}/latest.json`, { signal: AbortSignal.timeout(10000) });
   if (!response.ok) return;
   const { version } = await response.json();
   if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) return;
@@ -23,7 +22,7 @@ async function check(context) {
   const download = t('Download');
   const skip = t('Skip This Version');
   const choice = await vscode.window.showInformationMessage(t('Eolymp Code {0} is available.', version), download, skip);
-  if (choice === download) vscode.env.openExternal(vscode.Uri.parse(BASE + PACKAGES[process.platform]));
+  if (choice === download) vscode.env.openExternal(vscode.Uri.parse(PAGE));
   else if (choice === skip) context.globalState.update('updateSkipped', version);
 }
 
