@@ -1,70 +1,70 @@
 {
   "darwin-arm64-24": {
-    "url": "https://downloads.eolymp.com/code/toolchains/darwin-arm64-24-0f9c53ead4fe.tar.gz",
-    "sha256": "0f9c53ead4fea972229e27a2027400d00055d060e13f9f7410771526f1b25c70",
-    "cxx": "brew/gcc@14/bin/g++-14",
-    "python": "python/bin/python3",
     "clangd": "",
+    "cxx": "brew/gcc@14/bin/g++",
     "flags": [
       "-static-libstdc++",
       "-static-libgcc"
     ],
-    "sdk": true
+    "python": "python/bin/python3",
+    "sdk": true,
+    "sha256": "b6d494bdaf570327b8577b46cd2a6829ca4c04178c7b67ff50c66551a58a6fa7",
+    "url": "https://downloads.eolymp.com/code/toolchains/darwin-arm64-24-b6d494bdaf57.tar.gz"
   },
   "darwin-arm64-25": {
-    "url": "https://downloads.eolymp.com/code/toolchains/darwin-arm64-25-2d439b3388ff.tar.gz",
-    "sha256": "2d439b3388ff54b10a8b4512283c8ea6d82db45db0dd6597d7820a769f79d009",
-    "cxx": "brew/gcc@14/bin/g++-14",
-    "python": "python/bin/python3",
     "clangd": "",
+    "cxx": "brew/gcc@14/bin/g++",
     "flags": [
       "-static-libstdc++",
       "-static-libgcc"
     ],
-    "sdk": true
+    "python": "python/bin/python3",
+    "sdk": true,
+    "sha256": "aedf03ff9bab9c2e3ed029f2fd9693a82d1f7464d6c06af392aad0da6c60a585",
+    "url": "https://downloads.eolymp.com/code/toolchains/darwin-arm64-25-aedf03ff9bab.tar.gz"
   },
   "darwin-x64-24": {
-    "url": "https://downloads.eolymp.com/code/toolchains/darwin-x64-24-12822dae595f.tar.gz",
-    "sha256": "12822dae595f0c718ce8180acf0a3b7fff7594414980d3bea54c56b3f3cc6537",
-    "cxx": "brew/gcc@14/bin/g++-14",
-    "python": "python/bin/python3",
     "clangd": "",
+    "cxx": "brew/gcc@14/bin/g++",
     "flags": [
       "-static-libstdc++",
       "-static-libgcc"
     ],
-    "sdk": true
+    "python": "python/bin/python3",
+    "sdk": true,
+    "sha256": "fa738451939c47ad9040f67280cb70460669fd4e4d96b105bf7881856bed320a",
+    "url": "https://downloads.eolymp.com/code/toolchains/darwin-x64-24-fa738451939c.tar.gz"
   },
   "linux-arm64": {
-    "url": "https://downloads.eolymp.com/code/toolchains/linux-arm64-8b6bca5395b4.tar.gz",
-    "sha256": "8b6bca5395b4a136421e79058bcde55bc29609b0ace749052a73c72e967786be",
-    "cxx": "gcc/bin/aarch64-conda-linux-gnu-g++",
-    "python": "python/bin/python3",
-    "clangd": "",
+    "clangd": "gcc/bin/clangd",
+    "cxx": "gcc/bin/g++",
     "flags": [
       "-static-libstdc++",
       "-static-libgcc"
-    ]
+    ],
+    "python": "python/bin/python3",
+    "sha256": "946a643edeabde57d04ad4e0a581908ac6958dd6fccdf5b4a7371a5f44288823",
+    "url": "https://downloads.eolymp.com/code/toolchains/linux-arm64-946a643edeab.tar.gz"
   },
   "linux-x64": {
-    "url": "https://downloads.eolymp.com/code/toolchains/linux-x64-fd2fdb1cc1d2.tar.gz",
-    "sha256": "fd2fdb1cc1d246153164235587f172801a602f7bdc68e81e41af4331e22846de",
-    "cxx": "gcc/bin/x86_64-conda-linux-gnu-g++",
-    "python": "python/bin/python3",
     "clangd": "clangd/bin/clangd",
+    "cxx": "gcc/bin/g++",
     "flags": [
       "-static-libstdc++",
       "-static-libgcc"
-    ]
+    ],
+    "python": "python/bin/python3",
+    "sha256": "4573e362cdc5e2ddab3f6b4a5d0e9747e0c3bbaa50f612b8b3686b8831a3357b",
+    "url": "https://downloads.eolymp.com/code/toolchains/linux-x64-4573e362cdc5.tar.gz"
   },
   "win32-x64": {
-    "url": "https://downloads.eolymp.com/code/toolchains/win32-x64-5f265c6e2d8b.tar.gz",
-    "sha256": "5f265c6e2d8b4426bc53096244776b95d2cc2011c9fd0696243b59e04b6dfb2f",
-    "cxx": "gcc/Library/bin/x86_64-w64-mingw32-g++.exe",
-    "python": "python/python.exe",
     "clangd": "clangd/bin/clangd.exe",
+    "cxx": "gcc/Library/bin/g++.exe",
     "flags": [
       "-static"
-    ]
+    ],
+    "python": "python/python.exe",
+    "sha256": "b4b5cf40f5d17676f22be54781d308c037ddc230d850a2b7548340c4e4f5786b",
+    "url": "https://downloads.eolymp.com/code/toolchains/win32-x64-b4b5cf40f5d1.tar.gz"
   }
 }

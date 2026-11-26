@@ -10,7 +10,7 @@ Linux: download the package for [x64](https://downloads.eolymp.com/code/EolympCo
 
 Windows: download and run the [setup program](https://downloads.eolymp.com/code/EolympCode-windows-x64.exe).
 
-The app installs its own GCC and Python. On Intel Macs and on macOS older than 15 it uses Apple's compiler and Python instead.
+The app installs its own GCC and Python. On macOS older than 15 it uses Apple's compiler and Python instead.
 
 ## Layout
 
