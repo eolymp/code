@@ -125,12 +125,13 @@ async function compile(s, debug) {
   const flags = debug ? [...cxxFlags().filter((f) => !f.startsWith('-O')), '-g', '-O0'] : cxxFlags();
   const r = await runner.collect(cxx, [...flags, s.file, '-o', exe], { cwd: s.dir, env: toolEnv() });
   const shown = path.relative(s.dir, exe);
+  const packaging = provided.cxx && cxx === provided.cxx ? provided.flags : [];
   return {
     ok: r.code === 0,
     missing: Boolean(r.missing),
     command: exe,
     args: [],
-    compile: `${shortName(cxx)} ${flags.join(' ')} ${source} -o ${shown}`,
+    compile: `${shortName(cxx)} ${flags.filter((flag) => !packaging.includes(flag)).join(' ')} ${source} -o ${shown}`,
     log: r.missing ? t('The compiler was not found: {0}', cxx) : r.stderr.trim(),
     run: shown,
   };
