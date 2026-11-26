@@ -36,15 +36,15 @@
     "url": "https://downloads.eolymp.com/code/toolchains/darwin-x64-24-fa738451939c.tar.gz"
   },
   "linux-arm64": {
-    "clangd": "gcc/bin/clangd",
+    "url": "https://downloads.eolymp.com/code/toolchains/linux-arm64-3544a2d790cf.tar.gz",
+    "sha256": "3544a2d790cf67ca8bc8f59aa8046fa48ad12adebd62f1ad6d4d11a8ef684151",
     "cxx": "gcc/bin/g++",
+    "python": "python/bin/python3",
+    "clangd": "gcc/bin/clangd",
     "flags": [
       "-static-libstdc++",
       "-static-libgcc"
-    ],
-    "python": "python/bin/python3",
-    "sha256": "946a643edeabde57d04ad4e0a581908ac6958dd6fccdf5b4a7371a5f44288823",
-    "url": "https://downloads.eolymp.com/code/toolchains/linux-arm64-946a643edeab.tar.gz"
+    ]
   },
   "linux-x64": {
     "clangd": "clangd/bin/clangd",
