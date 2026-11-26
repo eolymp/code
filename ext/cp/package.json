@@ -22,6 +22,15 @@
   ],
   "main": "./extension.js",
   "contributes": {
+    "icons": {
+      "cp-new-test": {
+        "description": "New test",
+        "default": {
+          "fontPath": "icons.woff",
+          "fontCharacter": "\\E000"
+        }
+      }
+    },
     "viewsContainers": {
       "panel": [
         {
@@ -107,10 +116,7 @@
         "command": "cp.newTest",
         "title": "%command.newTest%",
         "category": "Competitive Programming",
-        "icon": {
-          "light": "new-test-light.svg",
-          "dark": "new-test-dark.svg"
-        }
+        "icon": "$(cp-new-test)"
       },
       {
         "command": "cp.openInput",
