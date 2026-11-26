@@ -79,7 +79,7 @@
   "Testset {0}": "Conjunto de pruebas {0}",
   "Could not submit {0}: {1}": "No se pudo enviar {0}: {1}",
   "Testing {0} at {1} ({2})": "Evaluación de {0} en {1} ({2})",
-  "Testing {0} on your computer": "Pruebas de {0} en tu computadora",
-  "Running {0} on your computer": "Ejecución de {0} en tu computadora",
+  "Testing {0} on your computer": "Pruebas de {0} en tu ordenador",
+  "Running {0} on your computer": "Ejecución de {0} en tu ordenador",
   "{0} is submitted, but its testing could not be followed: {1}": "{0} se envió, pero no se pudo seguir su evaluación: {1}"
 }
