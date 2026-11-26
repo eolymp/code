@@ -38,8 +38,9 @@ async function main() {
     pinned += 1;
     const unpacked = path.join(cache, `${sha256}.dir`);
     fs.rmSync(unpacked, { recursive: true, force: true });
-    childProcess.execFileSync('unzip', ['-q', await fetched(url, sha256), 'extension/*', '-d', unpacked]);
-    placed(path.join(unpacked, 'extension'));
+    childProcess.execFileSync('unzip', ['-q', await fetched(url, sha256), '-d', unpacked]);
+    const { target: placedAt, manifest } = placed(path.join(unpacked, 'extension'));
+    if (manifest.main && !['', '.js'].some((ext) => fs.existsSync(path.join(placedAt, manifest.main + ext)))) throw new Error(`${url} unpacked without ${manifest.main}`);
     fs.rmSync(unpacked, { recursive: true, force: true });
   }
 
