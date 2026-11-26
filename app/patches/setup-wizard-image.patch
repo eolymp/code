@@ -1,0 +1,11 @@
+--- a/build/win32/code.iss
++++ b/build/win32/code.iss
+@@ -34,6 +34,8 @@
+ ArchitecturesAllowed={#ArchitecturesAllowed}
+ ArchitecturesInstallIn64BitMode={#ArchitecturesInstallIn64BitMode}
+ WizardStyle=modern
++WizardImageStretch=no
++WizardImageBackColor=$FFFFFF
+ 
+ // We've seen an uptick on broken installations from updates which were unable
+ // to shutdown VS Code. We rely on the fact that the update signals
