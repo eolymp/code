@@ -1,0 +1,149 @@
+--- a/resources/linux/debian/postinst.template
++++ b/resources/linux/debian/postinst.template
+@@ -47,11 +47,11 @@ if [ "@@NAME@@" != "code-oss" ]; then
+ 
+ 	# Register apt repository
+ 	eval $(apt-config shell APT_SOURCE_PARTS Dir::Etc::sourceparts/d APT_SOURCES_LIST Dir::Etc::sourcelist/f)
+-	CODE_SOURCE_PART=${APT_SOURCE_PARTS}vscode.list
+-	CODE_SOURCE_PART_DEB822=${APT_SOURCE_PARTS}vscode.sources
++	CODE_SOURCE_PART=${APT_SOURCE_PARTS}@@NAME@@.list
++	CODE_SOURCE_PART_DEB822=${APT_SOURCE_PARTS}@@NAME@@.sources
+ 
+-	CODE_TRUSTED_PART=/usr/share/keyrings/microsoft.gpg
+-	CODE_TRUSTED_PART_OLD="/etc/apt/trusted.gpg.d/microsoft.gpg"
++	CODE_TRUSTED_PART=/usr/share/keyrings/@@NAME@@.gpg
++	CODE_TRUSTED_PART_OLD="/etc/apt/trusted.gpg.d/@@NAME@@.gpg"
+ 
+ 	has_existing_repo_source() {
+ 		for source_file in "${APT_SOURCE_PARTS}"*.list "${APT_SOURCE_PARTS}"*.sources "$APT_SOURCES_LIST"; do
+@@ -60,14 +60,14 @@ if [ "@@NAME@@" != "code-oss" ]; then
+ 			fi
+ 
+ 			# Classic apt source list entry, for example:
+-			# deb [arch=amd64] https://packages.microsoft.com/repos/code stable main
+-			if grep -Eiq "^[[:space:]]*deb[[:space:]].*https://packages\\.microsoft\\.com/repos/code/?([[:space:]]|$)" "$source_file"; then
++			# deb [arch=amd64] https://pkgs.eolymp.com/apt stable main
++			if grep -Eiq "^[[:space:]]*deb[[:space:]].*https://pkgs\\.eolymp\\.com/apt/?([[:space:]]|$)" "$source_file"; then
+ 				return 0
+ 			fi
+ 
+ 			# DEB822 source entry, for example:
+-			# URIs: https://packages.microsoft.com/repos/code
+-			if grep -Eiq "^[[:space:]]*URIs:[[:space:]]*https://packages\\.microsoft\\.com/repos/code/?([[:space:]]|$)" "$source_file"; then
++			# URIs: https://pkgs.eolymp.com/apt
++			if grep -Eiq "^[[:space:]]*URIs:[[:space:]]*https://pkgs\\.eolymp\\.com/apt/?([[:space:]]|$)" "$source_file"; then
+ 				return 0
+ 			fi
+ 		done
+@@ -79,14 +79,14 @@ if [ "@@NAME@@" != "code-oss" ]; then
+ 	RET='true'
+ 	if [ -e '/usr/share/debconf/confmodule' ]; then
+ 		. /usr/share/debconf/confmodule
+-		db_get @@NAME@@/add-microsoft-repo || true
++		db_get @@NAME@@/add-repo || true
+ 	fi
+ 
+-	# Determine whether to write the Microsoft repository source list
++	# Determine whether to write the Eolymp repository source list
+ 	WRITE_SOURCE='no'
+ 	WRITE_KEY='no'
+ 	if [ "$RET" = 'false' ]; then
+-		# The user specified in debconf not to add the Microsoft repository
++		# The user specified in debconf not to add the Eolymp repository
+ 		WRITE_SOURCE='no'
+ 	elif [ -f "$CODE_SOURCE_PART" ]; then
+ 		# The user is not on the new DEB822 format
+@@ -112,10 +112,10 @@ if [ "@@NAME@@" != "code-oss" ]; then
+ 			WRITE_KEY='yes'
+ 		elif [ -e '/usr/share/debconf/confmodule' ]; then
+ 			# Ask the user whether to actually write the source list
+-			db_input high @@NAME@@/add-microsoft-repo || true
++			db_input high @@NAME@@/add-repo || true
+ 			db_go || true
+ 
+-			db_get @@NAME@@/add-microsoft-repo
++			db_get @@NAME@@/add-repo
+ 			if [ "$RET" = false ]; then
+ 				WRITE_SOURCE='no'
+ 				WRITE_KEY='no'
+@@ -143,7 +143,7 @@ if [ "@@NAME@@" != "code-oss" ]; then
+ # You may comment out this entry, but any other modifications may be lost." > "$CODE_SOURCE_PART_DEB822"
+ 		cat <<EOF >> "$CODE_SOURCE_PART_DEB822"
+ Types: deb
+-URIs: https://packages.microsoft.com/repos/code
++URIs: https://pkgs.eolymp.com/apt
+ Suites: stable
+ Components: main
+ Architectures: @@ARCHITECTURE@@
+@@ -155,26 +155,17 @@ EOF
+ 	fi
+ 
+ 	if [ "$WRITE_KEY" != 'no' ]; then
+-		# Sourced from https://packages.microsoft.com/keys/microsoft.asc
++		# Sourced from https://pkgs.eolymp.com/apt/eolymp.asc
+ 		if [ ! -f $CODE_TRUSTED_PART ]; then
+ 			echo "-----BEGIN PGP PUBLIC KEY BLOCK-----
+-Version: BSN Pgp v1.1.0.0
+-
+-mQENBFYxWIwBCADAKoZhZlJxGNGWzqV+1OG1xiQeoowKhssGAKvd+buXCGISZJwT
+-LXZqIcIiLP7pqdcZWtE9bSc7yBY2MalDp9Liu0KekywQ6VVX1T72NPf5Ev6x6DLV
+-7aVWsCzUAF+eb7DC9fPuFLEdxmOEYoPjzrQ7cCnSV4JQxAqhU4T6OjbvRazGl3ag
+-OeizPXmRljMtUUttHQZnRhtlzkmwIrUivbfFPD+fEoHJ1+uIdfOzZX8/oKHKLe2j
+-H632kvsNzJFlROVvGLYAk2WRcLu+RjjggixhwiB+Mu/A8Tf4V6b+YppS44q8EvVr
+-M+QvY7LNSOffSO6Slsy9oisGTdfE39nC7pVRABEBAAG0N01pY3Jvc29mdCAoUmVs
+-ZWFzZSBzaWduaW5nKSA8Z3Bnc2VjdXJpdHlAbWljcm9zb2Z0LmNvbT6JATQEEwEI
+-AB4FAlYxWIwCGwMGCwkIBwMCAxUIAwMWAgECHgECF4AACgkQ6z6Urb4SKc+P9gf/
+-diY2900wvWEgV7iMgrtGzx79W/PbwWiOkKoD9sdzhARXWiP8Q5teL/t5TUH6TZ3B
+-ENboDjwr705jLLPwuEDtPI9jz4kvdT86JwwG6N8gnWM8Ldi56SdJEtXrzwtlB/Fe
+-6tyfMT1E/PrJfgALUG9MWTIJkc0GhRJoyPpGZ6YWSLGXnk4c0HltYKDFR7q4wtI8
+-4cBu4mjZHZbxIO6r8Cci+xxuJkpOTIpr4pdpQKpECM6x5SaT2gVnscbN0PE19KK9
+-nPsBxyK4wW0AvAhed2qldBPTipgzPhqB2gu0jSryil95bKrSmlYJd1Y1XfNHno5D
+-xfn5JwgySBIdWWvtOI05gw==
+-=zPfd
++
++mDMEawlqVBYJKwYBBAHaRw8BAQdA5xalayl3KcwvMAk2Nk6Mxt/JQftM4fNi6xIm
++cFc2QUS0IEVvbHltcCBDb2RlIDxzdXBwb3J0QGVvbHltcC5jb20+iK8EExYKAFcW
++IQRe5cYd1X4tJKfyI6wTN+1+Dj7xUwUCawlqVBsUgAAAAAAEAA5tYW51MiwyLjUr
++MS4xMiwwLDMCGwMFCwkIBwICIgIGFQoJCAsCBBYCAwECHgcCF4AACgkQEzftfg4+
++8VOm2QEApk6IyZVG3JH21pQ5ulkU+kyQikVMl4e7tMlbAzI6/m4A/AyT7+Yproir
++anRQjFcON3QICRuuyUl6lsAY6w9wPbsA
++=sASt
+ -----END PGP PUBLIC KEY BLOCK-----
+ " | gpg --dearmor > $CODE_TRUSTED_PART
+ 			if [ -f "$CODE_TRUSTED_PART_OLD" ]; then
+--- a/resources/linux/debian/postrm.template
++++ b/resources/linux/debian/postrm.template
+@@ -30,14 +30,14 @@ fi
+ RET=true
+ if [ -e '/usr/share/debconf/confmodule' ]; then
+ 	. /usr/share/debconf/confmodule
+-	db_get @@NAME@@/add-microsoft-repo || true
++	db_get @@NAME@@/add-repo || true
+ fi
+ if [ "$RET" = "true" ]; then
+ 	eval $(apt-config shell APT_SOURCE_PARTS Dir::Etc::sourceparts/d)
+-	CODE_SOURCE_PART=${APT_SOURCE_PARTS}vscode.sources
++	CODE_SOURCE_PART=${APT_SOURCE_PARTS}@@NAME@@.sources
+ 	rm -f $CODE_SOURCE_PART
+ 
+-	CODE_TRUSTED_PART=/usr/share/keyrings/microsoft.gpg
++	CODE_TRUSTED_PART=/usr/share/keyrings/@@NAME@@.gpg
+ 	rm -f $CODE_TRUSTED_PART
+ fi
+ 
+--- a/resources/linux/debian/templates.template
++++ b/resources/linux/debian/templates.template
+@@ -1,9 +1,9 @@
+-Template: @@NAME@@/add-microsoft-repo
++Template: @@NAME@@/add-repo
+ Type: boolean
+ Default: true
+-Description: Add Microsoft apt repository for Visual Studio Code?
+- The installer would like to add the Microsoft repository and signing
+- key to update VS Code through apt.
++Description: Add the Eolymp apt repository for Eolymp Code?
++ The installer would like to add the Eolymp repository and signing
++ key to update Eolymp Code through apt.
+ 
+ Template: @@NAME@@/add-copilot-command
+ Type: boolean

@@ -23,13 +23,13 @@
     }
   },
   "builds": [
-    { "os": "windows", "arch": "x64", "file": "EolympCode-windows-x64.exe" },
-    { "os": "windows", "arch": "arm64", "file": "EolympCode-windows-arm64.exe" },
-    { "os": "mac", "arch": "arm64", "file": "EolympCode-macos-arm64.dmg" },
-    { "os": "mac", "arch": "x64", "file": "EolympCode-macos-x64.dmg" },
-    { "os": "linux", "arch": "x64", "format": ".deb", "file": "EolympCode-linux-x64.deb" },
-    { "os": "linux", "arch": "x64", "format": ".tar.gz", "file": "EolympCode-linux-x64.tar.gz" },
-    { "os": "linux", "arch": "arm64", "format": ".deb", "file": "EolympCode-linux-arm64.deb" },
-    { "os": "linux", "arch": "arm64", "format": ".tar.gz", "file": "EolympCode-linux-arm64.tar.gz" }
+    { "os": "windows", "arch": "x64", "file": "eolymp-code-windows-x64.exe" },
+    { "os": "windows", "arch": "arm64", "file": "eolymp-code-windows-arm64.exe" },
+    { "os": "mac", "arch": "arm64", "file": "eolymp-code-macos-arm64.dmg" },
+    { "os": "mac", "arch": "x64", "file": "eolymp-code-macos-x64.dmg" },
+    { "os": "linux", "arch": "x64", "format": ".deb", "file": "eolymp-code-linux-x64.deb" },
+    { "os": "linux", "arch": "x64", "format": ".tar.gz", "file": "eolymp-code-linux-x64.tar.gz" },
+    { "os": "linux", "arch": "arm64", "format": ".deb", "file": "eolymp-code-linux-arm64.deb" },
+    { "os": "linux", "arch": "arm64", "format": ".tar.gz", "file": "eolymp-code-linux-arm64.tar.gz" }
   ]
 }
