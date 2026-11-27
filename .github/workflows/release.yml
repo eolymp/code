@@ -101,13 +101,7 @@ jobs:
         with:
           node-version-file: app/.nvmrc
       - name: Publish the language packs to Open VSX
-        run: |
-          for pack in l10n/*/; do
-            id=$(node -p "const m = require('./${pack}package.json'); [m.publisher, m.name, m.version].join('/')")
-            if curl -sf "https://open-vsx.org/api/$id" > /dev/null; then echo "$id is already published"; continue; fi
-            (cd "$pack" && npx -y @vscode/vsce@4.1.1 package --no-dependencies -o "$RUNNER_TEMP/pack.vsix")
-            npx -y ovsx@1.4.0 publish "$RUNNER_TEMP/pack.vsix" --trusted-publishing
-          done
+        run: ./app/language-packs.sh
 
   publish:
     needs: editor
@@ -128,54 +122,10 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_PUBLISHER_ROLE }}
           aws-region: eu-central-1
-      - name: Upload to downloads.eolymp.com
+      - name: Publish to downloads.eolymp.com and pkgs.eolymp.com
         if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          bucket="${{ vars.DOWNLOADS_BUCKET }}"
-          version="${GITHUB_REF_NAME#v}"
-          case "$version" in *-*) channel=pre/ ;; *) channel= ;; esac
-          put() { aws s3 cp "$1" "$bucket/$channel$2" --cache-control "$3"; }
-          for file in artifacts/eolymp-code-*; do
-            name="$(basename "$file")"
-            put "$file" "$version/${name%%.*}-$version.${name#*.}" "public, max-age=31536000, immutable"
-          done
-          for file in artifacts/eolymp-code-*; do
-            put "$file" "$(basename "$file")" "public, max-age=300"
-          done
-          [ -n "$channel" ] || { jq --arg version "$version" '{version: $version} + .' app/download.json > latest.json; put latest.json latest.json "public, max-age=300"; }
-      - name: Publish the apt repository
-        if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
         env:
+          DOWNLOADS_BUCKET: ${{ vars.DOWNLOADS_BUCKET }}
+          APT_BUCKET: ${{ vars.APT_BUCKET }}
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
-        run: |
-          repo="$RUNNER_TEMP/apt"
-          mkdir -p "$repo/pool"
-          for deb in artifacts/eolymp-code-linux-*.deb; do
-            cp "$deb" "$repo/pool/$(dpkg-deb -f "$deb" Package)_$(dpkg-deb -f "$deb" Version)_$(dpkg-deb -f "$deb" Architecture).deb"
-          done
-          cp app/apt/eolymp.asc "$repo/"
-          cd "$repo"
-          for arch in amd64 arm64; do
-            mkdir -p "dists/stable/main/binary-$arch"
-            apt-ftparchive --arch "$arch" packages pool > "dists/stable/main/binary-$arch/Packages"
-            gzip -9kn "dists/stable/main/binary-$arch/Packages"
-          done
-          apt-ftparchive \
-            -o APT::FTPArchive::Release::Origin=Eolymp \
-            -o APT::FTPArchive::Release::Label="Eolymp Code" \
-            -o APT::FTPArchive::Release::Suite=stable \
-            -o APT::FTPArchive::Release::Codename=stable \
-            -o APT::FTPArchive::Release::Architectures="amd64 arm64" \
-            -o APT::FTPArchive::Release::Components=main \
-            release dists/stable > "$RUNNER_TEMP/Release"
-          mv "$RUNNER_TEMP/Release" dists/stable/Release
-          export GNUPGHOME="$RUNNER_TEMP/gnupg"
-          mkdir -m 700 "$GNUPGHOME"
-          printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
-          gpg --batch --yes --clearsign -o dists/stable/InRelease dists/stable/Release
-          gpg --batch --yes --armor --detach-sign -o dists/stable/Release.gpg dists/stable/Release
-          bucket="${{ vars.APT_BUCKET }}"
-          aws s3 cp pool "$bucket/pool" --recursive --cache-control "public, max-age=31536000, immutable"
-          aws s3 cp eolymp.asc "$bucket/eolymp.asc" --cache-control "public, max-age=300"
-          aws s3 cp dists "$bucket/dists" --recursive --exclude "stable/InRelease" --cache-control "no-cache"
-          aws s3 cp dists/stable/InRelease "$bucket/dists/stable/InRelease" --cache-control "no-cache"
+        run: ./app/publish.sh "${GITHUB_REF_NAME#v}"
