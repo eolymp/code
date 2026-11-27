@@ -1,5 +1,4 @@
 const vscode = require('vscode');
-const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const ws = require('./workspace');
@@ -18,8 +17,9 @@ function durationOf(seconds) {
 const TONES = ['live', 'upcoming', 'attention', 'virtual', 'done', 'blocked'];
 
 function cardOf(judge, contest) {
-  const starts = contest.startsAt ? new Date(contest.startsAt) : undefined;
-  const ends = contest.endsAt ? new Date(contest.endsAt) : undefined;
+  const dateOf = (value) => (value && !Number.isNaN(Date.parse(value)) ? new Date(value) : undefined);
+  const starts = dateOf(contest.startsAt);
+  const ends = dateOf(contest.endsAt);
   const when = starts ? new Intl.DateTimeFormat(vscode.env.language, { dateStyle: 'medium', timeStyle: 'short' }).format(starts) : '';
   const length = starts && ends && ends > starts ? durationOf((ends - starts) / 1000) : '';
   return {
@@ -129,14 +129,12 @@ function create({ judges, root, templateOf, refresh }) {
     const here = root();
     const contest = here && ws.contestOf(here);
     if (!contest || contest.judge !== judge.id || !judge.loadContest) return;
-    const links = fs.readdirSync(here, { withFileTypes: true })
-      .map((entry) => entry.isDirectory() && ws.placeOf(path.join(here, entry.name)))
-      .filter((link) => link && link.contest === contest.id);
-    if (links.length && links.every((link) => link.id !== undefined)) return;
-    judge.loadContest(contest.id).then((loaded) => {
-      place(here, judge, contest.id, loaded);
-      refresh();
-    }, (err) => vscode.window.showWarningMessage(t('Could not update the contest problems: {0}', err.message)));
+    judge.loadContest(contest.id)
+      .then((loaded) => {
+        place(here, judge, contest.id, loaded);
+        refresh();
+      })
+      .catch((err) => vscode.window.showWarningMessage(t('Could not update the contest problems: {0}', err.message)));
   };
 
   const register = (context) => {

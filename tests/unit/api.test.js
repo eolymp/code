@@ -22,6 +22,8 @@ test('a contest link gives the contest id', () => {
   assert.equal(api.contestIn('https://eolymp.com/problems/1'), undefined);
   assert.equal(api.contestIn('https://example.com/contests/abc'), undefined);
   assert.equal(api.contestIn('round 1'), undefined);
+  assert.equal(api.contestIn('https://eolymp.com/contests/..%2F..%2Faccount'), undefined);
+  assert.equal(api.contestIn('https://eolymp.com/contests/%E0'), undefined);
 });
 
 test('a watch stream gives its messages until the end marker', async () => {

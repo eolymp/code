@@ -53,7 +53,7 @@ function unless(...statuses) {
 function create(account, { get, locale, pick, examplesOf, families }) {
   const viewerOf = async (token, id) => {
     if (!token) return undefined;
-    const { participant } = await api.get(token, `/contests/${id}/introspect`).catch(unless(401, 404));
+    const { participant } = await api.get(token, `/contests/${id}/introspect`).catch(unless(401, 403, 404));
     return participant;
   };
 

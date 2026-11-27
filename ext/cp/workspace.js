@@ -168,7 +168,7 @@ function freshDirOf(home, name) {
   const base = slugOf(name) || 'contest';
   for (let n = 1; ; n += 1) {
     const dir = path.join(home, n === 1 ? base : `${base}-${n}`);
-    if (!fs.existsSync(dir)) return dir;
+    if (path.basename(dir) !== 'practice' && !fs.existsSync(dir)) return dir;
   }
 }
 

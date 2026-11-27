@@ -104,6 +104,7 @@ test('a contest gets its own folder, found again by its link', () => {
   assert.equal(ws.contestDirOf(home, 'another', 'c1'), undefined);
   assert.equal(path.basename(ws.freshDirOf(home, 'Round')), 'round-2');
   assert.equal(path.basename(ws.freshDirOf(home, '***')), 'contest');
+  assert.equal(path.basename(ws.freshDirOf(home, 'Practice')), 'practice-2');
   assert.equal(ws.contestDirOf(path.join(home, 'missing'), 'eolymp', 'c1'), undefined);
 });
 
