@@ -5,7 +5,6 @@ const path = require('path');
 const { repository } = require('./apt');
 
 const repo = path.dirname(__dirname);
-const LONG = 'public, max-age=31536000, immutable';
 const SHORT = 'public, max-age=300';
 
 function required(name) {
@@ -28,23 +27,26 @@ function main() {
   const artifacts = path.join(repo, 'artifacts');
   const files = fs.readdirSync(artifacts).filter((name) => name.startsWith('eolymp-code-')).sort();
   if (!files.length) throw new Error(`${artifacts} has no eolymp-code files`);
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-'));
+  const dir = path.join(work, 'apt');
+  if (stable) {
+    const key = childProcess.execFileSync('aws', ['ssm', 'get-parameter', '--name', parameter, '--with-decryption', '--query', 'Parameter.Value', '--output', 'text'], { encoding: 'utf8' });
+    repository(dir, key);
+  }
+
   for (const name of files) {
     const dot = name.indexOf('.');
-    copy(path.join(artifacts, name), `${downloads}${version}/${name.slice(0, dot)}-${version}${name.slice(dot)}`, LONG);
+    copy(path.join(artifacts, name), `${downloads}${version}/${name.slice(0, dot)}-${version}${name.slice(dot)}`, SHORT);
   }
   for (const name of files) copy(path.join(artifacts, name), `${downloads}${name}`, SHORT);
   if (!stable) return;
 
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-'));
   const latest = path.join(work, 'latest.json');
   const download = JSON.parse(fs.readFileSync(path.join(__dirname, 'download.json'), 'utf8'));
   fs.writeFileSync(latest, `${JSON.stringify({ version, ...download }, null, 2)}\n`);
   copy(latest, `${downloads}latest.json`, SHORT);
 
-  const dir = path.join(work, 'apt');
-  const key = childProcess.execFileSync('aws', ['ssm', 'get-parameter', '--name', parameter, '--with-decryption', '--query', 'Parameter.Value', '--output', 'text'], { encoding: 'utf8' });
-  repository(dir, key);
-  copy(path.join(dir, 'pool'), `${apt}/pool`, LONG, true);
+  copy(path.join(dir, 'pool'), `${apt}/pool`, SHORT, true);
   for (const arch of fs.readdirSync(path.join(dir, 'dists', 'stable', 'main'))) {
     copy(path.join(dir, 'dists', 'stable', 'main', arch), `${apt}/dists/stable/main/${arch}`, 'no-cache', true);
   }

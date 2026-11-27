@@ -47,7 +47,7 @@ function repository(dir, key) {
     run('gpg', ['--batch', '--yes', '--clearsign', '-o', path.join(stable, 'InRelease'), path.join(stable, 'Release')], { env });
     run('gpg', ['--batch', '--yes', '--armor', '--detach-sign', '-o', path.join(stable, 'Release.gpg'), path.join(stable, 'Release')], { env });
   } finally {
-    run('gpgconf', ['--kill', 'gpg-agent'], { env });
+    childProcess.spawnSync('gpgconf', ['--kill', 'gpg-agent'], { env, stdio: 'ignore' });
     fs.rmSync(home, { recursive: true, force: true });
   }
 }
