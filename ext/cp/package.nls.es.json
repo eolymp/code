@@ -38,5 +38,7 @@
   "command.submit": "Enviar",
   "command.openSubmission": "Abrir en el navegador",
   "command.consoleRerun": "Volver a ejecutar",
-  "command.consoleEndInput": "Terminar la entrada"
+  "command.consoleEndInput": "Terminar la entrada",
+  "view.contests": "Concursos",
+  "setting.contests": "Mostrar la vista Concursos en la barra de actividades."
 }

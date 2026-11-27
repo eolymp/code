@@ -81,5 +81,20 @@
   "Testing {0} at {1} ({2})": "Перевірка {0} на {1} ({2})",
   "Testing {0} on your computer": "Тестування {0} на вашому комп'ютері",
   "Running {0} on your computer": "Запуск {0} на вашому комп'ютері",
-  "{0} is submitted, but its testing could not be followed: {1}": "{0} надіслано, але стежити за перевіркою не вдалося: {1}"
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} надіслано, але стежити за перевіркою не вдалося: {1}",
+  "Contest": "Змагання",
+  "Contests": "Змагання",
+  "Could not open the contest: {0}": "Не вдалося відкрити змагання: {0}",
+  "No contests found.": "Змагань не знайдено.",
+  "Open in Editor": "Відкрити в редакторі",
+  "Open on {0}": "Відкрити на {0}",
+  "Participants: {0}": "Учасників: {0}",
+  "Preparing the contest workspace…": "Готуємо робочу папку змагання…",
+  "Problems: {0}": "Задач: {0}",
+  "Search contests": "Пошук змагань",
+  "{0} h": "{0} год",
+  "{0} h {1} min": "{0} год {1} хв",
+  "{0} min": "{0} хв",
+  "Problems": "Задачі",
+  "Could not update the contest problems: {0}": "Не вдалося оновити задачі змагання: {0}"
 }

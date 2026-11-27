@@ -1,5 +1,6 @@
 const vscode = require('vscode');
 const api = require('./api');
+const contests = require('./contests');
 
 const t = vscode.l10n.t;
 const FAMILIES = { cpp: 'cpp', py: 'python' };
@@ -56,10 +57,18 @@ function create(account) {
     return items.map((p) => ({ id: p.id, label: `${p.number}. ${p.title}`, description: t('{0}% accepted', Math.round((p.acceptanceRate || 0) * 100)) }));
   };
 
+  const examplesOf = (examples) => Promise.all(examples.map(async (e) => ({ input: await api.text(e.inputUrl), answer: await api.text(e.answerUrl) })));
+
+  const pick = (items, language) => {
+    const offered = items.filter((r) => r.lang === FAMILIES[language]);
+    const preferred = vscode.workspace.getConfiguration('judge').get('runtimes')[language] || [];
+    return preferred.map((id) => offered.find((r) => r.id === id)).find(Boolean) || offered[0];
+  };
+
   const load = async (id) => {
     const { problem } = await get(`/problems/${id}`, { locale: locale() });
     const { items = [] } = await get(`/problems/${id}/templates`, { size: 100 });
-    const tests = await Promise.all((problem.examples || []).map(async (e) => ({ input: await api.text(e.inputUrl), answer: await api.text(e.answerUrl) })));
+    const tests = await examplesOf(problem.examples || []);
     const templates = {};
     for (const [lang, family] of Object.entries(FAMILIES)) {
       const template = items.find((item) => typeof item.source === 'string' && String(item.runtime).startsWith(`${family}:`));
@@ -70,18 +79,20 @@ function create(account) {
 
   const submit = async (problem, { language, source }) => {
     const token = await account.token(true);
-    const { items = [] } = await api.get(token, `/problems/${problem.id}/runtime`);
-    const offered = items.filter((r) => r.lang === FAMILIES[language]);
-    const preferred = vscode.workspace.getConfiguration('judge').get('runtimes')[language] || [];
-    const runtime = preferred.map((id) => offered.find((r) => r.id === id)).find(Boolean) || offered[0];
+    const base = problem.contest ? `/contests/${problem.contest}/problems/${problem.id}` : `/problems/${problem.id}`;
+    const { items = [] } = await api.get(token, `${base}/runtime`);
+    const runtime = pick(items, language);
     if (!runtime) throw new Error(t('This problem does not take solutions in this language.'));
-    const created = await api.post(token, '/submissions', { problemId: problem.id, lang: runtime.id, source });
+    const created = problem.contest
+      ? await api.post(token, `${base}/submissions`, { lang: runtime.id, source })
+      : await api.post(token, '/submissions', { problemId: problem.id, lang: runtime.id, source });
     return created.submissionId;
   };
 
   const watch = async (problem, id, update, signal) => {
     const token = await account.token();
-    for await (const { submission } of await api.stream(token, `/submissions/${id}/watch`, { extra: ['GROUPS', 'RUNS'] }, signal)) {
+    const route = problem.contest ? `/contests/${problem.contest}/submissions/${id}/watch` : `/submissions/${id}/watch`;
+    for await (const { submission } of await api.stream(token, route, { extra: ['GROUPS', 'RUNS'] }, signal)) {
       const done = !RUNNING.includes(submission.status);
       update({
         ...resultOf(submission),
@@ -98,7 +109,7 @@ function create(account) {
     }
   };
 
-  return { id: 'eolymp', label: 'Eolymp', search, load, submit, watch };
+  return { id: 'eolymp', label: 'Eolymp', search, load, submit, watch, ...contests.create(account, { get, locale, pick, examplesOf, families: Object.keys(FAMILIES) }) };
 }
 
 module.exports = { create };

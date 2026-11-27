@@ -38,5 +38,7 @@
   "command.submit": "Invia",
   "command.openSubmission": "Apri nel browser",
   "command.consoleRerun": "Riesegui",
-  "command.consoleEndInput": "Termina l'input"
+  "command.consoleEndInput": "Termina l'input",
+  "view.contests": "Gare",
+  "setting.contests": "Mostra la vista Gare nella barra delle attività."
 }

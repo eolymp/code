@@ -1,13 +1,17 @@
 const vscode = require('vscode');
-const fs = require('fs');
 const path = require('path');
 const ws = require('./workspace');
 const submission = require('./submission');
 
 const t = vscode.l10n.t;
 
+function declared() {
+  return vscode.extensions.all.filter((extension) => extension.packageJSON.cp && extension.packageJSON.cp.contests);
+}
+
 function create(createProblem, refresh) {
   const judges = new Map();
+  const registered = new vscode.EventEmitter();
 
   const linkOf = (document) => {
     const link = document.uri.scheme === 'file' && ws.langOf(document.fileName) ? ws.linkOf(path.dirname(document.fileName)) : undefined;
@@ -20,14 +24,18 @@ function create(createProblem, refresh) {
     vscode.commands.executeCommand('setContext', 'cp.linked', Boolean(editor && linkOf(editor.document)));
   };
 
+  const announce = () => {
+    vscode.commands.executeCommand('setContext', 'cp.hasJudges', judges.size > 0);
+    mark();
+  };
+
   const register = (judge) => {
     judges.set(judge.id, judge);
-    vscode.commands.executeCommand('setContext', 'cp.hasJudges', true);
-    mark();
+    announce();
+    registered.fire(judge);
     return new vscode.Disposable(() => {
       judges.delete(judge.id);
-      vscode.commands.executeCommand('setContext', 'cp.hasJudges', judges.size > 0);
-      mark();
+      announce();
     });
   };
 
@@ -37,7 +45,7 @@ function create(createProblem, refresh) {
     if (!link) return;
     const file = editor.document.fileName;
     const judge = judges.get(link.judge);
-    const problem = { id: link.id, url: link.url };
+    const problem = { id: link.id, url: link.url, contest: link.contest };
     let id;
     try {
       id = await judge.submit(problem, { language: ws.langOf(file), source: editor.document.getText() });
@@ -57,13 +65,8 @@ function create(createProblem, refresh) {
       const problem = await judge.load(found.id);
       const dir = await createProblem(problem.name, problem.templates);
       if (!dir) return;
-      problem.tests.forEach((test, index) => {
-        const input = path.join(dir, `${index + 1}.in`);
-        if (fs.existsSync(input)) return;
-        fs.writeFileSync(input, test.input);
-        fs.writeFileSync(path.join(dir, `${index + 1}.answer`), test.answer);
-      });
-      fs.writeFileSync(path.join(dir, ws.LINK), `${JSON.stringify({ judge: judge.id, id: String(found.id), url: problem.url }, null, 2)}\n`);
+      ws.saveExamples(dir, problem.tests);
+      ws.saveLink(path.join(dir, ws.LINK), { judge: judge.id, id: String(found.id), url: problem.url });
       refresh();
       mark();
     } catch (err) {
@@ -120,7 +123,7 @@ function create(createProblem, refresh) {
     look();
   };
 
-  return { register, find, submit, mark };
+  return { register, find, submit, mark, declared, onDidRegister: registered.event, all: () => [...judges.values()], get: (id) => judges.get(id) };
 }
 
 module.exports = { create };

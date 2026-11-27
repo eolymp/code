@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https:; style-src 'nonce-{{nonce}}' {{source}}; script-src 'nonce-{{nonce}}';">
+<title>{{title}}</title>
+<link rel="stylesheet" href="{{tones}}">
+<style nonce="{{nonce}}">
+  body { margin: 0; padding: 0; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); }
+  #bar { position: sticky; top: 0; z-index: 1; padding: 8px 12px 8px 20px; background: var(--vscode-sideBar-background); }
+  input { box-sizing: border-box; width: 100%; height: 26px; padding: 0 6px; font: inherit; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent); border-radius: 2px; outline: none; }
+  input:focus { border-color: var(--vscode-focusBorder); }
+  input::placeholder { color: var(--vscode-input-placeholderForeground); }
+  #busy { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; overflow: hidden; visibility: hidden; }
+  #busy.on { visibility: visible; }
+  #busy::before { content: ''; position: absolute; top: 0; width: 30%; height: 100%; background: var(--vscode-progressBar-background); animation: slide 1.2s ease-in-out infinite; }
+  @keyframes slide { from { left: -30%; } to { left: 100%; } }
+  .item { display: flex; gap: 10px; align-items: center; padding: 6px 12px 6px 20px; cursor: pointer; outline: none; }
+  .item:hover { background: var(--vscode-list-hoverBackground); }
+  .item:focus { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); outline: 1px solid var(--vscode-list-focusOutline, transparent); outline-offset: -1px; }
+  .icon { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 4px; object-fit: cover; background: var(--vscode-badge-background); }
+  .text { flex: 1 1 auto; min-width: 0; }
+  .line { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .name { font-weight: 600; }
+  .sub { font-size: 0.9em; opacity: 0.75; }
+  .state { font-weight: 600; opacity: 1; }
+  .dot { padding: 0 6px; color: var(--vscode-descriptionForeground); }
+  #note { padding: 4px 20px; opacity: 0.75; }
+</style>
+</head>
+<body>
+<div id="bar"><input id="query" spellcheck="false" autocomplete="off"><div id="busy"></div></div>
+<div id="list" role="list"></div>
+<div id="note"></div>
+<script nonce="{{nonce}}">
+  const vscode = acquireVsCodeApi();
+  const el = (id) => document.getElementById(id);
+  const make = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  let strings = {};
+  let timer;
+  const kept = vscode.getState() || {};
+  el('query').value = kept.query || '';
+  const search = () => {
+    el('busy').classList.add('on');
+    vscode.setState({ query: el('query').value });
+    vscode.postMessage({ type: 'search', query: el('query').value });
+  };
+  el('query').addEventListener('input', () => {
+    clearTimeout(timer);
+    el('busy').classList.add('on');
+    timer = setTimeout(search, 250);
+  });
+  el('query').addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' && el('list').firstChild) { event.preventDefault(); el('list').firstChild.focus(); }
+  });
+  const row = (item) => {
+    const node = make('div', 'item');
+    node.tabIndex = 0;
+    node.setAttribute('role', 'listitem');
+    const icon = item.image ? make('img', 'icon') : make('div', 'icon');
+    if (item.image) { icon.src = item.image; icon.alt = ''; }
+    const text = make('div', 'text');
+    const name = make('div', 'line name', item.name);
+    text.append(name, make('div', 'line sub', item.when));
+    if (item.status.length) {
+      const state = make('div', 'line sub state');
+      item.status.forEach((s, i) => { if (i) state.append(make('span', 'dot', '•')); state.append(make('span', `tone-${s.tone}`, s.label)); });
+      text.append(state);
+    }
+    node.append(icon, text);
+    const open = () => vscode.postMessage({ type: 'details', judge: item.judge, id: item.id });
+    node.addEventListener('click', open);
+    node.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+      if (event.key === 'ArrowDown' && node.nextSibling) { event.preventDefault(); node.nextSibling.focus(); }
+      if (event.key === 'ArrowUp') { event.preventDefault(); (node.previousSibling || el('query')).focus(); }
+    });
+    return node;
+  };
+  window.addEventListener('message', ({ data }) => {
+    if (data.type === 'strings') {
+      strings = data;
+      el('query').placeholder = data.search;
+      el('query').setAttribute('aria-label', data.search);
+      search();
+    }
+    if (data.type === 'found') {
+      el('busy').classList.remove('on');
+      el('list').replaceChildren(...data.items.map(row));
+      el('note').textContent = data.error || (data.items.length ? '' : strings.empty);
+    }
+  });
+  vscode.postMessage({ type: 'ready' });
+</script>
+</body>
+</html>

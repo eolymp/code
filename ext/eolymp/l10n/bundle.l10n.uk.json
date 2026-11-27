@@ -6,5 +6,17 @@
   "Could not end the session on Eolymp: {0}": "Не вдалося завершити сеанс на Eolymp: {0}",
   "You are not signed in": "Ви не увійшли",
   "You can close this page and try again in Eolymp Code.": "Можете закрити цю сторінку й спробувати ще раз в Eolymp Code.",
-  "This problem does not take solutions in this language.": "Ця задача не приймає розв'язки цією мовою."
+  "This problem does not take solutions in this language.": "Ця задача не приймає розв'язки цією мовою.",
+  "Scheduled": "Заплановано",
+  "Ready": "Готово",
+  "In progress": "Триває",
+  "Paused": "Призупинено",
+  "Upsolve": "Дорозв'язування",
+  "Blocked": "Заблоковано",
+  "Finished": "Завершено",
+  "Unofficial": "Неофіційно",
+  "Open": "Відкрито",
+  "Frozen": "Заморожено",
+  "Suspended": "Зупинено",
+  "Virtual": "Віртуально"
 }

@@ -81,5 +81,20 @@
   "Testing {0} at {1} ({2})": "Testowanie {0} w {1} ({2})",
   "Testing {0} on your computer": "Testowanie {0} na twoim komputerze",
   "Running {0} on your computer": "Uruchamianie {0} na twoim komputerze",
-  "{0} is submitted, but its testing could not be followed: {1}": "{0} wysłano, ale nie udało się śledzić testowania: {1}"
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} wysłano, ale nie udało się śledzić testowania: {1}",
+  "Contest": "Zawody",
+  "Contests": "Zawody",
+  "Could not open the contest: {0}": "Nie udało się otworzyć zawodów: {0}",
+  "No contests found.": "Nie znaleziono zawodów.",
+  "Open in Editor": "Otwórz w edytorze",
+  "Open on {0}": "Otwórz na {0}",
+  "Participants: {0}": "Uczestnicy: {0}",
+  "Preparing the contest workspace…": "Przygotowywanie folderu zawodów…",
+  "Problems: {0}": "Zadania: {0}",
+  "Search contests": "Szukaj zawodów",
+  "{0} h": "{0} godz.",
+  "{0} h {1} min": "{0} godz. {1} min",
+  "{0} min": "{0} min",
+  "Problems": "Zadania",
+  "Could not update the contest problems: {0}": "Nie udało się zaktualizować zadań zawodów: {0}"
 }

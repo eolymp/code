@@ -67,6 +67,67 @@ test('a folder is a problem when it has a solution or a test', () => {
   assert.deepEqual(names(ws.problemsIn(dir)), ['a2', 'a10', 'b']);
 });
 
+test('a contest problem not shown yet is a problem by its link alone', () => {
+  const dir = folder({ 'a/.problem.json': '{"judge":"eolymp","contest":"c1","letter":"a"}', 'b/.problem.json': 'broken', 'c/.contest.json': '{}' });
+  assert.deepEqual(names(ws.problemsIn(dir)), ['a', 'b']);
+  assert.deepEqual(ws.placeOf(path.join(dir, 'a')), { judge: 'eolymp', contest: 'c1', letter: 'a' });
+  assert.equal(ws.linkOf(path.join(dir, 'a')), undefined);
+  assert.equal(ws.placeOf(path.join(dir, 'b')), undefined);
+});
+
+test('a contest folder is known by its link', () => {
+  const dir = folder({ '.contest.json': '{"judge":"eolymp","id":"c1","name":"Round 1"}', 'other/.contest.json': '{"judge":"eolymp"}' });
+  assert.equal(ws.contestOf(dir).name, 'Round 1');
+  assert.equal(ws.contestOf(path.join(dir, 'other')), undefined);
+  assert.equal(ws.contestOf(path.join(dir, 'missing')), undefined);
+});
+
+test('contest problems are lettered like a spreadsheet', () => {
+  assert.deepEqual([0, 1, 25, 26, 27, 51, 52].map(ws.letterOf), ['a', 'b', 'z', 'aa', 'ab', 'az', 'ba']);
+});
+
+test('examples are saved as tests without replacing existing ones', () => {
+  const dir = folder({ '1.in': 'mine\n' });
+  ws.saveExamples(dir, [{ input: '1\n', answer: '2\n' }, { input: '3\n', answer: '4\n' }]);
+  assert.deepEqual(ws.loadTests(dir), [{ id: '1', input: 'mine\n', answer: undefined }, { id: '2', input: '3\n', answer: '4\n' }]);
+});
+
+test('a problem title is cut to whole words that fit', () => {
+  assert.equal(ws.shortSlugOf('Simple Problem', 20), 'simple-problem');
+  assert.equal(ws.shortSlugOf('Counting Haybales in the Barn', 20), 'counting-haybales-in');
+  assert.equal(ws.shortSlugOf('Supercalifragilisticexpialidocious Strings', 20), 'supercalifragilisticexpialidocious');
+});
+
+test('a contest gets its own folder, found again by its link', () => {
+  const home = folder({ 'round/.contest.json': '{"judge":"eolymp","id":"c1"}', 'other/.contest.json': '{"judge":"eolymp","id":"c2"}' });
+  assert.equal(path.basename(ws.contestDirOf(home, 'eolymp', 'c1')), 'round');
+  assert.equal(ws.contestDirOf(home, 'another', 'c1'), undefined);
+  assert.equal(path.basename(ws.freshDirOf(home, 'Round')), 'round-2');
+  assert.equal(path.basename(ws.freshDirOf(home, '***')), 'contest');
+  assert.equal(path.basename(ws.freshDirOf(home, 'Practice')), 'practice-2');
+  assert.equal(ws.contestDirOf(path.join(home, 'missing'), 'eolymp', 'c1'), undefined);
+});
+
+test('a contest is laid out as letter folders, filled in once its problems show', () => {
+  const dir = folder({});
+  const place = (problems) => ws.placeContest(dir, { judge: 'eolymp', id: 'c1', contest: { name: 'Round', url: 'u', problems }, lang: 'cpp', template: 'BLANK' });
+  place([{}, {}]);
+  assert.deepEqual(names(ws.problemsIn(dir)), ['a', 'b']);
+  assert.equal(ws.read(path.join(dir, 'a', 'a.cpp')), 'BLANK');
+  assert.equal(ws.contestOf(dir).name, 'Round');
+  fs.writeFileSync(path.join(dir, 'b', 'b.cpp'), 'mine');
+  place([{ id: 'p1', name: 'Simple Problem', tests: [{ input: '1', answer: '2' }], templates: { cpp: 'GIVEN' } }, { id: 'p2', name: 'Two', templates: { cpp: 'GIVEN' } }, { id: 'p3', name: 'Third Problem' }]);
+  assert.deepEqual(names(ws.problemsIn(dir)), ['a', 'b', 'c-third-problem']);
+  assert.equal(ws.read(path.join(dir, 'a', 'a.cpp')), 'GIVEN');
+  assert.equal(ws.read(path.join(dir, 'b', 'b.cpp')), 'mine');
+  assert.equal(ws.read(path.join(dir, 'c-third-problem', 'c-third-problem.cpp')), 'BLANK');
+  assert.deepEqual(ws.loadTests(path.join(dir, 'a')), [{ id: '1', input: '1', answer: '2' }]);
+  assert.equal(ws.linkOf(path.join(dir, 'a')).id, 'p1');
+  place([{}, {}, {}]);
+  assert.deepEqual(names(ws.problemsIn(dir)), ['a', 'b', 'c-third-problem']);
+  assert.equal(ws.linkOf(path.join(dir, 'a')).id, 'p1');
+});
+
 test('tests are loaded with their input and answer, and an edited answer is read again', () => {
   const dir = folder({ '1.in': '5\n', '1.answer': '25\n', '2.in': '6\n' });
   assert.deepEqual(ws.loadTests(dir), [{ id: '1', input: '5\n', answer: '25\n' }, { id: '2', input: '6\n', answer: undefined }]);

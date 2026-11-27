@@ -1,0 +1,10 @@
+.tone-live { color: oklch(62.7% 0.194 149.214); }
+.tone-upcoming { color: oklch(54.6% 0.245 262.881); }
+.tone-attention { color: oklch(66.6% 0.179 58.318); }
+.tone-virtual { color: oklch(59.1% 0.293 322.896); }
+.tone-done { color: var(--vscode-descriptionForeground); }
+.tone-blocked { color: var(--vscode-errorForeground); }
+body:not(.vscode-light) .tone-live { color: oklch(72.3% 0.219 149.579); }
+body:not(.vscode-light) .tone-upcoming { color: oklch(62.3% 0.214 259.815); }
+body:not(.vscode-light) .tone-attention { color: oklch(76.9% 0.188 70.08); }
+body:not(.vscode-light) .tone-virtual { color: oklch(66.7% 0.295 322.15); }

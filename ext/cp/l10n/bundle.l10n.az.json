@@ -81,5 +81,20 @@
   "Testing {0} at {1} ({2})": "{0} {1} saytında test olunur ({2})",
   "Testing {0} on your computer": "{0} kompüterinizdə test olunur",
   "Running {0} on your computer": "{0} kompüterinizdə icra olunur",
-  "{0} is submitted, but its testing could not be followed: {1}": "{0} göndərildi, lakin onun testini izləmək mümkün olmadı: {1}"
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} göndərildi, lakin onun testini izləmək mümkün olmadı: {1}",
+  "Contest": "Yarış",
+  "Contests": "Yarışlar",
+  "Could not open the contest: {0}": "Yarışı açmaq mümkün olmadı: {0}",
+  "No contests found.": "Yarış tapılmadı.",
+  "Open in Editor": "Redaktorda aç",
+  "Open on {0}": "{0} saytında aç",
+  "Participants: {0}": "İştirakçılar: {0}",
+  "Preparing the contest workspace…": "Yarış qovluğu hazırlanır…",
+  "Problems: {0}": "Məsələlər: {0}",
+  "Search contests": "Yarış axtar",
+  "{0} h": "{0} saat",
+  "{0} h {1} min": "{0} saat {1} dəq",
+  "{0} min": "{0} dəq",
+  "Problems": "Məsələlər",
+  "Could not update the contest problems: {0}": "Yarışın məsələlərini yeniləmək mümkün olmadı: {0}"
 }

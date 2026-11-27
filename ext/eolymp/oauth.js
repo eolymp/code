@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const http = require('http');
 
 const CLIENT = 'code';
-const SCOPE = 'openid profile offline_access atlas:problem:read';
+const SCOPE = 'openid profile offline_access atlas:problem:read atlas:submission:read atlas:submission:write judge:contest:read judge:contest:participate';
 const AUTHORIZE = 'https://accounts.eolymp.com/authorize';
 const API = 'https://api.eolymp.com/oauth2';
 

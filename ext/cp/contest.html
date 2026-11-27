@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https:; font-src {{source}}; style-src 'nonce-{{nonce}}' {{source}}; script-src 'nonce-{{nonce}}';">
+<title>{{title}}</title>
+<link rel="stylesheet" href="{{tones}}">
+<style nonce="{{nonce}}">
+  body { margin: 0; padding: 0; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); }
+  [hidden] { display: none !important; }
+  .header { display: flex; padding: 20px 20px 12px; font-size: 14px; }
+  #icon { flex: 0 0 128px; width: 128px; height: 128px; object-fit: cover; }
+  div#icon { background: var(--vscode-badge-background); }
+  .details { padding-left: 12px; overflow: hidden; user-select: text; }
+  #name { margin: 0; font-size: 26px; line-height: 30px; font-weight: 600; }
+  @font-face { font-family: codicon; src: url('{{font}}') format('truetype'); }
+  .subtitle { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; padding-top: 6px; line-height: 20px; }
+  .entry { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .entry + .entry::before { content: '•'; margin-right: 4px; color: var(--vscode-descriptionForeground); }
+  .icon { font: 16px/1 codicon; color: var(--vscode-icon-foreground); -webkit-font-smoothing: antialiased; }
+  .state { font-weight: 600; }
+  .dot { padding: 0 6px; color: var(--vscode-descriptionForeground); }
+  .actions { display: flex; flex-wrap: wrap; margin-top: 10px; padding-top: 4px; }
+  button { margin: 0 6px 2px 2px; padding: 0 5px; font: inherit; font-size: 13px; line-height: 22px; border: 1px solid var(--vscode-button-border, transparent); border-radius: 2px; cursor: pointer; color: var(--vscode-button-foreground); background: var(--vscode-button-background); }
+  button:hover { background: var(--vscode-button-hoverBackground); }
+  button.secondary { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
+  button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
+  .navbar { height: 36px; line-height: 36px; padding-left: 20px; border-bottom: 1px solid var(--vscode-panelSection-border); }
+  .tab { display: inline-block; height: 35px; padding: 0 10px; font-size: 11px; text-transform: uppercase; color: var(--vscode-panelTitle-activeForeground); border-bottom: 1px solid var(--vscode-panelTitle-activeBorder); }
+  .content { padding: 12px 30px 20px; user-select: text; }
+  ol { margin: 0; padding: 0; list-style: none; }
+  li { display: flex; gap: 12px; padding: 4px 0; line-height: 20px; }
+  .letter { flex: 0 0 20px; font-weight: 600; color: var(--vscode-descriptionForeground); }
+</style>
+</head>
+<body>
+<div class="header" id="head" hidden>
+  <div id="icon"></div>
+  <div class="details">
+    <h1 id="name"></h1>
+    <div class="subtitle" id="subtitle"></div>
+    <div class="actions"><button id="open"></button><button id="visit" class="secondary"></button></div>
+  </div>
+</div>
+<section id="problems" hidden>
+  <div class="navbar"><span class="tab" id="heading"></span></div>
+  <div class="content"><ol id="titles"></ol></div>
+</section>
+<script nonce="{{nonce}}">
+  const vscode = acquireVsCodeApi();
+  const el = (id) => document.getElementById(id);
+  const make = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  el('open').addEventListener('click', () => vscode.postMessage({ type: 'open' }));
+  el('visit').addEventListener('click', () => vscode.postMessage({ type: 'visit' }));
+  window.addEventListener('message', ({ data }) => {
+    const icon = data.image ? make('img') : make('div');
+    icon.id = 'icon';
+    if (data.image) { icon.src = data.image; icon.alt = ''; }
+    el('icon').replaceWith(icon);
+    el('name').textContent = data.name;
+    const GLYPHS = { calendar: 0xeab0, judge: 0xeb12, watch: 0xeb7c, problems: 0xea86, participants: 0xea7e };
+    const entries = data.entries.map((entry) => {
+      const node = make('span', 'entry');
+      if (entry.hint) node.title = entry.hint;
+      node.append(make('span', 'icon', String.fromCharCode(GLYPHS[entry.icon])), make('span', '', entry.text));
+      return node;
+    });
+    if (data.status.length) {
+      const state = make('span', 'entry');
+      data.status.forEach((s, i) => { if (i) state.append(make('span', 'dot', '•')); state.append(make('span', `state tone-${s.tone}`, s.label)); });
+      entries.unshift(state);
+    }
+    el('subtitle').replaceChildren(...entries);
+    el('open').textContent = data.opening;
+    el('visit').textContent = data.visit;
+    el('visit').hidden = !data.linked;
+    el('heading').textContent = data.heading;
+    el('titles').replaceChildren(...data.titles.map((problem) => {
+      const item = make('li');
+      item.append(make('span', 'letter', problem.letter), make('span', '', problem.title));
+      return item;
+    }));
+    el('problems').hidden = !data.titles.length;
+    el('head').hidden = false;
+  });
+  vscode.postMessage({ type: 'ready' });
+</script>
+</body>
+</html>

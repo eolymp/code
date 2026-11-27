@@ -38,5 +38,7 @@
   "command.submit": "Göndər",
   "command.openSubmission": "Brauzerdə aç",
   "command.consoleRerun": "Yenidən icra et",
-  "command.consoleEndInput": "Girişi bitir"
+  "command.consoleEndInput": "Girişi bitir",
+  "view.contests": "Yarışlar",
+  "setting.contests": "Fəaliyyət panelində «Yarışlar» görünüşünü göstər."
 }

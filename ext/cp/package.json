@@ -49,6 +49,11 @@
           "id": "cpSidebar",
           "title": "%view.cpSidebar%",
           "icon": "$(symbol-event)"
+        },
+        {
+          "id": "cpContests",
+          "title": "%view.contests%",
+          "icon": "$(trophy)"
         }
       ]
     },
@@ -64,6 +69,14 @@
         {
           "id": "cp.problems",
           "name": "%view.problems%"
+        }
+      ],
+      "cpContests": [
+        {
+          "type": "webview",
+          "id": "cp.contests",
+          "name": "%view.contests%",
+          "when": "config.cp.contests"
         }
       ],
       "cpSubmission": [
@@ -643,6 +656,11 @@
           "default": "",
           "description": "%setting.python%",
           "scope": "machine"
+        },
+        "cp.contests": {
+          "type": "boolean",
+          "default": true,
+          "description": "%setting.contests%"
         },
         "cp.language": {
           "type": "string",

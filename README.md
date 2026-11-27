@@ -36,7 +36,15 @@ An extension adds an online judge by calling `registerJudge` on the API the Comp
       watch: async (problem, submissionId, update, signal) => {},
     });
 
-`problem` is `{ id, url }`, kept in `.problem.json` next to the solution. `language` is `cpp` or `py`. A judge without `submit` and `watch` only offers its problems.
+`problem` is `{ id, url, contest }`, kept in `.problem.json` next to the solution; `contest` is set for a problem of a contest. `language` is `cpp` or `py`. A judge without `submit` and `watch` only offers its problems.
+
+A judge that also has contests declares `"cp": { "contests": true }` in its `package.json`, so that a search in the Contests view starts it first, and adds three functions:
+
+      searchContests: async (query) => [contest],
+      describeContest: async (id) => ({ ...contest, titles }),
+      loadContest: async (id, { signIn }) => ({ ...contest, slug, problems: [{ id, name, url, tests, templates }] }),
+
+A contest is `{ id, name, url, image, startsAt, endsAt, status, problems, participants }`, where `status` is a list of labels the judge has already worked out and translated, `[{ label, tone }]`, with `tone` one of `live`, `upcoming`, `attention`, `virtual`, `done` or `blocked`, and `problems` and `participants` are counts. `titles` are the titles of the contest's problems in order, when the user may see them; the contest page lists them. Opening a contest in the editor creates a folder for it in `~/Eolymp` with `.contest.json` and a folder for each problem, named by its letter and as many leading words of its title as fit in 20 characters (`a-two-sum`). `signIn` is set when the user opens the contest, so the judge may ask them to sign in. A problem the judge does not show yet comes as `{}` and gets a folder named by its letter with a blank solution (`a/a.cpp`); when the judge shows the problem, on opening the contest again or its folder, the folder gets the tests and the judge's template and keeps its name. Before a contest starts the judge may not tell how many problems it has, and then the contest folder stays empty until it does. Folders are never renamed, so if the judge later reorders the problems, a folder's letter may no longer match the problem's letter.
 
 `watch` calls `update` with the state of the submission every time it changes and returns when testing is over:
 

@@ -1,0 +1,12 @@
+--- a/src/vs/workbench/browser/parts/views/viewPaneContainer.ts
++++ b/src/vs/workbench/browser/parts/views/viewPaneContainer.ts
+@@ -551,6 +551,9 @@
+ 			}
+ 
+ 			const paneItemTitle = this.paneItems[0].pane.title;
++			if (this.viewContainer.id === 'workbench.view.extension.cpSidebar' && paneItemTitle) {
++				return paneItemTitle;
++			}
+ 			if (containerTitle === paneItemTitle) {
+ 				return paneItemTitle;
+ 			}

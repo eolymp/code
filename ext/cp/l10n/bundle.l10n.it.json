@@ -81,5 +81,20 @@
   "Testing {0} at {1} ({2})": "Test di {0} su {1} ({2})",
   "Testing {0} on your computer": "Test di {0} sul tuo computer",
   "Running {0} on your computer": "Esecuzione di {0} sul tuo computer",
-  "{0} is submitted, but its testing could not be followed: {1}": "{0} è stato inviato, ma non è stato possibile seguirne il test: {1}"
+  "{0} is submitted, but its testing could not be followed: {1}": "{0} è stato inviato, ma non è stato possibile seguirne il test: {1}",
+  "Contest": "Gara",
+  "Contests": "Gare",
+  "Could not open the contest: {0}": "Impossibile aprire la gara: {0}",
+  "No contests found.": "Nessuna gara trovata.",
+  "Open in Editor": "Apri nell'editor",
+  "Open on {0}": "Apri su {0}",
+  "Participants: {0}": "Partecipanti: {0}",
+  "Preparing the contest workspace…": "Preparazione della cartella della gara…",
+  "Problems: {0}": "Problemi: {0}",
+  "Search contests": "Cerca gare",
+  "{0} h": "{0} h",
+  "{0} h {1} min": "{0} h {1} min",
+  "{0} min": "{0} min",
+  "Problems": "Problemi",
+  "Could not update the contest problems: {0}": "Impossibile aggiornare i problemi della gara: {0}"
 }
