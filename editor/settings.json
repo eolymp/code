@@ -38,8 +38,6 @@
   "chat.disableAIFeatures": true,
   "telemetry.telemetryLevel": "off",
   "update.titleBar": false,
-  "update.minReleaseAge": 0,
-  "update.showReleaseNotes": false,
   "extensions.ignoreRecommendations": true,
   "extensions.autoUpdate": false,
   "extensions.autoCheckUpdates": false,

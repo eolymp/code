@@ -1,0 +1,31 @@
+--- a/src/vs/platform/update/common/update.config.contribution.ts
++++ b/src/vs/platform/update/common/update.config.contribution.ts
+@@ -65,7 +65,7 @@ configurationRegistry.registerConfiguration({
+ 		},
+ 		'update.minReleaseAge': {
+ 			type: 'integer',
+-			default: 120,
++			default: 0,
+ 			scope: ConfigurationScope.APPLICATION,
+ 			description: localize('update.cooldown', "Control how old an update need to be before installing it (in hours)."),
+ 		},
+@@ -79,7 +79,7 @@ configurationRegistry.registerConfiguration({
+ 		},
+ 		'update.showReleaseNotes': {
+ 			type: 'boolean',
+-			default: true,
++			default: false,
+ 			scope: ConfigurationScope.APPLICATION,
+ 			description: localize('showReleaseNotes', "Show Release Notes after an update. The Release Notes are fetched from a Microsoft online service."),
+ 			tags: ['usesOnlineServices'],
+--- a/src/vs/platform/update/electron-main/abstractUpdateService.ts
++++ b/src/vs/platform/update/electron-main/abstractUpdateService.ts
+@@ -696,7 +696,7 @@ export abstract class AbstractUpdateService extends Disposable implements IUpdat
+ 					this.logService.info(`update#isLatestVersion() - found: ${fetchedVersion}, pending: ${currentVersion}`);
+ 				}
+ 				else {
+-					currentVersion = normalizeVersion(this.productService.version);
++					currentVersion = normalizeVersion(this.productService.releaseVersion ?? this.productService.version);
+ 
+ 					this.logService.info(`update#isLatestVersion() - found: ${fetchedVersion}, current: ${currentVersion}`);
+ 				}
