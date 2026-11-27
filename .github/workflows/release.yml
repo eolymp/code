@@ -130,5 +130,5 @@ jobs:
         env:
           DOWNLOADS_BUCKET: ${{ vars.DOWNLOADS_BUCKET }}
           APT_BUCKET: ${{ vars.APT_BUCKET }}
-          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+          APT_SIGNING_KEY_PARAMETER: ${{ vars.APT_SIGNING_KEY_PARAMETER }}
         run: node app/publish.js "${GITHUB_REF_NAME#v}"

@@ -11,9 +11,8 @@ function run(command, args, options = {}) {
   return childProcess.execFileSync(command, args, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'inherit'], ...options });
 }
 
-function repository(dir) {
-  const key = process.env.APT_SIGNING_KEY;
-  if (!key) throw new Error('APT_SIGNING_KEY is not set');
+function repository(dir, key) {
+  if (!key) throw new Error('no signing key');
   if (fs.existsSync(dir) && fs.readdirSync(dir).length) throw new Error(`${dir} is not empty`);
 
   const pool = path.join(dir, 'pool');
@@ -26,7 +25,6 @@ function repository(dir) {
     const [pkg, version, arch] = ['Package', 'Version', 'Architecture'].map((field) => run('dpkg-deb', ['-f', deb, field]).trim());
     fs.copyFileSync(deb, path.join(pool, `${pkg}_${version}_${arch}.deb`));
   }
-  fs.copyFileSync(path.join(__dirname, 'apt', 'eolymp.asc'), path.join(dir, 'eolymp.asc'));
 
   const stable = path.join(dir, 'dists', 'stable');
   for (const arch of architectures) {
@@ -59,8 +57,8 @@ module.exports = { repository };
 if (require.main === module) {
   try {
     const [dir] = process.argv.slice(2);
-    if (!dir) throw new Error('usage: node app/apt.js <dir>');
-    repository(dir);
+    if (!dir) throw new Error('usage: APT_SIGNING_KEY=<private key> node app/apt.js <dir>');
+    repository(dir, process.env.APT_SIGNING_KEY);
   } catch (err) {
     console.error(err.message);
     process.exit(1);

@@ -23,6 +23,7 @@ function main() {
   const stable = !version.includes('-');
   const downloads = `${required('DOWNLOADS_BUCKET')}/${stable ? '' : 'pre/'}`;
   const apt = stable ? required('APT_BUCKET') : '';
+  const parameter = stable ? required('APT_SIGNING_KEY_PARAMETER') : '';
 
   const artifacts = path.join(repo, 'artifacts');
   const files = fs.readdirSync(artifacts).filter((name) => name.startsWith('eolymp-code-')).sort();
@@ -41,9 +42,9 @@ function main() {
   copy(latest, `${downloads}latest.json`, SHORT);
 
   const dir = path.join(work, 'apt');
-  repository(dir);
+  const key = childProcess.execFileSync('aws', ['ssm', 'get-parameter', '--name', parameter, '--with-decryption', '--query', 'Parameter.Value', '--output', 'text'], { encoding: 'utf8' });
+  repository(dir, key);
   copy(path.join(dir, 'pool'), `${apt}/pool`, LONG, true);
-  copy(path.join(dir, 'eolymp.asc'), `${apt}/eolymp.asc`, SHORT);
   for (const arch of fs.readdirSync(path.join(dir, 'dists', 'stable', 'main'))) {
     copy(path.join(dir, 'dists', 'stable', 'main', arch), `${apt}/dists/stable/main/${arch}`, 'no-cache', true);
   }
