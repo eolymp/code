@@ -101,7 +101,7 @@ jobs:
         with:
           node-version-file: app/.nvmrc
       - name: Publish the language packs to Open VSX
-        run: ./app/language-packs.sh
+        run: node app/language-packs.js
 
   publish:
     needs: editor
@@ -117,6 +117,9 @@ jobs:
           pattern: editor-*
           path: artifacts
           merge-multiple: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: app/.nvmrc
       - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         if: startsWith(github.ref, 'refs/tags/v')
         with:
@@ -128,4 +131,4 @@ jobs:
           DOWNLOADS_BUCKET: ${{ vars.DOWNLOADS_BUCKET }}
           APT_BUCKET: ${{ vars.APT_BUCKET }}
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
-        run: ./app/publish.sh "${GITHUB_REF_NAME#v}"
+        run: node app/publish.js "${GITHUB_REF_NAME#v}"
