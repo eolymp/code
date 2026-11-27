@@ -13,7 +13,7 @@ function newer(latest, current) {
 
 async function check(context) {
   if (context.extensionMode !== vscode.ExtensionMode.Production) return;
-  if (process.platform === 'linux' && fs.existsSync('/etc/apt/sources.list.d/eolymp-code.sources')) return;
+  if (process.platform !== 'linux' || fs.existsSync('/etc/apt/sources.list.d/eolymp-code.sources')) return;
   if (Date.now() - (context.globalState.get('updateChecked') || 0) < 86400000) return;
   await context.globalState.update('updateChecked', Date.now());
   const response = await fetch(`${PAGE}/latest.json`, { signal: AbortSignal.timeout(10000) });

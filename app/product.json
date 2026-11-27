@@ -35,6 +35,7 @@
   "licenseUrl": "https://github.com/eolymp/code",
   "reportIssueUrl": "https://github.com/eolymp/code/issues/new",
   "downloadUrl": "https://eolymp.com/code",
+  "updateUrl": "https://downloads.eolymp.com/code",
   "linkProtectionTrustedDomains": [
     "https://open-vsx.org",
     "https://eolymp.com",
