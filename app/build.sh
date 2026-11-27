@@ -69,7 +69,7 @@ export SHOULD_BUILD="yes"
 export SHOULD_BUILD_REH="no"
 export SHOULD_BUILD_REH_WEB="no"
 export SHOULD_BUILD_CLI="no"
-export DISABLE_UPDATE="yes"
+if [ "$platform" = linux ]; then export DISABLE_UPDATE="yes"; else export DISABLE_UPDATE="no"; fi
 export BUILD_SOURCEVERSION="$(git -C "$repo" rev-parse HEAD)"
 export SOURCE_DATE_EPOCH="$(git -C "$repo" log -1 --format=%ct)"
 export VSCODE_SKIP_NODE_VERSION_CHECK="yes"
@@ -82,7 +82,7 @@ for candidate in python3.11 python3.12 python3.13; do
   fi
 done
 
-jq -s --arg release "${EOLYMP_CODE_VERSION:-}" '.[0] * .[1] | if $release == "" then . else .releaseVersion = $release end' product.json "$here/product.json" > product.json.merged
+jq -s --arg release "${EOLYMP_CODE_VERSION:-}" --arg platform "$platform" '.[0] * .[1] | if $release == "" then . else .releaseVersion = $release end | if $platform == "linux" then del(.updateUrl) else . end' product.json "$here/product.json" > product.json.merged
 mv product.json.merged product.json
 cp -R "$here/src/." src/stable/
 mkdir -p patches/user
@@ -121,7 +121,6 @@ if [ "$platform" = darwin ]; then
   for name in CERTIFICATE_OSX_P12_DATA CERTIFICATE_OSX_P12_PASSWORD CERTIFICATE_OSX_APPLE_ID CERTIFICATE_OSX_APP_PASSWORD CERTIFICATE_OSX_TEAM_ID; do
     [ -n "${!name:-}" ] || { echo "$name is needed to sign the disk image"; exit 1; }
   done
-  export SHOULD_BUILD_ZIP=no
   rm -rf assets
   mkdir assets
   set +u
@@ -132,6 +131,7 @@ if [ "$platform" = darwin ]; then
   xcrun notarytool submit "$dmg" --apple-id "$CERTIFICATE_OSX_APPLE_ID" --team-id "$CERTIFICATE_OSX_TEAM_ID" --password "$CERTIFICATE_OSX_APP_PASSWORD" --wait
   xcrun stapler staple "$dmg"
   cp "$dmg" "$out/eolymp-code-macos-$arch.dmg"
+  cp "assets/$APP_NAME-darwin-$arch-$version.zip" "$out/eolymp-code-macos-$arch.zip"
 elif [ "$platform" = linux ]; then
   cp "$work"/vscodium/vscode/.build/linux/deb/*/deb/*.deb "$out/eolymp-code-linux-$arch.deb"
   tar -czf "$out/eolymp-code-linux-$arch.tar.gz" -C "$built" .
