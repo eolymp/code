@@ -110,17 +110,6 @@
          Result := False;
        end;
      end;
---- a/resources/linux/debian/postinst.template
-+++ b/resources/linux/debian/postinst.template
-@@ -39,7 +39,7 @@
- 	update-mime-database /usr/share/mime
- fi
- 
--if [ "@@NAME@@" != "code-oss" ]; then
-+if [ "@@NAME@@" = "code" ] || [ "@@NAME@@" = "code-insiders" ]; then
- 	# Remove the legacy bin command if this is the stable build
- 	if [ "@@NAME@@" = "code" ]; then
- 		rm -f /usr/local/bin/code
 --- a/src/vs/base/common/product.ts
 +++ b/src/vs/base/common/product.ts
 @@ -98,6 +98,7 @@

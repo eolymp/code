@@ -131,12 +131,12 @@ if [ "$platform" = darwin ]; then
   dmg="assets/$APP_NAME.$arch.$version.dmg"
   xcrun notarytool submit "$dmg" --apple-id "$CERTIFICATE_OSX_APPLE_ID" --team-id "$CERTIFICATE_OSX_TEAM_ID" --password "$CERTIFICATE_OSX_APP_PASSWORD" --wait
   xcrun stapler staple "$dmg"
-  cp "$dmg" "$out/EolympCode-$platform-$arch-$version.dmg"
+  cp "$dmg" "$out/eolymp-code-macos-$arch.dmg"
 elif [ "$platform" = linux ]; then
-  cp "$work"/vscodium/vscode/.build/linux/deb/*/deb/*.deb "$out/EolympCode-$platform-$arch-$version.deb"
-  tar -czf "$out/EolympCode-$platform-$arch-$version.tar.gz" -C "$built" .
+  cp "$work"/vscodium/vscode/.build/linux/deb/*/deb/*.deb "$out/eolymp-code-linux-$arch.deb"
+  tar -czf "$out/eolymp-code-linux-$arch.tar.gz" -C "$built" .
 else
   (cd "$work/vscodium/vscode" && npm run gulp "vscode-win32-$arch-user-setup")
-  cp "$work/vscodium/vscode/.build/win32-$arch/user-setup/VSCodeSetup.exe" "$out/EolympCode-$platform-$arch-$version.exe"
+  cp "$work/vscodium/vscode/.build/win32-$arch/user-setup/VSCodeSetup.exe" "$out/eolymp-code-windows-$arch.exe"
 fi
 ls -lh "$out"
